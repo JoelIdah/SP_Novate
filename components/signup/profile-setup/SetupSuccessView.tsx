@@ -1,4 +1,6 @@
-﻿import { SuccessBadgeIcon } from "./icons";
+import Link from "next/link";
+
+import { SuccessBadgeIcon } from "./icons";
 
 export function SetupSuccessView() {
   return (
@@ -11,9 +13,9 @@ export function SetupSuccessView() {
         <p className="mx-auto mt-3 max-w-[360px] text-sm font-medium leading-relaxed text-[#8c93a7]">
           Your profile is set up. You can now access all of the features on the dashboard.
         </p>
-        <button className="mt-8 h-10 rounded-full border border-[#d8dde8] bg-white px-6 text-sm font-semibold text-[#3f5f57] hover:bg-[#f8fafc]" type="button">
+        <Link className="mt-8 inline-flex h-10 items-center rounded-full border border-[#d8dde8] bg-white px-6 text-sm font-semibold text-[#3f5f57] hover:bg-[#f8fafc]" href="/dashboard">
           Proceed to dashboard
-        </button>
+        </Link>
       </div>
     </section>
   );

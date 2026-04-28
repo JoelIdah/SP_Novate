@@ -1,18 +1,35 @@
-﻿"use client";
-
-import { useState } from "react";
+"use client";
 
 import { ProfileSetupStep } from "../ProfileSetupStep";
+import type { SetupMode, SetupStepId, SignUpFlowStage } from "../types";
 import { StudentOnboardingOverview } from "./StudentOnboardingOverview";
 
-type StudentStage = "overview" | "setup";
-
-export function StudentFlow({ onBackToAccount }: { onBackToAccount: () => void }) {
-  const [stage, setStage] = useState<StudentStage>("overview");
-
+export function StudentFlow({
+  onBackToAccount,
+  onSetupStateChange,
+  onStageChange,
+  setupMode,
+  setupStepId,
+  stage,
+}: {
+  onBackToAccount: () => void;
+  onSetupStateChange: (state: { mode: SetupMode; stepId: SetupStepId }) => void;
+  onStageChange: (stage: SignUpFlowStage) => void;
+  setupMode: SetupMode;
+  setupStepId: SetupStepId;
+  stage: SignUpFlowStage;
+}) {
   if (stage === "setup") {
-    return <ProfileSetupStep onBack={() => setStage("overview")} role="student" />;
+    return (
+      <ProfileSetupStep
+        initialMode={setupMode}
+        initialStepId={setupStepId}
+        onBack={() => onStageChange("overview")}
+        onStateChange={onSetupStateChange}
+        role="student"
+      />
+    );
   }
 
-  return <StudentOnboardingOverview onCancel={onBackToAccount} onContinue={() => setStage("setup")} />;
+  return <StudentOnboardingOverview onCancel={onBackToAccount} onContinue={() => onStageChange("setup")} />;
 }

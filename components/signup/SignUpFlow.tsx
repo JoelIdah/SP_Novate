@@ -1,6 +1,7 @@
-﻿"use client";
+"use client";
 
-import { useState } from "react";
+import { useMemo } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { AccountStep } from "./AccountStep";
 import { AuthCardHeader } from "./AuthCardHeader";
@@ -8,33 +9,169 @@ import { AuthShell } from "./AuthShell";
 import { RoleStep } from "./RoleStep";
 import { StudentFlow } from "./student/StudentFlow";
 import { TutorFlow } from "./tutor/TutorFlow";
-import type { SignUpRole, SignUpView } from "./types";
+import type { SetupMode, SetupStepId, SignUpFlowStage, SignUpRole, SignUpView } from "./types";
 
-export function SignUpFlow() {
-  const [selectedRole, setSelectedRole] = useState<SignUpRole | null>(null);
-  const [view, setView] = useState<SignUpView>("role");
+type SignUpUrlState = {
+  mode: SetupMode;
+  role: SignUpRole | null;
+  stage: SignUpFlowStage;
+  step: SetupStepId;
+  view: SignUpView;
+};
 
-  if (view === "flow" && selectedRole === "student") {
-    return <StudentFlow onBackToAccount={() => setView("account")} />;
+function parseRole(value: string | null): SignUpRole | null {
+  return value === "student" || value === "tutor" ? value : null;
+}
+
+function parseView(value: string | null): SignUpView {
+  return value === "role" || value === "account" || value === "flow" ? value : "role";
+}
+
+function parseStage(value: string | null): SignUpFlowStage {
+  return value === "setup" ? "setup" : "overview";
+}
+
+function parseStep(value: string | null): SetupStepId {
+  return value === "identification" || value === "compensation" || value === "location" ? value : "personal";
+}
+
+function parseMode(value: string | null): SetupMode {
+  return value === "review" || value === "success" ? value : "form";
+}
+
+function normalizeStepForRole(step: SetupStepId, role: SignUpRole | null): SetupStepId {
+  if (role !== "tutor" && (step === "identification" || step === "compensation")) {
+    return "personal";
+  }
+  return step;
+}
+
+function readUrlState(searchParams: URLSearchParams): SignUpUrlState {
+  const role = parseRole(searchParams.get("role"));
+  let view = parseView(searchParams.get("view"));
+
+  if (!role && view !== "role") {
+    view = "role";
   }
 
-  if (view === "flow" && selectedRole === "tutor") {
-    return <TutorFlow onBackToAccount={() => setView("account")} />;
+  let stage = parseStage(searchParams.get("stage"));
+  if (view !== "flow") {
+    stage = "overview";
+  }
+
+  const step = normalizeStepForRole(parseStep(searchParams.get("step")), role);
+  const mode = parseMode(searchParams.get("mode"));
+
+  return {
+    mode: stage === "setup" ? mode : "form",
+    role,
+    stage,
+    step: stage === "setup" ? step : "personal",
+    view,
+  };
+}
+
+export function SignUpFlow() {
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const urlState = useMemo(() => readUrlState(new URLSearchParams(searchParams.toString())), [searchParams]);
+
+  const writeUrlState = (nextState: Partial<SignUpUrlState>) => {
+    const role = nextState.role !== undefined ? nextState.role : urlState.role;
+    const view = nextState.view ?? urlState.view;
+    const stage = nextState.stage ?? urlState.stage;
+    const step = normalizeStepForRole(nextState.step ?? urlState.step, role);
+    const mode = nextState.mode ?? urlState.mode;
+
+    const params = new URLSearchParams(searchParams.toString());
+
+    params.set("view", view);
+
+    if (role) {
+      params.set("role", role);
+    } else {
+      params.delete("role");
+    }
+
+    if (view === "flow") {
+      params.set("stage", stage);
+      if (stage === "setup") {
+        params.set("step", step);
+        params.set("mode", mode);
+      } else {
+        params.delete("step");
+        params.delete("mode");
+      }
+    } else {
+      params.delete("stage");
+      params.delete("step");
+      params.delete("mode");
+    }
+
+    const nextQuery = params.toString();
+    const currentQuery = searchParams.toString();
+
+    if (nextQuery === currentQuery) return;
+
+    router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
+  };
+
+  if (urlState.view === "flow" && urlState.role === "student") {
+    return (
+      <StudentFlow
+        onBackToAccount={() => {
+          writeUrlState({ mode: "form", stage: "overview", step: "personal", view: "account" });
+        }}
+        onSetupStateChange={({ mode, stepId }) => {
+          writeUrlState({ mode, stage: "setup", step: stepId, view: "flow" });
+        }}
+        onStageChange={(stage) => {
+          writeUrlState({ mode: "form", stage, view: "flow" });
+        }}
+        setupMode={urlState.mode}
+        setupStepId={urlState.step}
+        stage={urlState.stage}
+      />
+    );
+  }
+
+  if (urlState.view === "flow" && urlState.role === "tutor") {
+    return (
+      <TutorFlow
+        onBackToAccount={() => {
+          writeUrlState({ mode: "form", stage: "overview", step: "personal", view: "account" });
+        }}
+        onSetupStateChange={({ mode, stepId }) => {
+          writeUrlState({ mode, stage: "setup", step: stepId, view: "flow" });
+        }}
+        onStageChange={(stage) => {
+          writeUrlState({ mode: "form", stage, view: "flow" });
+        }}
+        setupMode={urlState.mode}
+        setupStepId={urlState.step}
+        stage={urlState.stage}
+      />
+    );
   }
 
   return (
     <AuthShell>
       <div className="relative rounded-[1.1rem] border border-[#d9dde8] bg-white/95 px-5 pb-7 pt-12 shadow-[0_9px_26px_rgba(23,30,63,0.09)] sm:px-8 sm:pb-8 sm:pt-13">
         <AuthCardHeader />
-        {view === "role" ? (
+        {urlState.view === "role" ? (
           <RoleStep
             onSelect={(role) => {
-              setSelectedRole(role);
-              setView("account");
+              writeUrlState({ mode: "form", role, stage: "overview", step: "personal", view: "account" });
             }}
           />
         ) : (
-          <AccountStep onContinue={() => setView("flow")} />
+          <AccountStep
+            onContinue={() => {
+              writeUrlState({ mode: "form", stage: "overview", step: "personal", view: "flow" });
+            }}
+          />
         )}
       </div>
     </AuthShell>

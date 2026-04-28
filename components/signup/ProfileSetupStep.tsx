@@ -1,13 +1,13 @@
 ﻿"use client";
 
 import Image from "next/image";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { LocationTargetIcon } from "./profile-setup/icons";
 import { ReviewInformationStep } from "./profile-setup/ReviewInformationStep";
 import { SetupSuccessView } from "./profile-setup/SetupSuccessView";
 import { getStepIconKindFromLabel, StepItemIcon } from "./shared/StepItemIcon";
-import type { SignUpRole } from "./types";
+import type { SetupMode, SetupStepId, SignUpRole } from "./types";
 import { parseReverseGeocodeResult, type AddressState } from "./utils";
 
 type PersonalFormState = {
@@ -38,7 +38,6 @@ type CompensationFormState = {
   sortCode: string;
 };
 
-type SetupStepId = "personal" | "identification" | "compensation" | "location";
 type LocationView = "prompt" | "map" | "edit";
 
 type StepMeta = {
@@ -126,13 +125,31 @@ function StatusIndicator({ done, active }: { done: boolean; active: boolean }) {
   return <span className="inline-flex h-4 w-4 rounded-full border border-[#b8c1d4]" />;
 }
 
-export function ProfileSetupStep({ role, onBack }: { role: SignUpRole | null; onBack: () => void }) {
+export function ProfileSetupStep({
+  initialMode = "form",
+  initialStepId,
+  onBack,
+  onStateChange,
+  role,
+}: {
+  initialMode?: SetupMode;
+  initialStepId?: SetupStepId;
+  onBack: () => void;
+  onStateChange?: (state: { mode: SetupMode; stepId: SetupStepId }) => void;
+  role: SignUpRole | null;
+}) {
   const steps = role === "tutor" ? tutorSteps : studentSteps;
+  const stepIndexFromUrl = useMemo(() => {
+    const fallbackId = steps[0]?.id ?? "personal";
+    const targetId = initialStepId ?? fallbackId;
+    const index = steps.findIndex((step) => step.id === targetId);
+    return index >= 0 ? index : 0;
+  }, [initialStepId, steps]);
 
-  const [activeStepIndex, setActiveStepIndex] = useState(0);
+  const [activeStepIndex, setActiveStepIndex] = useState(stepIndexFromUrl);
   const [completedSteps, setCompletedSteps] = useState<SetupStepId[]>([]);
-  const [setupComplete, setSetupComplete] = useState(false);
-  const [showReview, setShowReview] = useState(false);
+  const [setupComplete, setSetupComplete] = useState(initialMode === "success");
+  const [showReview, setShowReview] = useState(initialMode === "review");
   const [reviewConfirmed, setReviewConfirmed] = useState(false);
 
   const [personalForm, setPersonalForm] = useState<PersonalFormState>(initialPersonalForm);
@@ -149,6 +166,12 @@ export function ProfileSetupStep({ role, onBack }: { role: SignUpRole | null; on
   const currentStep = steps[activeStepIndex]?.id ?? "personal";
   const isLastStep = activeStepIndex === steps.length - 1;
   const showReviewScreen = !setupComplete && showReview;
+
+  useEffect(() => {
+    if (!onStateChange) return;
+    const mode: SetupMode = setupComplete ? "success" : showReview ? "review" : "form";
+    onStateChange({ mode, stepId: currentStep });
+  }, [currentStep, onStateChange, setupComplete, showReview]);
 
   const personalValid = useMemo(() => {
     const base =
@@ -315,7 +338,7 @@ export function ProfileSetupStep({ role, onBack }: { role: SignUpRole | null; on
           showReviewScreen
             ? "min-h-[calc(100svh-112px)] px-4 py-5 sm:px-6"
             : setupComplete
-              ? "h-[calc(100svh-112px)] px-4 py-5 sm:px-6"
+              ? "h-[calc(100svh-56px)] px-4 py-5 sm:px-6"
             : "grid h-[calc(100svh-112px)] grid-cols-[250px_1fr] gap-8 px-8 py-6"
         }
       >
@@ -499,14 +522,14 @@ export function ProfileSetupStep({ role, onBack }: { role: SignUpRole | null; on
         </div>
       </section>
 
-      <footer className="flex h-14 items-center justify-between border-t border-[#e6e9f2] bg-white/95 px-3 sm:px-5">
-        <div className="flex items-center gap-2 text-[0.72rem] text-[#5f6780]">
-          <span className="rounded-full border border-[#c7cdfd] bg-[#f2f3ff] px-2 py-1 font-semibold text-[#5852ce]">{stepLabel}</span>
-          <span>›</span>
-          <span className="font-medium">Profile set up</span>
-        </div>
+      {!setupComplete ? (
+        <footer className="flex h-14 items-center justify-between border-t border-[#e6e9f2] bg-white/95 px-3 sm:px-5">
+          <div className="flex items-center gap-2 text-[0.72rem] text-[#5f6780]">
+            <span className="rounded-full border border-[#c7cdfd] bg-[#f2f3ff] px-2 py-1 font-semibold text-[#5852ce]">{stepLabel}</span>
+            <span>›</span>
+            <span className="font-medium">Profile set up</span>
+          </div>
 
-        {!setupComplete ? (
           <div className="flex items-center gap-2.5">
             {showReviewScreen ? (
               <>
@@ -540,8 +563,8 @@ export function ProfileSetupStep({ role, onBack }: { role: SignUpRole | null; on
               </>
             )}
           </div>
-        ) : null}
-      </footer>
+        </footer>
+      ) : null}
 
       <div className="sr-only">Selected role: {role ?? "none"}</div>
     </main>

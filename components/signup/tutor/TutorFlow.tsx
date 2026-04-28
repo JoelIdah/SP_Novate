@@ -1,18 +1,35 @@
-﻿"use client";
-
-import { useState } from "react";
+"use client";
 
 import { ProfileSetupStep } from "../ProfileSetupStep";
+import type { SetupMode, SetupStepId, SignUpFlowStage } from "../types";
 import { TutorOnboardingOverview } from "./TutorOnboardingOverview";
 
-type TutorStage = "overview" | "setup";
-
-export function TutorFlow({ onBackToAccount }: { onBackToAccount: () => void }) {
-  const [stage, setStage] = useState<TutorStage>("overview");
-
+export function TutorFlow({
+  onBackToAccount,
+  onSetupStateChange,
+  onStageChange,
+  setupMode,
+  setupStepId,
+  stage,
+}: {
+  onBackToAccount: () => void;
+  onSetupStateChange: (state: { mode: SetupMode; stepId: SetupStepId }) => void;
+  onStageChange: (stage: SignUpFlowStage) => void;
+  setupMode: SetupMode;
+  setupStepId: SetupStepId;
+  stage: SignUpFlowStage;
+}) {
   if (stage === "setup") {
-    return <ProfileSetupStep onBack={() => setStage("overview")} role="tutor" />;
+    return (
+      <ProfileSetupStep
+        initialMode={setupMode}
+        initialStepId={setupStepId}
+        onBack={() => onStageChange("overview")}
+        onStateChange={onSetupStateChange}
+        role="tutor"
+      />
+    );
   }
 
-  return <TutorOnboardingOverview onCancel={onBackToAccount} onContinue={() => setStage("setup")} />;
+  return <TutorOnboardingOverview onCancel={onBackToAccount} onContinue={() => onStageChange("setup")} />;
 }

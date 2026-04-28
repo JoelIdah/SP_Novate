@@ -1,0 +1,57 @@
+@import "tailwindcss";
+
+:root {
+  --app-max-width: 1520px;
+  --app-gutter: clamp(1rem, 2.8vw, 2.75rem);
+  --panel-max-width: 25rem;
+  --brand-surface: #eef0f8;
+  --brand-card: #ffffff;
+  --brand-ink: #1a1e2a;
+  --brand-muted: #7a8298;
+  --brand-line: #dde1ee;
+  --brand-primary: #4f4ccf;
+  --brand-primary-soft: #ecebff;
+}
+
+@theme inline {
+  --font-sans: var(--font-open-sauce);
+  --color-brand-surface: var(--brand-surface);
+  --color-brand-card: var(--brand-card);
+  --color-brand-ink: var(--brand-ink);
+  --color-brand-muted: var(--brand-muted);
+  --color-brand-line: var(--brand-line);
+  --color-brand-primary: var(--brand-primary);
+  --color-brand-primary-soft: var(--brand-primary-soft);
+}
+
+body {
+  min-height: 100%;
+  font-family: var(--font-open-sauce), "Segoe UI", sans-serif;
+}
+
+a,
+button {
+  transition: color 160ms ease, border-color 160ms ease, background-color 160ms ease,
+    transform 160ms ease;
+}
+
+.app-screen {
+  position: relative;
+  min-height: 100svh;
+  overflow: hidden;
+}
+
+.app-content-wrap {
+  margin-inline: auto;
+  display: flex;
+  min-height: 100svh;
+  width: min(calc(100% - (var(--app-gutter) * 2)), var(--app-max-width));
+  flex-direction: column;
+  justify-content: space-between;
+  padding-block: clamp(1rem, 2.5vh, 2rem);
+}
+
+.auth-panel {
+  width: min(100%, var(--panel-max-width));
+  margin-inline: auto;
+}

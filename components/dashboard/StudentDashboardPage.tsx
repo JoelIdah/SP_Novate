@@ -43,9 +43,9 @@ function TopIcon({ label }: { label: string }) {
 
 export function StudentDashboardPage() {
   return (
-    <main className="min-h-screen bg-[#f6f7fb] text-[#2d3448]">
+    <main className="app-page-shell bg-[#f6f7fb] text-[#2d3448]">
       <header className="border-b border-[#e6e9f2] bg-white">
-        <div className="mx-auto flex h-15 w-full max-w-[1120px] items-center justify-between px-4">
+        <div className="app-page-wrap flex h-15 items-center justify-between">
           <Image alt="SP Novate" className="h-8 w-auto" height={32} src="/logo/logo.png" width={32} />
 
           <nav className="hidden items-center gap-9 text-[0.95rem] font-semibold text-[#666e84] md:flex">
@@ -69,7 +69,7 @@ export function StudentDashboardPage() {
         </div>
       </header>
 
-      <section className="mx-auto w-full max-w-[1120px] space-y-7 px-4 py-6">
+      <section className="app-page-wrap space-y-7 py-6">
         <div>
           <h2 className="mb-2 text-[0.93rem] font-semibold text-[#616a82]">Actions</h2>
           <div className="grid gap-3 md:grid-cols-3">
@@ -206,5 +206,4 @@ export function StudentDashboardPage() {
     </main>
   );
 }
-
 

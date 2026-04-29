@@ -125,15 +125,50 @@ function StatusIndicator({ done, active }: { done: boolean; active: boolean }) {
   return <span className="inline-flex h-4 w-4 rounded-full border border-[#b8c1d4]" />;
 }
 
+function EyeIcon({ open }: { open: boolean }) {
+  if (open) {
+    return (
+      <svg aria-hidden className="h-4 w-4" fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3 3L21 21" stroke="currentColor" strokeLinecap="round" strokeWidth="1.7" />
+        <path
+          d="M10.58 10.58C10.21 10.95 10 11.46 10 12C10 13.1 10.9 14 12 14C12.54 14 13.05 13.79 13.42 13.42"
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeWidth="1.7"
+        />
+        <path
+          d="M9.88 5.09C10.56 4.94 11.27 4.86 12 4.86C16.14 4.86 19.63 7.35 21 11.99C20.57 13.44 19.87 14.68 18.96 15.69M14.12 18.91C13.44 19.06 12.73 19.14 12 19.14C7.86 19.14 4.37 16.65 3 12.01C3.58 10.07 4.67 8.5 6.04 7.31"
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeWidth="1.7"
+        />
+      </svg>
+    );
+  }
+
+  return (
+    <svg aria-hidden className="h-4 w-4" fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M3 12.01C4.37 7.35 7.86 4.86 12 4.86C16.14 4.86 19.63 7.35 21 12.01C19.63 16.65 16.14 19.14 12 19.14C7.86 19.14 4.37 16.65 3 12.01Z"
+        stroke="currentColor"
+        strokeWidth="1.7"
+      />
+      <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.7" />
+    </svg>
+  );
+}
+
 export function ProfileSetupStep({
   initialMode = "form",
   initialStepId,
+  initialProfile,
   onBack,
   onStateChange,
   role,
 }: {
   initialMode?: SetupMode;
   initialStepId?: SetupStepId;
+  initialProfile?: { email?: string; firstName?: string; lastName?: string };
   onBack: () => void;
   onStateChange?: (state: { mode: SetupMode; stepId: SetupStepId }) => void;
   role: SignUpRole | null;
@@ -152,12 +187,19 @@ export function ProfileSetupStep({
   const [showReview, setShowReview] = useState(initialMode === "review");
   const [reviewConfirmed, setReviewConfirmed] = useState(false);
 
-  const [personalForm, setPersonalForm] = useState<PersonalFormState>(initialPersonalForm);
+  const [personalForm, setPersonalForm] = useState<PersonalFormState>({
+    ...initialPersonalForm,
+    email: initialProfile?.email ?? initialPersonalForm.email,
+    firstName: initialProfile?.firstName ?? initialPersonalForm.firstName,
+    lastName: initialProfile?.lastName ?? initialPersonalForm.lastName,
+  });
   const [identificationForm, setIdentificationForm] = useState<IdentificationFormState>(initialIdentificationForm);
   const [compensationForm, setCompensationForm] = useState<CompensationFormState>(initialCompensationForm);
   const [addressForm, setAddressForm] = useState<AddressState>(initialAddress);
 
   const [locationView, setLocationView] = useState<LocationView>("prompt");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [coords, setCoords] = useState<{ lat: number; lon: number } | null>(null);
   const [requestingLocation, setRequestingLocation] = useState(false);
   const [locationError, setLocationError] = useState("");
@@ -400,7 +442,7 @@ export function ProfileSetupStep({
 
               <SectionTitle>Contact information</SectionTitle>
               <div className="mt-2 grid grid-cols-2 gap-2.5">
-                <label><FieldLabel>Email</FieldLabel><input className="mt-1 h-8 w-full rounded-md border border-[#d8dde8] bg-white px-3 text-[0.76rem]" onChange={(e) => setPersonalForm((p) => ({ ...p, email: e.target.value }))} value={personalForm.email} /></label>
+                <label><FieldLabel>Email</FieldLabel><input className="mt-1 h-8 w-full rounded-md border border-[#d8dde8] bg-[#f2f4f8] px-3 text-[0.76rem] text-[#6d758a]" disabled value={personalForm.email} /></label>
                 <label>
                   <FieldLabel>Phone number</FieldLabel>
                   <div className="mt-1 flex h-8 items-center rounded-md border border-[#d8dde8] bg-white px-3 text-[0.76rem] text-[#6c748a]">
@@ -424,8 +466,20 @@ export function ProfileSetupStep({
 
               <SectionTitle>Security</SectionTitle>
               <div className="mt-2 grid grid-cols-2 gap-2.5">
-                <label><FieldLabel>Password</FieldLabel><input className="mt-1 h-8 w-full rounded-md border border-[#d8dde8] bg-white px-3 text-[0.76rem]" onChange={(e) => setPersonalForm((p) => ({ ...p, password: e.target.value }))} type="password" value={personalForm.password} /></label>
-                <label><FieldLabel>Confirm Password</FieldLabel><input className="mt-1 h-8 w-full rounded-md border border-[#d8dde8] bg-white px-3 text-[0.76rem]" onChange={(e) => setPersonalForm((p) => ({ ...p, confirmPassword: e.target.value }))} type="password" value={personalForm.confirmPassword} /></label>
+                <label>
+                  <FieldLabel>Password</FieldLabel>
+                  <div className="mt-1 flex h-8 items-center rounded-md border border-[#d8dde8] bg-white px-3 text-[0.76rem]">
+                    <input className="min-w-0 flex-1 bg-transparent outline-none" onChange={(e) => setPersonalForm((p) => ({ ...p, password: e.target.value }))} type={showPassword ? "text" : "password"} value={personalForm.password} />
+                    <button aria-label={showPassword ? "Hide password" : "Show password"} className="text-[#7b84a0] hover:text-[#2187d3]" onClick={() => setShowPassword((v) => !v)} type="button"><EyeIcon open={showPassword} /></button>
+                  </div>
+                </label>
+                <label>
+                  <FieldLabel>Confirm Password</FieldLabel>
+                  <div className="mt-1 flex h-8 items-center rounded-md border border-[#d8dde8] bg-white px-3 text-[0.76rem]">
+                    <input className="min-w-0 flex-1 bg-transparent outline-none" onChange={(e) => setPersonalForm((p) => ({ ...p, confirmPassword: e.target.value }))} type={showConfirmPassword ? "text" : "password"} value={personalForm.confirmPassword} />
+                    <button aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"} className="text-[#7b84a0] hover:text-[#2187d3]" onClick={() => setShowConfirmPassword((v) => !v)} type="button"><EyeIcon open={showConfirmPassword} /></button>
+                  </div>
+                </label>
               </div>
             </div>
           ) : currentStep === "identification" ? (

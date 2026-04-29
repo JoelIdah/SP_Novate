@@ -1,4 +1,4 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 import type { ReactNode } from "react";
 
 export function AuthShell({ children }: { children: ReactNode }) {
@@ -29,10 +29,9 @@ export function AuthShell({ children }: { children: ReactNode }) {
       </button>
 
       <section className="app-content-wrap relative z-10">
-        <div className="flex-1" />
         <div className="auth-panel">{children}</div>
-        <div className="flex-1" />
-        <footer className="mt-8 flex w-full flex-wrap items-center justify-between gap-y-3 text-[0.775rem] font-medium text-[#697188] sm:mt-10 sm:text-[0.8rem]">
+
+        <footer className="mt-6 flex w-full flex-wrap items-center justify-between gap-y-3 text-[0.76rem] font-medium text-[#697188] sm:mt-8 sm:text-[0.8rem]">
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
             <Link href="#" className="transition-colors hover:text-[#1f2430]">
               SP Products

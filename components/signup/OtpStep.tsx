@@ -3,6 +3,22 @@
 import { useMemo, useRef, useState } from "react";
 import Image from "next/image";
 
+type VerifyOtpResponse = {
+  message?: string;
+  data?: {
+    user?: {
+      email?: string;
+      first_name?: string;
+      last_name?: string;
+      role?: "student" | "tutor";
+    };
+  };
+};
+
+type ResendOtpResponse = {
+  message?: string;
+};
+
 
 export function OtpStep({
   email,
@@ -40,23 +56,11 @@ export function OtpStep({
       });
 
       const raw = await response.text();
-      let data:
-        | {
-            message?: string;
-            data?: {
-              user?: {
-                email?: string;
-                first_name?: string;
-                last_name?: string;
-                role?: "student" | "tutor";
-              };
-            };
-          }
-        | null = null;
+      let data: VerifyOtpResponse | null = null;
 
       if (raw) {
         try {
-          data = JSON.parse(raw) as typeof data;
+          data = JSON.parse(raw) as VerifyOtpResponse;
         } catch {
           data = null;
         }
@@ -103,11 +107,11 @@ export function OtpStep({
       });
 
       const raw = await response.text();
-      let data: { message?: string } | null = null;
+      let data: ResendOtpResponse | null = null;
 
       if (raw) {
         try {
-          data = JSON.parse(raw) as { message?: string };
+          data = JSON.parse(raw) as ResendOtpResponse;
         } catch {
           data = null;
         }

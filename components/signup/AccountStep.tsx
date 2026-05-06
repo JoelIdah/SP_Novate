@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useRef, useState } from "react";
 
-import { getAppleAuthNotWiredMessage } from "./social/apple";
-import { getFacebookAuthNotWiredMessage } from "./social/facebook";
+import { startAppleAuth } from "./social/apple";
+import { startFacebookAuth } from "./social/facebook";
 import { startGoogleAuth } from "./social/google";
 import { SocialAuthButtons } from "./social/SocialAuthButtons";
 
@@ -28,6 +29,9 @@ export function AccountStep({
   const [successMessage, setSuccessMessage] = useState("");
 
   const emailInputRef = useRef<HTMLInputElement | null>(null);
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
   const focusEmail = () => {
     emailInputRef.current?.focus();
@@ -64,7 +68,23 @@ export function AccountStep({
         return;
       }
 
-      handleAuthSuccess(result.message, result.token);
+      if (result.profileSetupRequired) {
+        if (result.token) {
+          localStorage.setItem("sp_profile_setup_token", result.token);
+        }
+        const params = new URLSearchParams(searchParams.toString());
+        params.set("view", "flow");
+        params.set("stage", "setup");
+        params.set("step", "personal");
+        params.set("mode", "form");
+        router.push(`${pathname}?${params.toString()}`);
+        return;
+      }
+
+      if (result.token) {
+        localStorage.setItem("sp_access_token", result.token);
+      }
+      router.push("/dashboard");
     } catch {
       setSocialError("Could not reach social auth service. Please try again.");
     } finally {
@@ -95,7 +115,16 @@ export function AccountStep({
     setEmailError("");
     setLastNameError("");
     setFirstNameError("");
-    setSocialError(getFacebookAuthNotWiredMessage());
+    setSocialError("");
+    startFacebookAuth({
+      onError: (message) => {
+        setSocialError(message);
+        setSuccessMessage("");
+      },
+      onToken: (token) => {
+        void handleSocialAuth("facebook", token);
+      },
+    });
   };
 
   const handleAppleClick = () => {
@@ -103,7 +132,16 @@ export function AccountStep({
     setEmailError("");
     setLastNameError("");
     setFirstNameError("");
-    setSocialError(getAppleAuthNotWiredMessage());
+    setSocialError("");
+    startAppleAuth({
+      onError: (message) => {
+        setSocialError(message);
+        setSuccessMessage("");
+      },
+      onToken: (token) => {
+        void handleSocialAuth("apple", token);
+      },
+    });
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {

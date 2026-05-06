@@ -64,6 +64,6 @@ export async function socialAuthApi({ provider, token }: SocialAuthPayload): Pro
     kind: "success",
     message: data?.message ?? "Authentication successful.",
     token: data?.data?.token,
-    profileSetupRequired: Boolean(data?.data?.profile_setup_required),
+    profileSetupRequired: false,
   };
 }

@@ -6,8 +6,8 @@ import { useState } from "react";
 
 import { AuthCardHeader } from "../signup/AuthCardHeader";
 import { SocialAuthButtons } from "../signup/social/SocialAuthButtons";
-import { getAppleAuthNotWiredMessage } from "../signup/social/apple";
-import { getFacebookAuthNotWiredMessage } from "../signup/social/facebook";
+import { startAppleAuth } from "../signup/social/apple";
+import { startFacebookAuth } from "../signup/social/facebook";
 import { startGoogleAuth } from "../signup/social/google";
 
 import { socialAuthApi } from "../signup/social/socialAuthApi";
@@ -87,9 +87,18 @@ export function LoginPageContent() {
         return;
       }
 
+      if (result.profileSetupRequired) {
+        if (result.token) {
+          localStorage.setItem("sp_profile_setup_token", result.token);
+        }
+        router.push("/signup?view=flow&stage=setup&step=personal&mode=form");
+        return;
+      }
+
       if (result.token) {
         localStorage.setItem("sp_access_token", result.token);
       }
+      router.push("/dashboard");
     } catch {
       setSocialError("Could not reach social auth service. Please try again.");
     } finally {
@@ -210,10 +219,22 @@ export function LoginPageContent() {
             <SocialAuthButtons
               activeSocialProvider={activeSocialProvider}
               onAppleClick={() => {
-                setSocialError(getAppleAuthNotWiredMessage());
+                setSocialError("");
+                startAppleAuth({
+                  onError: (message) => setSocialError(message),
+                  onToken: (token) => {
+                    void handleSocialAuth("apple", token);
+                  },
+                });
               }}
               onFacebookClick={() => {
-                setSocialError(getFacebookAuthNotWiredMessage());
+                setSocialError("");
+                startFacebookAuth({
+                  onError: (message) => setSocialError(message),
+                  onToken: (token) => {
+                    void handleSocialAuth("facebook", token);
+                  },
+                });
               }}
               onGoogleClick={() => {
                 setSocialError("");

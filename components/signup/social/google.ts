@@ -1,3 +1,5 @@
+"use client";
+
 type GoogleCredentialResponse = {
   credential?: string;
 };
@@ -12,6 +14,9 @@ type GoogleGlobal = {
     id?: GoogleAccountsId;
   };
 };
+
+let googleInitialized = false;
+let googlePromptInFlight = false;
 
 export function startGoogleAuth(options: { onToken: (token: string) => void; onError: (message: string) => void }) {
   const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
@@ -29,12 +34,27 @@ export function startGoogleAuth(options: { onToken: (token: string) => void; onE
     return;
   }
 
-  googleAccountsId.initialize({
-    client_id: googleClientId,
-    callback: (response) => {
-      options.onToken(response.credential ?? "");
-    },
-  });
+  if (!googleInitialized) {
+    googleAccountsId.initialize({
+      client_id: googleClientId,
+      callback: (response) => {
+        const token = response.credential ?? "";
+        if (!token) {
+          options.onError("Google did not return a credential. Please try again.");
+          return;
+        }
+        options.onToken(token);
+        googlePromptInFlight = false;
+      },
+    });
+    googleInitialized = true;
+  }
 
+  if (googlePromptInFlight) {
+    options.onError("Google sign-in is already in progress. Please wait.");
+    return;
+  }
+
+  googlePromptInFlight = true;
   googleAccountsId.prompt();
 }

@@ -215,53 +215,7 @@ export function LoginPageContent() {
         <form className="mx-auto mt-3.5 w-full max-w-[20rem]" onSubmit={handleSubmit}>
           <p className="text-center text-[0.71rem] font-medium text-[#8d95a8]">Welcome back! Please enter your details.</p>
 
-          <div className="mt-3.5 space-y-2">
-            <SocialAuthButtons
-              activeSocialProvider={activeSocialProvider}
-              onAppleClick={() => {
-                setSocialError("");
-                startAppleAuth({
-                  onError: (message) => setSocialError(message),
-                  onToken: (token) => {
-                    void handleSocialAuth("apple", token);
-                  },
-                });
-              }}
-              onFacebookClick={() => {
-                setSocialError("");
-                startFacebookAuth({
-                  onError: (message) => setSocialError(message),
-                  onToken: (token) => {
-                    void handleSocialAuth("facebook", token);
-                  },
-                });
-              }}
-              onGoogleClick={() => {
-                setSocialError("");
-                startGoogleAuth({
-                  onError: (message) => setSocialError(message),
-                  onToken: (token) => {
-                    void handleSocialAuth("google", token);
-                  },
-                });
-              }}
-            />
-            <div
-              className={`overflow-hidden transition-all duration-200 ease-out ${
-                socialError ? "mt-0.5 max-h-5 opacity-100" : "max-h-0 opacity-0"
-              }`}
-            >
-              <p className="text-[0.66rem] font-medium text-[#d04b4b]">{socialError}</p>
-            </div>
-          </div>
-
-          <div className="my-3 flex items-center gap-3">
-            <span className="h-px flex-1 bg-[#d9deea]" />
-            <span className="text-[0.64rem] font-semibold uppercase text-[#9ba2b4]">or</span>
-            <span className="h-px flex-1 bg-[#d9deea]" />
-          </div>
-
-          <div className="space-y-1.5">
+          <div className="mt-3.5 space-y-1.5">
             <label className="block text-[0.71rem] font-semibold text-[#6f778c]">
               Email
               <input
@@ -328,6 +282,52 @@ export function LoginPageContent() {
           >
             {isSubmitting ? "Continuing..." : "Continue with email"}
           </button>
+
+          <div className="my-3 flex items-center gap-3">
+            <span className="h-px flex-1 bg-[#d9deea]" />
+            <span className="text-[0.64rem] font-semibold uppercase text-[#9ba2b4]">or</span>
+            <span className="h-px flex-1 bg-[#d9deea]" />
+          </div>
+
+          <div className="space-y-2">
+            <SocialAuthButtons
+              activeSocialProvider={activeSocialProvider}
+              onAppleClick={() => {
+                setSocialError("");
+                startAppleAuth({
+                  onError: (message) => setSocialError(message),
+                  onToken: (token) => {
+                    void handleSocialAuth("apple", token);
+                  },
+                });
+              }}
+              onFacebookClick={() => {
+                setSocialError("");
+                startFacebookAuth({
+                  onError: (message) => setSocialError(message),
+                  onToken: (token) => {
+                    void handleSocialAuth("facebook", token);
+                  },
+                });
+              }}
+              onGoogleClick={() => {
+                setSocialError("");
+                startGoogleAuth({
+                  onError: (message) => setSocialError(message),
+                  onToken: (token) => {
+                    void handleSocialAuth("google", token);
+                  },
+                });
+              }}
+            />
+            <div
+              className={`overflow-hidden transition-all duration-200 ease-out ${
+                socialError ? "mt-0.5 max-h-5 opacity-100" : "max-h-0 opacity-0"
+              }`}
+            >
+              <p className="text-[0.66rem] font-medium text-[#d04b4b]">{socialError}</p>
+            </div>
+          </div>
 
           <p className="mt-3 text-center text-[0.71rem] font-medium text-[#8d95a8]">
             Don&apos;t have an account?{" "}

@@ -7,7 +7,6 @@ import { AccountStep } from "./AccountStep";
 import { AuthCardHeader } from "./AuthCardHeader";
 import { AuthShell } from "./AuthShell";
 import { OtpStep } from "./OtpStep";
-import { RoleStep } from "./RoleStep";
 import { StudentFlow } from "./student/StudentFlow";
 import { TutorFlow } from "./tutor/TutorFlow";
 import type { SetupMode, SetupStepId, SignUpFlowStage, SignUpRole, SignUpView } from "./types";
@@ -27,7 +26,7 @@ function parseRole(value: string | null): SignUpRole | null {
 }
 
 function parseView(value: string | null): SignUpView {
-  return value === "role" || value === "account" || value === "otp" || value === "flow" ? value : "role";
+  return value === "account" || value === "otp" || value === "flow" ? value : "account";
 }
 
 function parseStage(value: string | null): SignUpFlowStage {
@@ -51,11 +50,7 @@ function normalizeStepForRole(step: SetupStepId, role: SignUpRole | null): Setup
 
 function readUrlState(searchParams: URLSearchParams): SignUpUrlState {
   const role = parseRole(searchParams.get("role"));
-  let view = parseView(searchParams.get("view"));
-
-  if (!role && view !== "role") {
-    view = "role";
-  }
+  const view = parseView(searchParams.get("view"));
 
   let stage = parseStage(searchParams.get("stage"));
   if (view !== "flow") {
@@ -122,7 +117,7 @@ export function SignUpFlow() {
     router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
   };
 
-  if (urlState.view === "flow" && urlState.role === "student") {
+  if (urlState.view === "flow" && urlState.role !== "tutor") {
     return (
       <StudentFlow
         accountProfile={accountProfile}
@@ -166,13 +161,7 @@ export function SignUpFlow() {
     <AuthShell>
       <div className="auth-card relative rounded-[1.1rem] border border-[#d9dde8] bg-white/95 px-5 pb-6 pt-11 shadow-[0_9px_26px_rgba(23,30,63,0.09)] sm:px-7 sm:pb-7 sm:pt-12">
         {urlState.view !== "otp" ? <AuthCardHeader /> : null}
-        {urlState.view === "role" ? (
-          <RoleStep
-            onSelect={(role) => {
-              writeUrlState({ mode: "form", role, stage: "overview", step: "personal", view: "account" });
-            }}
-          />
-        ) : urlState.view === "account" ? (
+        {urlState.view === "account" ? (
           <AccountStep
             onContinue={(payload) => {
               setAccountProfile(payload);

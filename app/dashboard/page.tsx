@@ -1,5 +1,5 @@
-import { StudentDashboardPage } from "../../components/dashboard/StudentDashboardPage";
+import NewDashboardPage from "../../components/dashboard/NewDashboardPage";
 
 export default function DashboardPage() {
-  return <StudentDashboardPage />;
+  return <NewDashboardPage />;
 }

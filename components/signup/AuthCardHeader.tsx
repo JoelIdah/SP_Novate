@@ -18,27 +18,27 @@ export function AuthCardHeader({
 }: AuthCardHeaderProps) {
   return (
     <>
-      <div className="absolute left-1/2 -top-5 -translate-x-1/2 sm:-top-6">
+      <div className="absolute left-1/2 -top-4 -translate-x-1/2 sm:-top-5">
         <div className="overflow-hidden rounded-[0.7rem] shadow-[0_9px_20px_rgba(53,49,177,0.25)]">
           <Image
             alt="SP Novate"
-            className="h-[52px] w-auto sm:h-[56px]"
-            height={56}
+            className="h-[clamp(2.4rem,2.35vw,3.4rem)] w-auto"
+            height={54}
             priority
             src="/logo/logo.png"
-            width={56}
+            width={54}
           />
         </div>
       </div>
 
       <div className="text-center">
-        <h1 className="text-[1.7rem] font-bold tracking-[-0.02em] text-[#1d2230] sm:text-[1.85rem]">{title}</h1>
+        <h1 className="text-[clamp(1.12rem,1.05vw,1.65rem)] font-bold tracking-[-0.02em] text-[#1d2230]">{title}</h1>
         {showPrompt ? (
-          <p className="mt-1 text-[0.74rem] font-medium text-[#8d95a8] sm:text-[0.76rem]">
+          <p className="mt-1.5 text-[clamp(0.68rem,0.62vw,0.82rem)] font-medium text-[#98a0b2]">
             {promptText}{" "}
             <Link
               href={promptLinkHref}
-              className="font-semibold text-[#2187d3] transition-colors hover:text-[#17679f]"
+              className="font-semibold text-[#1f7ec4] transition-colors hover:text-[#17679f]"
             >
               {promptLinkLabel}
             </Link>
@@ -48,3 +48,5 @@ export function AuthCardHeader({
     </>
   );
 }
+
+

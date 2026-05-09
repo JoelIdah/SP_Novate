@@ -166,7 +166,7 @@ export default function ForgotPasswordPage() {
 
   return (
     <AuthShell>
-      <div className="auth-card relative rounded-[1.1rem] border border-[#d9dde8] bg-white/95 px-5 pb-6 pt-11 shadow-[0_9px_26px_rgba(23,30,63,0.09)] sm:px-7 sm:pb-7 sm:pt-12">
+      <div className="auth-card relative rounded-[clamp(1rem,1.05vw,1.4rem)] border border-[#d9dde8] bg-white/95 px-[clamp(0.95rem,0.9vw,1.35rem)] pb-[clamp(0.95rem,1vw,1.35rem)] pt-[clamp(1.9rem,2vw,2.6rem)] shadow-[0_9px_26px_rgba(23,30,63,0.09)]">
         <AuthCardHeader
           promptLinkHref="/login"
           promptLinkLabel="Log In"
@@ -175,7 +175,7 @@ export default function ForgotPasswordPage() {
         />
 
         {token ? (
-          <form className="mx-auto mt-3.5 w-full max-w-[20rem]" onSubmit={handleReset}>
+          <form className="mx-auto mt-3.5 w-full max-w-[var(--auth-form-max-w)]" onSubmit={handleReset}>
             <div className="mt-3.5 space-y-1.5">
               <label className="block text-[0.71rem] font-semibold text-[#6f778c]">
                 New password
@@ -200,7 +200,7 @@ export default function ForgotPasswordPage() {
             <div className={`overflow-hidden text-center transition-all duration-200 ease-out ${successMessage ? "mt-2 max-h-5 opacity-100" : "max-h-0 opacity-0"}`}><p className="text-[0.64rem] font-medium text-[#247f57]">{successMessage}</p></div>
           </form>
         ) : (
-          <form className="mx-auto mt-3.5 w-full max-w-[20rem]" onSubmit={handleSend}>
+          <form className="mx-auto mt-3.5 w-full max-w-[var(--auth-form-max-w)]" onSubmit={handleSend}>
             <div className="mt-3.5 space-y-1.5">
               <label className="block text-[0.71rem] font-semibold text-[#6f778c]">
                 Email
@@ -221,4 +221,6 @@ export default function ForgotPasswordPage() {
     </AuthShell>
   );
 }
+
+
 

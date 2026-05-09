@@ -57,7 +57,7 @@ export function LoginPageContent() {
   const [activeSocialProvider, setActiveSocialProvider] = useState<SocialProvider | null>(null);
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
-  
+
   const getJwtPurpose = (token: string): string | null => {
     try {
       const parts = token.split(".");
@@ -206,13 +206,10 @@ export function LoginPageContent() {
 
   return (
     <AuthShell>
-      <div className="auth-card relative rounded-[1.1rem] border border-[#d9dde8] bg-white/95 px-5 pb-6 pt-11 shadow-[0_9px_26px_rgba(23,30,63,0.09)] sm:px-7 sm:pb-7 sm:pt-12">
-        <AuthCardHeader
-          showPrompt={false}
-          title="Log in to your account"
-        />
+      <div className="auth-card relative rounded-[clamp(1rem,1.05vw,1.45rem)] border border-[#d9dde8] bg-gradient-to-b from-white to-[#fcfdff] px-[clamp(0.95rem,0.9vw,1.35rem)] pb-[clamp(0.95rem,1vw,1.35rem)] pt-[clamp(1.9rem,2vw,2.6rem)] shadow-[0_14px_34px_rgba(23,30,63,0.11)]">
+        <AuthCardHeader showPrompt={false} title="Log in to your account" />
 
-        <form className="mx-auto mt-3.5 w-full max-w-[20rem]" onSubmit={handleSubmit}>
+        <form className="mx-auto mt-3.5 w-full max-w-[var(--auth-form-max-w)]" onSubmit={handleSubmit}>
           <p className="text-center text-[0.71rem] font-medium text-[#8d95a8]">Welcome back! Please enter your details.</p>
 
           <div className="mt-3.5 space-y-1.5">
@@ -268,7 +265,7 @@ export function LoginPageContent() {
             </label>
 
             <Link
-              className="inline-block text-[0.68rem] font-semibold text-[#2187d3] hover:text-[#17679f]"
+              className="inline-block text-[0.68rem] font-semibold text-[#6f8fb5] hover:text-[#17679f]"
               href={email.trim() ? `/forgot-password?email=${encodeURIComponent(email.trim())}` : "/forgot-password"}
             >
               Forgot your password?
@@ -276,7 +273,7 @@ export function LoginPageContent() {
           </div>
 
           <button
-            className="mt-3 h-9.5 w-full rounded-full bg-[#231d71] text-[0.8rem] font-semibold text-white hover:bg-[#1c175f] disabled:cursor-not-allowed disabled:opacity-70"
+            className="mt-3 h-9.5 w-full rounded-full bg-[#231d71] text-[0.8rem] font-semibold text-white hover:bg-[#1c175f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8b88f5] focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:cursor-not-allowed disabled:opacity-70"
             disabled={isSubmitting}
             type="submit"
           >
@@ -340,4 +337,5 @@ export function LoginPageContent() {
     </AuthShell>
   );
 }
+
 

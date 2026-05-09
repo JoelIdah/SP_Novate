@@ -6,32 +6,16 @@ export function AuthShell({ children }: { children: ReactNode }) {
     <main className="app-screen bg-brand-surface">
       <div
         aria-hidden
-        className="absolute inset-0 bg-center bg-repeat opacity-90"
+        className="auth-pattern absolute inset-0 bg-center bg-repeat opacity-90"
         style={{
           backgroundImage: "url('/images/hero-pattern.png')",
           backgroundSize: "clamp(760px, 130vw, 1860px)",
         }}
       />
-
-      <button
-        aria-label="Close sign up"
-        className="absolute right-3 top-3 z-30 inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#1f6f6c] text-white shadow-[0_2px_8px_rgba(31,111,108,0.35)] hover:bg-[#185a57] sm:right-4 sm:top-4"
-        type="button"
-      >
-        <svg aria-hidden className="h-3.5 w-3.5" fill="none" viewBox="0 0 14 14" xmlns="http://www.w3.org/2000/svg">
-          <path
-            d="M3.2 3.2L10.8 10.8M10.8 3.2L3.2 10.8"
-            stroke="currentColor"
-            strokeLinecap="round"
-            strokeWidth="1.9"
-          />
-        </svg>
-      </button>
-
       <section className="app-content-wrap relative z-10">
         <div className="auth-panel">{children}</div>
 
-        <footer className="mt-6 flex w-full flex-wrap items-center justify-between gap-y-3 text-[0.76rem] font-medium text-[#697188] sm:mt-8 sm:text-[0.8rem]">
+        <footer className="mt-[clamp(0.7rem,0.8vw,1.1rem)] flex w-full flex-wrap items-center justify-between gap-y-2 text-[clamp(0.68rem,0.62vw,0.86rem)] font-medium text-[#697188]">
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
             <Link href="#" className="transition-colors hover:text-[#1f2430]">
               SP Products
@@ -56,3 +40,5 @@ export function AuthShell({ children }: { children: ReactNode }) {
     </main>
   );
 }
+
+

@@ -131,21 +131,21 @@ export function OtpStep({
   };
 
   return (
-    <div className="mx-auto mt-2 w-full max-w-[22rem]">
+    <div className="mx-auto mt-2 w-full max-w-[clamp(18rem,22vw,24rem)]">
       <div className="mb-3 flex justify-center">
         <div className="overflow-hidden rounded-[0.7rem] shadow-[0_9px_20px_rgba(53,49,177,0.25)]">
-          <Image alt="SP Novate" className="h-[48px] w-auto" height={48} src="/logo/logo.png" width={48} />
+          <Image alt="SP Novate" className="h-[clamp(2.8rem,3vw,4.4rem)] w-auto" height={48} src="/logo/logo.png" width={48} />
         </div>
       </div>
-      <h2 className="text-center text-[1.7rem] font-bold tracking-[-0.02em] text-[#1d2230]">Enter verification code</h2>
-      <p className="mt-1 text-center text-[0.68rem] text-[#9aa1b2]">Code sent to {email || "your email"}</p>
+      <h2 className="text-center text-[clamp(1.05rem,0.95vw,1.45rem)] font-bold tracking-[-0.02em] text-[#1d2230]">Enter verification code</h2>
+      <p className="mt-1 text-center text-[clamp(0.72rem,0.72vw,1rem)] text-[#9aa1b2]">Code sent to {email || "your email"}</p>
 
-      <div className="mt-4 grid grid-cols-6 gap-2">
+      <div className="mt-4 grid grid-cols-6 gap-[clamp(0.35rem,0.45vw,0.65rem)]">
         {digits.map((digit, idx) => (
           <input
             key={idx}
             autoFocus={idx === 0}
-            className="h-10 w-full rounded-[0.45rem] border border-[#d8dde8] text-center text-[1rem] font-semibold text-[#4f5980] outline-none focus:border-[#b6c0d8]"
+            className="h-[clamp(2.4rem,2.6vw,3.5rem)] w-full rounded-[clamp(0.45rem,0.5vw,0.75rem)] border border-[#d8dde8] text-center text-[clamp(0.95rem,0.95vw,1.35rem)] font-semibold text-[#4f5980] outline-none focus:border-[#b6c0d8]"
             inputMode="numeric"
             maxLength={1}
             onKeyDown={(e) => {
@@ -186,7 +186,7 @@ export function OtpStep({
       </div>
 
       <button
-        className="mt-4 h-10 w-full rounded-full bg-[#231d71] text-[0.84rem] font-semibold text-white disabled:cursor-not-allowed disabled:opacity-70"
+        className="mt-4 h-[clamp(2.4rem,2.6vw,3.5rem)] w-full rounded-full bg-[#231d71] text-[clamp(0.84rem,0.82vw,1.15rem)] font-semibold text-white disabled:cursor-not-allowed disabled:opacity-70"
         disabled={code.length !== 6 || isVerifying}
         onClick={handleVerify}
         type="button"
@@ -194,7 +194,7 @@ export function OtpStep({
         {isVerifying ? "Verifying..." : "Verify code"}
       </button>
 
-      <p className="mt-2 text-center text-[0.74rem] text-[#8d95a8]">
+      <p className="mt-2 text-center text-[clamp(0.76rem,0.76vw,1.05rem)] text-[#8d95a8]">
         Didn&apos;t get a code?{" "}
         <button
           className="font-semibold text-[#2187d3] disabled:opacity-70"
@@ -206,9 +206,11 @@ export function OtpStep({
         </button>
       </p>
 
-      <p className="mt-2 min-h-[1rem] text-center text-[0.68rem] font-medium text-[#d04b4b]">{errorMessage || "\u00A0"}</p>
-      <p className="min-h-[1rem] text-center text-[0.68rem] font-medium text-[#247f57]">{resendMessage || "\u00A0"}</p>
+      <p className="mt-2 min-h-[1rem] text-center text-[clamp(0.72rem,0.72vw,1rem)] font-medium text-[#d04b4b]">{errorMessage || "\u00A0"}</p>
+      <p className="min-h-[1rem] text-center text-[clamp(0.72rem,0.72vw,1rem)] font-medium text-[#247f57]">{resendMessage || "\u00A0"}</p>
     </div>
   );
 }
+
+
 

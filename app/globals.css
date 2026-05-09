@@ -1,9 +1,35 @@
 @import "tailwindcss";
 
 :root {
-  --app-max-width: 1520px;
+  --scale-base-font: 16px;
+  --scale-start-width: 1440px;
+  --scale-growth-per-px: 0.0075;
+  --scale-max-font: 30px;
+  --app-max-width: clamp(95rem, 90vw, 170rem);
   --app-gutter: clamp(0.85rem, 2.6vw, 2.4rem);
-  --panel-max-width: 24.5rem;
+  --panel-max-width: clamp(22rem, 24vw, 26rem);
+  --topbar-h: clamp(3.5rem, 2.8rem + 1vw, 5rem);
+  --sidebar-w: clamp(16rem, 13rem + 5vw, 24rem);
+  --controls-h: clamp(3.5rem, 2.8rem + 1vw, 5rem);
+  --content-pad: clamp(0.75rem, 0.45rem + 0.8vw, 1.5rem);
+  --panel-gap: clamp(0.75rem, 0.5rem + 0.7vw, 1.25rem);
+  --rail-w: clamp(3.25rem, 2.8rem + 1vw, 4.5rem);
+  --modal-max-w: clamp(20rem, 50vw, 48rem);
+  --content-h: calc(100dvh - var(--topbar-h));
+  --stage-h: calc(var(--content-h) - var(--controls-h));
+
+  --auth-form-max-w: clamp(17.5rem, 20vw, 21.5rem);
+  --auth-space-1: clamp(0.125rem, 0.12rem + 0.02vw, 0.16rem);
+  --auth-space-2: clamp(0.375rem, 0.36rem + 0.04vw, 0.44rem);
+  --auth-space-3: clamp(0.75rem, 0.72rem + 0.08vw, 0.86rem);
+  --auth-input-h: clamp(2.125rem, 2.1rem + 0.08vw, 2.22rem);
+  --auth-input-radius: clamp(0.45rem, 0.44rem + 0.03vw, 0.49rem);
+  --auth-label-size: clamp(0.71rem, 0.705rem + 0.02vw, 0.74rem);
+  --auth-input-size: clamp(0.74rem, 0.735rem + 0.02vw, 0.77rem);
+  --auth-error-size: clamp(0.64rem, 0.635rem + 0.02vw, 0.67rem);
+  --auth-button-h: clamp(2.375rem, 2.35rem + 0.08vw, 2.48rem);
+  --auth-button-size: clamp(0.8rem, 0.795rem + 0.02vw, 0.83rem);
+  --auth-note-size: clamp(0.66rem, 0.655rem + 0.02vw, 0.69rem);
   --brand-surface: #eef0f8;
   --brand-card: #ffffff;
   --brand-ink: #1a1e2a;
@@ -27,6 +53,20 @@
 html,
 body {
   min-height: 100dvh;
+}
+
+html {
+  font-size: clamp(
+    var(--scale-base-font),
+    calc(var(--scale-base-font) + ((100vw - var(--scale-start-width)) * var(--scale-growth-per-px))),
+    var(--scale-max-font)
+  );
+}
+
+@media (min-width: 3000px) {
+  :root {
+    --panel-max-width: clamp(24rem, 24vw, 34rem);
+  }
 }
 
 body {
@@ -54,7 +94,7 @@ button {
   grid-template-rows: 1fr auto auto;
   align-items: center;
   overflow: hidden;
-  padding-block: clamp(0.5rem, 1.6vh, 1.1rem);
+  padding-block: clamp(0.5rem, 1.6vh, 1.6rem);
 }
 
 .auth-panel {
@@ -74,3 +114,10 @@ button {
   width: min(calc(100% - (var(--app-gutter) * 2)), var(--app-max-width));
   margin-inline: auto;
 }
+
+@media (min-width: 3000px) {
+  .auth-pattern {
+    opacity: 0.72;
+  }
+}
+

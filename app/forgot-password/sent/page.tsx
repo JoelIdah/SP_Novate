@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 
 import { AuthCardHeader } from "../../../components/signup/AuthCardHeader";
 import { AuthShell } from "../../../components/signup/AuthShell";
 
-export default function ForgotPasswordSentPage() {
+function ForgotPasswordSentContent() {
   const searchParams = useSearchParams();
   const email = (searchParams.get("email") ?? "").trim();
 
@@ -34,6 +35,14 @@ export default function ForgotPasswordSentPage() {
         </div>
       </div>
     </AuthShell>
+  );
+}
+
+export default function ForgotPasswordSentPage() {
+  return (
+    <Suspense fallback={null}>
+      <ForgotPasswordSentContent />
+    </Suspense>
   );
 }
 

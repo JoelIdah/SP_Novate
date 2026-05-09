@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 
 import { AuthCardHeader } from "../../components/signup/AuthCardHeader";
 import { AuthShell } from "../../components/signup/AuthShell";
@@ -41,7 +41,7 @@ function EyeIcon({ open }: { open: boolean }) {
   );
 }
 
-export default function ForgotPasswordPage() {
+function ForgotPasswordPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = (searchParams.get("token") ?? "").trim();
@@ -219,6 +219,14 @@ export default function ForgotPasswordPage() {
         )}
       </div>
     </AuthShell>
+  );
+}
+
+export default function ForgotPasswordPage() {
+  return (
+    <Suspense fallback={null}>
+      <ForgotPasswordPageContent />
+    </Suspense>
   );
 }
 

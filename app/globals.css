@@ -8,6 +8,8 @@
   --app-max-width: clamp(95rem, 90vw, 170rem);
   --app-gutter: clamp(0.85rem, 2.6vw, 2.4rem);
   --panel-max-width: clamp(22rem, 24vw, 26rem);
+  --dashboard-max-width: clamp(78rem, 94vw, 140rem);
+  --dashboard-gutter: clamp(0.75rem, 1.8vw, 2rem);
   --topbar-h: clamp(3.5rem, 2.8rem + 1vw, 5rem);
   --sidebar-w: clamp(16rem, 13rem + 5vw, 24rem);
   --controls-h: clamp(3.5rem, 2.8rem + 1vw, 5rem);
@@ -113,6 +115,49 @@ button {
 .app-page-wrap {
   width: min(calc(100% - (var(--app-gutter) * 2)), var(--app-max-width));
   margin-inline: auto;
+}
+
+.dashboard-screen {
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.dashboard-shell {
+  display: grid;
+  height: 100dvh;
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
+}
+
+.dashboard-main {
+  min-height: 0;
+  overflow: hidden;
+  padding: clamp(0.35rem, 0.9vh, 0.7rem) 0;
+}
+
+.dashboard-content-frame {
+  width: min(calc(100% - (var(--dashboard-gutter) * 2)), var(--dashboard-max-width));
+  margin-inline: auto;
+  min-height: 100%;
+}
+
+@media (min-width: 1600px) {
+  .dashboard-content-frame {
+    font-size: 1.04rem;
+  }
+}
+
+@media (min-width: 1920px) {
+  .dashboard-content-frame {
+    font-size: 1.08rem;
+  }
+}
+
+@media (max-width: 1024px) {
+  .dashboard-main {
+    overflow-y: auto;
+    padding: 0.75rem 0;
+  }
 }
 
 @media (min-width: 3000px) {

@@ -522,14 +522,15 @@ const messages = [
 
 export default function Dashboard() {
   return (
-    <div className="min-h-screen bg-white text-[#1E1E1E]">
-      <header className="sticky top-0 z-50 border-b border-[#E8EAF1] bg-white shadow-[0_2px_10px_rgba(33,38,79,0.08)]">
-        <div className="grid h-[clamp(3.2rem,3.2vw,4.6rem)] w-full grid-cols-[auto_1fr_auto] items-center gap-4 px-4 sm:px-5">
+    <div className="dashboard-screen bg-white text-[#1E1E1E]">
+      <div className="dashboard-shell">
+      <header className="z-50 border-b border-[#E8EAF1] bg-white shadow-[0_2px_10px_rgba(33,38,79,0.08)]">
+        <div className="grid h-[var(--topbar-h)] w-full grid-cols-[auto_1fr_auto] items-center gap-4 px-4 sm:px-5">
           <div className="flex items-center">
             <Image alt="SP Novate" className="h-9 w-auto" height={36} src="/logo/logo.png" width={36} />
           </div>
 
-          <nav className="flex h-full items-center justify-center gap-6">
+          <nav className="flex h-full items-center justify-center gap-5">
             {navItems.map((item) => {
               const Icon = item.icon;
 
@@ -537,7 +538,7 @@ export default function Dashboard() {
                 <Link
                   key={item.label}
                   href={item.href}
-                  className={`relative flex h-full flex-col items-center justify-center gap-[2px] px-2.5 text-[clamp(0.82rem,0.86vw,1.25rem)] font-semibold leading-[150%] transition-colors ${
+                  className={`relative flex h-full flex-col items-center justify-center gap-[2px] px-2.5 text-[clamp(0.76rem,0.8vw,1.12rem)] font-semibold leading-[150%] transition-colors ${
                     item.active
                       ? "text-[#4A46D6]"
                       : "text-[#5F6678] hover:text-[#434B5F]"
@@ -545,7 +546,7 @@ export default function Dashboard() {
                 >
                   <Icon
                     strokeWidth={1.9}
-                    className={`h-[clamp(0.82rem,0.82vw,1.2rem)] w-[clamp(0.82rem,0.82vw,1.2rem)] ${item.active ? "text-[#7073EA]" : "text-[#A6ADBD]"}`}
+                    className={`h-[clamp(0.76rem,0.76vw,1.08rem)] w-[clamp(0.76rem,0.76vw,1.08rem)] ${item.active ? "text-[#7073EA]" : "text-[#A6ADBD]"}`}
                   />
 
                   <span>{item.label}</span>
@@ -574,7 +575,8 @@ export default function Dashboard() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-[clamp(78rem,88vw,150rem)] px-3 py-3 sm:px-5">
+      <main className="dashboard-main">
+        <div className="dashboard-content-frame px-3 sm:px-5">
         <SectionTitle title="Actions" />
 
         <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
@@ -609,7 +611,7 @@ export default function Dashboard() {
           />
         </div>
 
-        <div className="mt-3">
+        <div className="mt-2">
           <SectionTitle title="Learning Overview" />
 
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
@@ -628,8 +630,8 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-2">
-          <div className="overflow-hidden rounded-2xl border border-[#E4E7F0] bg-white shadow-[0_8px_24px_rgba(27,35,74,0.04)]">
+        <div className="mt-2 grid grid-cols-1 gap-3 lg:grid-cols-2">
+          <div className="overflow-hidden rounded-2xl border border-[#E6E9F2] bg-white shadow-[0_8px_24px_rgba(27,35,74,0.04)]">
             <CardHeader
               title="Managed Bookings"
               action="Go to managed bookings"
@@ -671,7 +673,7 @@ export default function Dashboard() {
             </table>
           </div>
 
-          <div className="overflow-hidden rounded-2xl border border-[#E4E7F0] bg-white shadow-[0_8px_24px_rgba(27,35,74,0.04)]">
+          <div className="overflow-hidden rounded-2xl border border-[#E6E9F2] bg-white shadow-[0_8px_24px_rgba(27,35,74,0.04)]">
             <CardHeader title="Messages" action="Go to chat" />
 
             <div className="border-b border-[#EEF1F6] px-4 py-2 text-[clamp(0.78rem,0.76vw,1.1rem)] font-medium leading-[150%] text-[#B1B7C6]">
@@ -719,7 +721,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="mt-4">
+        <div className="mt-2.5">
           <SectionTitle title="Resource & Support" />
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.5fr_1fr_1fr]">
@@ -746,7 +748,9 @@ export default function Dashboard() {
             />
           </div>
         </div>
+        </div>
       </main>
+      </div>
     </div>
   );
 }

@@ -8,8 +8,8 @@
   --app-max-width: clamp(95rem, 90vw, 170rem);
   --app-gutter: clamp(0.85rem, 2.6vw, 2.4rem);
   --panel-max-width: clamp(22rem, 24vw, 26rem);
-  --dashboard-max-width: clamp(78rem, 94vw, 140rem);
-  --dashboard-gutter: clamp(0.75rem, 1.8vw, 2rem);
+  --dashboard-max-width: clamp(78rem, 96vw, 220rem);
+  --dashboard-gutter: clamp(0.85rem, 1.4vw, 2.2rem);
   --topbar-h: clamp(3.5rem, 2.8rem + 1vw, 5rem);
   --sidebar-w: clamp(16rem, 13rem + 5vw, 24rem);
   --controls-h: clamp(3.5rem, 2.8rem + 1vw, 5rem);
@@ -139,17 +139,16 @@ button {
   width: min(calc(100% - (var(--dashboard-gutter) * 2)), var(--dashboard-max-width));
   margin-inline: auto;
   min-height: 100%;
+  font-size: clamp(0.95rem, calc(0.88rem + 0.18vw), 1.38rem);
 }
 
-@media (min-width: 1600px) {
+@media (min-width: 2800px) {
   .dashboard-content-frame {
-    font-size: 1.04rem;
+    font-size: clamp(1.15rem, calc(0.95rem + 0.2vw), 1.65rem);
   }
-}
 
-@media (min-width: 1920px) {
-  .dashboard-content-frame {
-    font-size: 1.08rem;
+  .dashboard-main {
+    padding-block: clamp(0.75rem, 1vh, 1.4rem);
   }
 }
 

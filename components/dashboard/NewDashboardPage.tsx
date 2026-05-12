@@ -416,6 +416,7 @@ import {
   MoreVertical,
   PlayCircle,
 } from "lucide-react";
+import { DashboardScale } from "./DashboardScale";
 
 const navItems = [
   {
@@ -523,14 +524,15 @@ const messages = [
 export default function Dashboard() {
   return (
     <div className="dashboard-screen bg-white text-[#1E1E1E]">
+      <DashboardScale />
       <div className="dashboard-shell">
       <header className="z-50 border-b border-[#E8EAF1] bg-white shadow-[0_2px_10px_rgba(33,38,79,0.08)]">
-        <div className="grid h-[var(--topbar-h)] w-full grid-cols-[auto_1fr_auto] items-center gap-4 px-4 sm:px-5">
+        <div className="mx-auto grid h-[var(--topbar-h)] w-full max-w-[var(--dashboard-max-width)] grid-cols-[auto_1fr_auto] items-center gap-[clamp(0.75rem,1.4vw,1.6rem)] px-[var(--dashboard-gutter)]">
           <div className="flex items-center">
             <Image alt="SP Novate" className="h-9 w-auto" height={36} src="/logo/logo.png" width={36} />
           </div>
 
-          <nav className="flex h-full items-center justify-center gap-5">
+          <nav className="flex h-full items-center justify-center gap-[clamp(1.25rem,2vw,2.5rem)]">
             {navItems.map((item) => {
               const Icon = item.icon;
 
@@ -559,27 +561,27 @@ export default function Dashboard() {
             })}
           </nav>
 
-          <div className="flex items-center justify-end gap-2.5">
-            <button className="rounded-full border border-[#E6E8EF] bg-[#F2F3F7] px-3.5 py-[6px] text-[clamp(0.72rem,0.68vw,0.96rem)] font-semibold text-[#454B5D] transition hover:bg-[#EBEDF3]">
+          <div className="flex items-center justify-end gap-[clamp(0.5rem,0.9vw,1.1rem)]">
+            <button className="rounded-full border border-[#E6E8EF] bg-[#F2F3F7] px-[clamp(0.85rem,1.1vw,1.4rem)] py-[clamp(0.35rem,0.55vw,0.6rem)] text-[clamp(0.72rem,0.68vw,0.96rem)] font-semibold text-[#454B5D] transition hover:bg-[#EBEDF3]">
               Become a tutor
             </button>
 
-            <button className="flex items-center gap-1 rounded-full bg-[#F1F2F6] px-1 py-1">
-              <div className="flex h-6.5 w-6.5 items-center justify-center rounded-full bg-[#221D71] text-[clamp(0.72rem,0.68vw,0.96rem)] font-semibold text-white">
+            <button className="flex items-center gap-[clamp(0.25rem,0.45vw,0.55rem)] rounded-full bg-[#F1F2F6] px-[clamp(0.25rem,0.45vw,0.55rem)] py-[clamp(0.25rem,0.45vw,0.55rem)]">
+              <div className="flex h-[clamp(1.6rem,2.1vw,2.35rem)] w-[clamp(1.6rem,2.1vw,2.35rem)] items-center justify-center rounded-full bg-[#221D71] text-[clamp(0.72rem,0.68vw,0.96rem)] font-semibold text-white">
                 O
               </div>
 
-              <ChevronDown className="h-4 w-4 text-[#8E93A1]" />
+              <ChevronDown className="h-[clamp(0.8rem,1vw,1.1rem)] w-[clamp(0.8rem,1vw,1.1rem)] text-[#8E93A1]" />
             </button>
           </div>
         </div>
       </header>
 
       <main className="dashboard-main">
-        <div className="dashboard-content-frame px-3 sm:px-5">
+        <div className="dashboard-content-frame px-[var(--dashboard-gutter)]">
         <SectionTitle title="Actions" />
 
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-[var(--panel-gap)] md:grid-cols-3">
           <ActionCard
             title="Book a session"
             subtitle="Find a tutor and schedule your session."
@@ -611,14 +613,14 @@ export default function Dashboard() {
           />
         </div>
 
-        <div className="mt-2">
+        <div className="mt-[clamp(0.75rem,1.2vw,1.4rem)]">
           <SectionTitle title="Learning Overview" />
 
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-[var(--panel-gap)] md:grid-cols-2 xl:grid-cols-4">
             {stats.map((stat) => (
               <div
                 key={stat.label}
-                className="rounded-[clamp(0.58rem,0.66vw,0.95rem)] border border-[#E5E7EB] bg-white px-4 py-3"
+                className="rounded-[clamp(0.58rem,0.66vw,0.95rem)] border border-[#E5E7EB] bg-white px-[clamp(0.85rem,1.1vw,1.4rem)] py-[clamp(0.7rem,1vw,1.2rem)]"
               >
                 <p className="text-[clamp(0.68rem,0.64vw,0.92rem)] leading-[150%] text-[#9CA3AF]">{stat.label}</p>
 
@@ -630,7 +632,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="mt-2 grid grid-cols-1 gap-3 lg:grid-cols-2">
+        <div className="mt-[clamp(0.75rem,1.2vw,1.4rem)] grid grid-cols-1 gap-[var(--panel-gap)] lg:grid-cols-2">
           <div className="overflow-hidden rounded-2xl border border-[#E6E9F2] bg-white shadow-[0_8px_24px_rgba(27,35,74,0.04)]">
             <CardHeader
               title="Managed Bookings"
@@ -640,10 +642,10 @@ export default function Dashboard() {
             <table className="w-full border-collapse text-left">
               <thead>
                 <tr className="bg-[#F4F6FA] text-[clamp(0.74rem,0.72vw,1rem)] leading-[150%] text-[#848BA0]">
-                  <th className="px-4 py-2.5 font-medium">Tutor</th>
-                  <th className="px-4 py-2.5 font-medium">Subject</th>
-                  <th className="px-4 py-2.5 font-medium">Status</th>
-                  <th className="px-4 py-2.5" />
+                  <th className="px-[clamp(0.85rem,1.1vw,1.4rem)] py-[clamp(0.5rem,0.8vw,0.95rem)] font-medium">Tutor</th>
+                  <th className="px-[clamp(0.85rem,1.1vw,1.4rem)] py-[clamp(0.5rem,0.8vw,0.95rem)] font-medium">Subject</th>
+                  <th className="px-[clamp(0.85rem,1.1vw,1.4rem)] py-[clamp(0.5rem,0.8vw,0.95rem)] font-medium">Status</th>
+                  <th className="px-[clamp(0.85rem,1.1vw,1.4rem)] py-[clamp(0.5rem,0.8vw,0.95rem)]" />
                 </tr>
               </thead>
 
@@ -653,9 +655,9 @@ export default function Dashboard() {
                     key={index}
                     className="border-t border-[#EEF1F6] text-[clamp(0.82rem,0.82vw,1.2rem)] leading-[150%] font-normal text-[#4F566A]"
                   >
-                    <td className="px-4 py-[clamp(0.46rem,0.56vw,0.8rem)]">{booking.tutor}</td>
-                    <td className="px-4 py-[clamp(0.46rem,0.56vw,0.8rem)]">{booking.subject}</td>
-                    <td className="px-4 py-[clamp(0.46rem,0.56vw,0.8rem)]">
+                    <td className="px-[clamp(0.85rem,1.1vw,1.4rem)] py-[clamp(0.46rem,0.56vw,0.8rem)]">{booking.tutor}</td>
+                    <td className="px-[clamp(0.85rem,1.1vw,1.4rem)] py-[clamp(0.46rem,0.56vw,0.8rem)]">{booking.subject}</td>
+                    <td className="px-[clamp(0.85rem,1.1vw,1.4rem)] py-[clamp(0.46rem,0.56vw,0.8rem)]">
                       <div className="flex items-center gap-2">
                         <span
                           className="h-[clamp(0.34rem,0.34vw,0.5rem)] w-[clamp(0.34rem,0.34vw,0.5rem)] rounded-full"
@@ -664,8 +666,8 @@ export default function Dashboard() {
                         {booking.status}
                       </div>
                     </td>
-                    <td className="px-4 py-[clamp(0.46rem,0.56vw,0.8rem)] text-right">
-                      <MoreVertical className="ml-auto h-4 w-4 text-[#9CA3AF]" />
+                    <td className="px-[clamp(0.85rem,1.1vw,1.4rem)] py-[clamp(0.46rem,0.56vw,0.8rem)] text-right">
+                      <MoreVertical className="ml-auto h-[clamp(0.8rem,1vw,1.1rem)] w-[clamp(0.8rem,1vw,1.1rem)] text-[#9CA3AF]" />
                     </td>
                   </tr>
                 ))}
@@ -676,7 +678,7 @@ export default function Dashboard() {
           <div className="overflow-hidden rounded-2xl border border-[#E6E9F2] bg-white shadow-[0_8px_24px_rgba(27,35,74,0.04)]">
             <CardHeader title="Messages" action="Go to chat" />
 
-            <div className="border-b border-[#EEF1F6] px-4 py-2 text-[clamp(0.78rem,0.76vw,1.1rem)] font-medium leading-[150%] text-[#B1B7C6]">
+            <div className="border-b border-[#EEF1F6] px-[clamp(0.85rem,1.1vw,1.4rem)] py-[clamp(0.45rem,0.75vw,0.85rem)] text-[clamp(0.78rem,0.76vw,1.1rem)] font-medium leading-[150%] text-[#B1B7C6]">
               Chat
             </div>
 
@@ -684,7 +686,7 @@ export default function Dashboard() {
               {messages.map((message, index) => (
                 <div
                   key={index}
-                  className="flex items-center gap-3 border-b border-[#F0F2F7] px-4 py-2 last:border-b-0 hover:bg-[#FAFAFA]"
+                  className="flex items-center gap-[clamp(0.65rem,1vw,1.2rem)] border-b border-[#F0F2F7] px-[clamp(0.85rem,1.1vw,1.4rem)] py-[clamp(0.45rem,0.75vw,0.85rem)] last:border-b-0 hover:bg-[#FAFAFA]"
                 >
                   <div
                     className="flex h-[clamp(1.8rem,1.8vw,2.6rem)] w-[clamp(1.8rem,1.8vw,2.6rem)] items-center justify-center rounded-md text-[clamp(0.74rem,0.72vw,1rem)] font-semibold"
@@ -721,10 +723,10 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="mt-2.5">
+        <div className="mt-[clamp(0.9rem,1.4vw,1.7rem)]">
           <SectionTitle title="Resource & Support" />
 
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.5fr_1fr_1fr]">
+          <div className="grid grid-cols-1 gap-[var(--panel-gap)] lg:grid-cols-[1.5fr_1fr_1fr]">
             <SupportCard
               title="Watch our demo video"
               description="Watch this intro video to learn how SP novate works."
@@ -757,7 +759,7 @@ export default function Dashboard() {
 
 function SectionTitle({ title }: { title: string }) {
   return (
-    <p className="mb-2.5 text-[clamp(0.74rem,0.72vw,1rem)] font-medium leading-[150%] text-[#9CA3AF]">{title}</p>
+    <p className="mb-[clamp(0.5rem,0.8vw,0.95rem)] text-[clamp(0.74rem,0.72vw,1rem)] font-medium leading-[150%] text-[#9CA3AF]">{title}</p>
   );
 }
 
@@ -769,10 +771,10 @@ function CardHeader({
   action: string;
 }) {
   return (
-    <div className="flex items-center justify-between px-4 py-2.5">
+    <div className="flex items-center justify-between px-[clamp(0.85rem,1.1vw,1.4rem)] py-[clamp(0.5rem,0.8vw,0.95rem)]">
       <h3 className="text-[clamp(0.78rem,0.76vw,1.1rem)] font-normal leading-[150%] text-[#4B5563]">{title}</h3>
 
-      <button className="flex items-center gap-1 text-[clamp(0.72rem,0.68vw,0.96rem)] font-medium leading-[150%] text-[#4F46E5] hover:opacity-80">
+      <button className="flex items-center gap-[clamp(0.25rem,0.45vw,0.55rem)] text-[clamp(0.72rem,0.68vw,0.96rem)] font-medium leading-[150%] text-[#4F46E5] hover:opacity-80">
         {action}
         <ChevronRight className="h-3 w-3" />
       </button>
@@ -799,10 +801,10 @@ function ActionCard({
 }) {
   return (
     <div
-      className={`${bg} ${border} flex items-center gap-3 rounded-[clamp(0.58rem,0.66vw,0.95rem)] border px-4 py-3 transition hover:shadow-sm`}
+      className={`${bg} ${border} flex items-center gap-[clamp(0.65rem,1vw,1.2rem)] rounded-[clamp(0.58rem,0.66vw,0.95rem)] border px-[clamp(0.85rem,1.1vw,1.4rem)] py-[clamp(0.75rem,1vw,1.25rem)] transition hover:shadow-sm`}
     >
       <div
-        className={`${iconBg} ${iconColor} flex h-10 w-10 items-center justify-center rounded-full`}
+        className={`${iconBg} ${iconColor} flex h-[clamp(2.3rem,2.6vw,3.1rem)] w-[clamp(2.3rem,2.6vw,3.1rem)] items-center justify-center rounded-full`}
       >
         {icon}
       </div>
@@ -831,7 +833,7 @@ function SupportCard({
 }) {
   return (
     <div
-      className={`${bg} ${border} relative overflow-hidden rounded-[clamp(0.72rem,0.78vw,1.12rem)] border p-4`}
+      className={`${bg} ${border} relative overflow-hidden rounded-[clamp(0.72rem,0.78vw,1.12rem)] border p-[clamp(0.9rem,1.2vw,1.6rem)]`}
     >
       <h3 className="max-w-[clamp(13rem,14vw,20rem)] text-[clamp(0.92rem,0.96vw,1.4rem)] font-semibold leading-snug text-[#374151]">
         {title}
@@ -841,16 +843,16 @@ function SupportCard({
         {description}
       </p>
 
-      <button className="mt-4 inline-flex items-center gap-2 rounded-full border border-[#D1D5DB] bg-white px-4 py-1.5 text-[clamp(0.72rem,0.68vw,0.96rem)] font-medium text-[#4B5563] transition hover:bg-[#FAFAFA]">
-        <PlayCircle className="h-4 w-4" />
+      <button className="mt-4 inline-flex items-center gap-2 rounded-full border border-[#D1D5DB] bg-white px-[clamp(0.85rem,1.1vw,1.4rem)] py-[clamp(0.35rem,0.55vw,0.6rem)] text-[clamp(0.72rem,0.68vw,0.96rem)] font-medium text-[#4B5563] transition hover:bg-[#FAFAFA]">
+        <PlayCircle className="h-[clamp(0.85rem,1.1vw,1.15rem)] w-[clamp(0.85rem,1.1vw,1.15rem)]" />
         Watch video
       </button>
 
       {large && (
-        <div className="absolute bottom-3 right-4">
+        <div className="absolute bottom-[clamp(0.6rem,1vw,1rem)] right-[clamp(0.8rem,1.2vw,1.4rem)]">
           <div className="relative flex h-[clamp(4.8rem,4.8vw,7rem)] w-[clamp(7rem,7vw,10rem)] items-center justify-center rounded-xl border border-[#D1D5DB] bg-white shadow-sm">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#FF5A5F] text-white shadow">
-              <PlayCircle className="h-6 w-6 fill-white" />
+            <div className="flex h-[clamp(2.5rem,3vw,3.5rem)] w-[clamp(2.5rem,3vw,3.5rem)] items-center justify-center rounded-xl bg-[#FF5A5F] text-white shadow">
+              <PlayCircle className="h-[clamp(1.25rem,1.6vw,1.75rem)] w-[clamp(1.25rem,1.6vw,1.75rem)] fill-white" />
             </div>
 
             <div className="absolute -left-5 top-0 h-10 w-10 rounded-full border-4 border-[#EAB308]" />

@@ -5,6 +5,7 @@ import type { SetupMode, SetupStepId, SignUpFlowStage } from "../types";
 import { StudentOnboardingOverview } from "./StudentOnboardingOverview";
 
 export function StudentFlow({
+  accountProfile,
   onBackToAccount,
   onSetupStateChange,
   onStageChange,
@@ -12,6 +13,7 @@ export function StudentFlow({
   setupStepId,
   stage,
 }: {
+  accountProfile?: { email?: string; firstName?: string; lastName?: string };
   onBackToAccount: () => void;
   onSetupStateChange: (state: { mode: SetupMode; stepId: SetupStepId }) => void;
   onStageChange: (stage: SignUpFlowStage) => void;
@@ -22,6 +24,7 @@ export function StudentFlow({
   if (stage === "setup") {
     return (
       <ProfileSetupStep
+        initialProfile={accountProfile}
         initialMode={setupMode}
         initialStepId={setupStepId}
         onBack={() => onStageChange("overview")}

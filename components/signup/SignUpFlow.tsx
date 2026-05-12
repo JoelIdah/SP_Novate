@@ -1,12 +1,12 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { AccountStep } from "./AccountStep";
 import { AuthCardHeader } from "./AuthCardHeader";
 import { AuthShell } from "./AuthShell";
-import { RoleStep } from "./RoleStep";
+import { OtpStep } from "./OtpStep";
 import { StudentFlow } from "./student/StudentFlow";
 import { TutorFlow } from "./tutor/TutorFlow";
 import type { SetupMode, SetupStepId, SignUpFlowStage, SignUpRole, SignUpView } from "./types";
@@ -19,12 +19,14 @@ type SignUpUrlState = {
   view: SignUpView;
 };
 
+type AccountProfile = { email?: string; firstName?: string; lastName?: string };
+
 function parseRole(value: string | null): SignUpRole | null {
   return value === "student" || value === "tutor" ? value : null;
 }
 
 function parseView(value: string | null): SignUpView {
-  return value === "role" || value === "account" || value === "flow" ? value : "role";
+  return value === "account" || value === "otp" || value === "flow" ? value : "account";
 }
 
 function parseStage(value: string | null): SignUpFlowStage {
@@ -48,11 +50,7 @@ function normalizeStepForRole(step: SetupStepId, role: SignUpRole | null): Setup
 
 function readUrlState(searchParams: URLSearchParams): SignUpUrlState {
   const role = parseRole(searchParams.get("role"));
-  let view = parseView(searchParams.get("view"));
-
-  if (!role && view !== "role") {
-    view = "role";
-  }
+  const view = parseView(searchParams.get("view"));
 
   let stage = parseStage(searchParams.get("stage"));
   if (view !== "flow") {
@@ -77,6 +75,7 @@ export function SignUpFlow() {
   const searchParams = useSearchParams();
 
   const urlState = useMemo(() => readUrlState(new URLSearchParams(searchParams.toString())), [searchParams]);
+  const [accountProfile, setAccountProfile] = useState<AccountProfile>({});
 
   const writeUrlState = (nextState: Partial<SignUpUrlState>) => {
     const role = nextState.role !== undefined ? nextState.role : urlState.role;
@@ -118,9 +117,10 @@ export function SignUpFlow() {
     router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
   };
 
-  if (urlState.view === "flow" && urlState.role === "student") {
+  if (urlState.view === "flow" && urlState.role !== "tutor") {
     return (
       <StudentFlow
+        accountProfile={accountProfile}
         onBackToAccount={() => {
           writeUrlState({ mode: "form", stage: "overview", step: "personal", view: "account" });
         }}
@@ -140,6 +140,7 @@ export function SignUpFlow() {
   if (urlState.view === "flow" && urlState.role === "tutor") {
     return (
       <TutorFlow
+        accountProfile={accountProfile}
         onBackToAccount={() => {
           writeUrlState({ mode: "form", stage: "overview", step: "personal", view: "account" });
         }}
@@ -158,17 +159,29 @@ export function SignUpFlow() {
 
   return (
     <AuthShell>
-      <div className="relative rounded-[1.1rem] border border-[#d9dde8] bg-white/95 px-5 pb-7 pt-12 shadow-[0_9px_26px_rgba(23,30,63,0.09)] sm:px-8 sm:pb-8 sm:pt-13">
-        <AuthCardHeader />
-        {urlState.view === "role" ? (
-          <RoleStep
-            onSelect={(role) => {
-              writeUrlState({ mode: "form", role, stage: "overview", step: "personal", view: "account" });
+      <div className="auth-card relative rounded-[clamp(1rem,1.05vw,1.45rem)] border border-[#d9dde8] bg-gradient-to-b from-white to-[#fcfdff] px-[clamp(0.9rem,0.85vw,1.25rem)] pb-[clamp(0.85rem,0.9vw,1.2rem)] pt-[clamp(1.65rem,1.7vw,2.25rem)] shadow-[0_14px_34px_rgba(23,30,63,0.11)]">
+        {urlState.view !== "otp" ? <AuthCardHeader /> : null}
+        {urlState.view === "account" ? (
+          <AccountStep
+            onContinue={(payload) => {
+              setAccountProfile(payload);
+              writeUrlState({ mode: "form", stage: "overview", step: "personal", view: "otp" });
             }}
           />
         ) : (
-          <AccountStep
-            onContinue={() => {
+          <OtpStep
+            email={accountProfile.email ?? ""}
+            onVerified={(payload) => {
+              setAccountProfile((prev) => ({
+                email: payload.email || prev.email,
+                firstName: payload.firstName || prev.firstName,
+                lastName: payload.lastName || prev.lastName,
+              }));
+
+              if (payload.role === "student" || payload.role === "tutor") {
+                writeUrlState({ role: payload.role });
+              }
+
               writeUrlState({ mode: "form", stage: "overview", step: "personal", view: "flow" });
             }}
           />
@@ -177,3 +190,5 @@ export function SignUpFlow() {
     </AuthShell>
   );
 }
+
+

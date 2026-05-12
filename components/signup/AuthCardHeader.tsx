@@ -1,33 +1,52 @@
-﻿import Image from "next/image";
+import Image from "next/image";
 import Link from "next/link";
 
-export function AuthCardHeader() {
+type AuthCardHeaderProps = {
+  title?: string;
+  promptText?: string;
+  promptLinkHref?: string;
+  promptLinkLabel?: string;
+  showPrompt?: boolean;
+};
+
+export function AuthCardHeader({
+  title = "Create an account",
+  promptText = "Already have an account?",
+  promptLinkHref = "/login",
+  promptLinkLabel = "Log In",
+  showPrompt = true,
+}: AuthCardHeaderProps) {
   return (
     <>
-      <div className="absolute left-1/2 -top-7 -translate-x-1/2 sm:-top-8">
+      <div className="absolute left-1/2 -top-4 -translate-x-1/2 sm:-top-5">
         <div className="overflow-hidden rounded-[0.7rem] shadow-[0_9px_20px_rgba(53,49,177,0.25)]">
           <Image
             alt="SP Novate"
-            className="h-[52px] w-auto sm:h-[56px]"
-            height={56}
+            className="h-[clamp(2.4rem,2.35vw,3.4rem)] w-auto"
+            height={54}
             priority
             src="/logo/logo.png"
-            width={56}
+            width={54}
           />
         </div>
       </div>
 
       <div className="text-center">
-        <h1 className="text-[1.85rem] font-bold tracking-[-0.02em] text-[#1d2230] sm:text-[2rem]">
-          Create an account
-        </h1>
-        <p className="mt-1.5 text-[0.77rem] font-medium text-[#8d95a8] sm:text-[0.79rem]">
-          Already have an account?{" "}
-          <Link href="#" className="font-semibold text-[#2187d3] transition-colors hover:text-[#17679f]">
-            Log In
-          </Link>
-        </p>
+        <h1 className="text-[clamp(1.12rem,1.05vw,1.65rem)] font-bold tracking-[-0.02em] text-[#1d2230]">{title}</h1>
+        {showPrompt ? (
+          <p className="mt-1.5 text-[clamp(0.68rem,0.62vw,0.82rem)] font-medium text-[#98a0b2]">
+            {promptText}{" "}
+            <Link
+              href={promptLinkHref}
+              className="font-semibold text-[#1f7ec4] transition-colors hover:text-[#17679f]"
+            >
+              {promptLinkLabel}
+            </Link>
+          </p>
+        ) : null}
       </div>
     </>
   );
 }
+
+

@@ -1,5 +1,6 @@
-﻿import { SignUpFlow } from "../components/signup/SignUpFlow";
+import { redirect } from "next/navigation";
 
 export default function Home() {
-  return <SignUpFlow />;
+  redirect("/signup");
+  // redirect("/dashboard");
 }

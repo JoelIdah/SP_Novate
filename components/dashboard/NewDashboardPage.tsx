@@ -404,8 +404,8 @@
 
 "use client";
 
-import Link from "next/link";
 import Image from "next/image";
+import { DashboardNavbar } from "./DashboardNavbar";
 import {
   Home,
   CalendarDays,
@@ -414,34 +414,9 @@ import {
   Menu,
   Search,
   ChevronRight,
-  ChevronDown,
   MoreVertical,
   PlayCircle,
 } from "lucide-react";
-
-const navItems = [
-  {
-    label: "Home",
-    href: "/",
-    icon: Home,
-    active: true,
-  },
-  {
-    label: "Bookings",
-    href: "/bookings",
-    icon: CalendarDays,
-  },
-  {
-    label: "Transactions",
-    href: "/transactions",
-    icon: CreditCard,
-  },
-  {
-    label: "Chat",
-    href: "/chat",
-    icon: MessageCircle,
-  },
-];
 
 const stats = [
   {
@@ -530,56 +505,7 @@ export default function Dashboard() {
       </div>
       <div className="hidden xl:block">
       <div className="dashboard-shell">
-      <header className="dashboard-header z-50 border-b border-[#E8EAF1] bg-white shadow-[0_2px_10px_rgba(33,38,79,0.08)]">
-        <div className="mx-auto grid h-[var(--topbar-h)] w-full max-w-[var(--dashboard-max-width)] grid-cols-[auto_1fr_auto] items-center gap-[clamp(0.75rem,1.4vw,1.6rem)] px-[var(--dashboard-gutter)]">
-          <div className="flex items-center">
-            <Image alt="SP Novate" className="h-9 w-auto" height={36} src="/logo/logo.png" width={36} />
-          </div>
-
-          <nav className="flex h-full items-center justify-center gap-[clamp(0.7rem,1.5vw,2.2rem)] overflow-x-auto px-1 md:px-0">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-
-              return (
-                <Link
-                  key={item.label}
-                  href={item.href}
-                  className={`relative flex h-full min-w-[3.5rem] flex-col items-center justify-center gap-[2px] px-2 text-[clamp(0.72rem,0.8vw,1.12rem)] font-semibold leading-[150%] transition-colors ${
-                    item.active
-                      ? "text-[#4A46D6]"
-                      : "text-[#5F6678] hover:text-[#434B5F]"
-                  }`}
-                >
-                  <Icon
-                    strokeWidth={1.9}
-                    className={`h-[clamp(0.76rem,0.76vw,1.08rem)] w-[clamp(0.76rem,0.76vw,1.08rem)] ${item.active ? "text-[#7073EA]" : "text-[#A6ADBD]"}`}
-                  />
-
-                  <span>{item.label}</span>
-
-                  {item.active && (
-                    <span className="absolute bottom-0 h-[clamp(0.12rem,0.16vw,0.24rem)] w-[clamp(3.8rem,4vw,6rem)] rounded-full bg-[#4B49D8]" />
-                  )}
-                </Link>
-              );
-            })}
-          </nav>
-
-          <div className="flex items-center justify-end gap-[clamp(0.35rem,0.9vw,1.1rem)]">
-            <button className="hidden rounded-full border border-[#E6E8EF] bg-[#F2F3F7] px-[clamp(0.85rem,1.1vw,1.4rem)] py-[clamp(0.35rem,0.55vw,0.6rem)] text-[clamp(0.72rem,0.68vw,0.96rem)] font-semibold text-[#454B5D] transition hover:bg-[#EBEDF3] md:inline-flex">
-              Become a tutor
-            </button>
-
-            <button className="flex items-center gap-[clamp(0.25rem,0.45vw,0.55rem)] rounded-full bg-[#F1F2F6] px-[clamp(0.25rem,0.45vw,0.55rem)] py-[clamp(0.25rem,0.45vw,0.55rem)]">
-              <div className="flex h-[clamp(1.6rem,2.1vw,2.35rem)] w-[clamp(1.6rem,2.1vw,2.35rem)] items-center justify-center rounded-full bg-[#221D71] text-[clamp(0.72rem,0.68vw,0.96rem)] font-semibold text-white">
-                O
-              </div>
-
-              <ChevronDown className="h-[clamp(0.8rem,1vw,1.1rem)] w-[clamp(0.8rem,1vw,1.1rem)] text-[#8E93A1]" />
-            </button>
-          </div>
-        </div>
-      </header>
+      <DashboardNavbar active="Home" />
 
       <main className="dashboard-main">
         <div className="dashboard-content-frame px-[var(--dashboard-gutter)]">
@@ -627,11 +553,11 @@ export default function Dashboard() {
                 {stats.map((stat) => (
                   <div
                     key={stat.label}
-                    className="rounded-[clamp(0.58rem,0.66vw,0.95rem)] border border-[#E5E7EB] bg-white px-[clamp(0.85rem,1.1vw,1.4rem)] py-[clamp(0.7rem,1vw,1.2rem)]"
+                    className="rounded-[clamp(0.58rem,0.66vw,0.95rem)] border border-[#E5E7EB] bg-white px-[clamp(0.9rem,1vw,1.5rem)] py-[clamp(0.85rem,1vw,1.35rem)]"
                   >
-                    <p className="text-[clamp(0.68rem,0.64vw,0.92rem)] leading-[150%] text-[#9CA3AF]">{stat.label}</p>
+                    <p className="text-[clamp(0.85rem,0.7vw,0.98rem)] leading-[150%] text-[#9CA3AF]">{stat.label}</p>
 
-                    <h3 className="mt-1 text-[clamp(1.05rem,1.08vw,1.6rem)] font-semibold leading-[120%] tracking-[-0.2px] text-[#111827]">
+                    <h3 className="mt-1 text-[clamp(1.2rem,1.1vw,1.6rem)] font-semibold leading-[120%] tracking-[-0.2px] text-[#111827]">
                       {stat.value}
                     </h3>
                   </div>
@@ -639,17 +565,17 @@ export default function Dashboard() {
               </div>
             </section>
 
-            <section>
-              <div className="grid grid-cols-1 gap-[var(--panel-gap)] lg:grid-cols-2">
-                <div className="overflow-x-auto rounded-2xl border border-[#E6E9F2] bg-white shadow-[0_8px_24px_rgba(27,35,74,0.04)]">
+            <section className="dashboard-section-fill">
+              <div className="dashboard-section-fill-grid grid grid-cols-1 gap-[var(--panel-gap)] lg:grid-cols-2">
+                <div className="dashboard-section-fill-card overflow-x-auto rounded-2xl border border-[#E6E9F2] bg-white shadow-[0_8px_24px_rgba(27,35,74,0.04)]">
                   <CardHeader
                     title="Managed Bookings"
                     action="Go to managed bookings"
                   />
 
-                  <table className="min-w-[34rem] w-full border-collapse text-left">
+                  <table className="dashboard-section-fill-body min-w-[34rem] w-full border-collapse text-left">
                     <thead>
-                      <tr className="bg-[#F4F6FA] text-[clamp(0.74rem,0.72vw,1rem)] leading-[150%] text-[#848BA0]">
+                      <tr className="bg-[#F4F6FA] text-[clamp(0.9rem,0.75vw,1rem)] leading-[150%] text-[#848BA0]">
                         <th className="px-[clamp(0.85rem,1.1vw,1.4rem)] py-[clamp(0.5rem,0.8vw,0.95rem)] font-medium">Tutor</th>
                         <th className="px-[clamp(0.85rem,1.1vw,1.4rem)] py-[clamp(0.5rem,0.8vw,0.95rem)] font-medium">Subject</th>
                         <th className="px-[clamp(0.85rem,1.1vw,1.4rem)] py-[clamp(0.5rem,0.8vw,0.95rem)] font-medium">Status</th>
@@ -661,7 +587,7 @@ export default function Dashboard() {
                       {bookings.map((booking, index) => (
                         <tr
                           key={index}
-                          className="border-t border-[#EEF1F6] text-[clamp(0.82rem,0.82vw,1.2rem)] leading-[150%] font-normal text-[#4F566A]"
+                          className={`border-t border-[#EEF1F6] text-[clamp(0.9rem,0.78vw,1.05rem)] leading-[150%] font-normal text-[#4F566A] ${index >= 3 ? "compact-hide" : index === 2 ? "ultra-compact-hide" : ""}`}
                         >
                           <td className="px-[clamp(0.85rem,1.1vw,1.4rem)] py-[clamp(0.46rem,0.56vw,0.8rem)]">{booking.tutor}</td>
                           <td className="px-[clamp(0.85rem,1.1vw,1.4rem)] py-[clamp(0.46rem,0.56vw,0.8rem)]">{booking.subject}</td>
@@ -683,18 +609,18 @@ export default function Dashboard() {
                   </table>
                 </div>
 
-                <div className="overflow-hidden rounded-2xl border border-[#E6E9F2] bg-white shadow-[0_8px_24px_rgba(27,35,74,0.04)]">
+                <div className="dashboard-section-fill-card overflow-hidden rounded-2xl border border-[#E6E9F2] bg-white shadow-[0_8px_24px_rgba(27,35,74,0.04)]">
                   <CardHeader title="Messages" action="Go to chat" />
 
-                  <div className="border-b border-[#EEF1F6] px-[clamp(0.85rem,1.1vw,1.4rem)] py-[clamp(0.45rem,0.75vw,0.85rem)] text-[clamp(0.78rem,0.76vw,1.1rem)] font-medium leading-[150%] text-[#B1B7C6]">
+                  <div className="border-b border-[#EEF1F6] px-[clamp(0.85rem,1.1vw,1.4rem)] py-[clamp(0.45rem,0.75vw,0.85rem)] text-[clamp(0.9rem,0.75vw,1rem)] font-medium leading-[150%] text-[#B1B7C6]">
                     Chat
                   </div>
 
-                  <div>
+                  <div className="dashboard-section-fill-body">
                     {messages.map((message, index) => (
                       <div
                         key={index}
-                        className="flex items-center gap-[clamp(0.65rem,1vw,1.2rem)] border-b border-[#F0F2F7] px-[clamp(0.85rem,1.1vw,1.4rem)] py-[clamp(0.45rem,0.75vw,0.85rem)] last:border-b-0 hover:bg-[#FAFAFA]"
+                        className={`flex items-center gap-[clamp(0.65rem,1vw,1.2rem)] border-b border-[#F0F2F7] px-[clamp(0.85rem,1.1vw,1.4rem)] py-[clamp(0.45rem,0.75vw,0.85rem)] last:border-b-0 hover:bg-[#FAFAFA] ${index === 2 ? "compact-hide" : index === 1 ? "ultra-compact-hide" : ""}`}
                       >
                         <div
                           className="flex h-[clamp(1.8rem,1.8vw,2.6rem)] w-[clamp(1.8rem,1.8vw,2.6rem)] items-center justify-center rounded-md text-[clamp(0.74rem,0.72vw,1rem)] font-semibold"
@@ -707,21 +633,21 @@ export default function Dashboard() {
                         </div>
 
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-[clamp(0.78rem,0.76vw,1.1rem)] leading-[150%] font-semibold text-[#374151]">
+                          <p className="truncate text-[clamp(0.98rem,0.85vw,1.15rem)] leading-[150%] font-semibold text-[#374151]">
                             {message.name}
                           </p>
 
-                          <p className="truncate text-[clamp(0.72rem,0.68vw,0.96rem)] leading-[150%] text-[#9CA3AF]">
+                          <p className="truncate text-[clamp(0.88rem,0.72vw,0.98rem)] leading-[150%] text-[#9CA3AF]">
                             {message.message}
                           </p>
                         </div>
 
                         <div className="flex flex-col items-end gap-1">
-                          <span className="text-[clamp(0.72rem,0.68vw,0.96rem)] text-[#9CA3AF]">
+                          <span className="text-[clamp(0.88rem,0.72vw,0.98rem)] text-[#9CA3AF]">
                             {message.time}
                           </span>
 
-                          <div className="flex h-[clamp(0.8rem,0.8vw,1.15rem)] w-[clamp(0.8rem,0.8vw,1.15rem)] items-center justify-center rounded-full bg-[#4338CA] text-[clamp(0.62rem,0.58vw,0.84rem)] text-white">
+                          <div className="flex h-[clamp(0.8rem,0.8vw,1.15rem)] w-[clamp(0.8rem,0.8vw,1.15rem)] items-center justify-center rounded-full bg-[#4338CA] text-[clamp(0.8rem,0.65vw,0.9rem)] text-white">
                             1
                           </div>
                         </div>
@@ -875,7 +801,7 @@ function MobileDashboardView() {
 
 function SectionTitle({ title }: { title: string }) {
   return (
-    <p className="mb-[clamp(0.5rem,0.8vw,0.95rem)] text-[clamp(0.74rem,0.72vw,1rem)] font-medium leading-[150%] text-[#9CA3AF]">{title}</p>
+    <p className="mb-[clamp(0.5rem,0.8vw,0.95rem)] text-[clamp(0.95rem,0.82vw,1.1rem)] font-medium leading-[150%] text-[#9CA3AF]">{title}</p>
   );
 }
 
@@ -888,9 +814,9 @@ function CardHeader({
 }) {
   return (
     <div className="flex items-center justify-between px-[clamp(0.85rem,1.1vw,1.4rem)] py-[clamp(0.5rem,0.8vw,0.95rem)]">
-      <h3 className="text-[clamp(0.78rem,0.76vw,1.1rem)] font-normal leading-[150%] text-[#4B5563]">{title}</h3>
+      <h3 className="text-[clamp(0.98rem,0.85vw,1.15rem)] font-normal leading-[150%] text-[#4B5563]">{title}</h3>
 
-      <button className="flex items-center gap-[clamp(0.25rem,0.45vw,0.55rem)] text-[clamp(0.72rem,0.68vw,0.96rem)] font-medium leading-[150%] text-[#4F46E5] hover:opacity-80">
+      <button className="flex items-center gap-[clamp(0.25rem,0.45vw,0.55rem)] text-[clamp(0.9rem,0.75vw,1rem)] font-medium leading-[150%] text-[#4F46E5] hover:opacity-80">
         {action}
         <ChevronRight className="h-3 w-3" />
       </button>
@@ -917,7 +843,7 @@ function ActionCard({
 }) {
   return (
     <div
-      className={`${bg} ${border} flex items-center gap-[clamp(0.65rem,1vw,1.2rem)] rounded-[clamp(0.58rem,0.66vw,0.95rem)] border px-[clamp(0.85rem,1.1vw,1.4rem)] py-[clamp(0.75rem,1vw,1.25rem)] transition hover:shadow-sm`}
+      className={`${bg} ${border} flex items-center gap-[clamp(0.65rem,1vw,1.2rem)] rounded-[clamp(0.58rem,0.66vw,0.95rem)] border px-[clamp(0.9rem,1vw,1.5rem)] py-[clamp(0.9rem,1vw,1.5rem)] transition hover:shadow-sm`}
     >
       <div
         className={`${iconBg} ${iconColor} flex h-[clamp(2.3rem,2.6vw,3.1rem)] w-[clamp(2.3rem,2.6vw,3.1rem)] items-center justify-center rounded-full`}
@@ -926,9 +852,9 @@ function ActionCard({
       </div>
 
       <div>
-        <h3 className="text-[clamp(0.78rem,0.76vw,1.1rem)] font-semibold leading-[150%] text-[#374151]">{title}</h3>
+        <h3 className="text-[clamp(0.98rem,0.85vw,1.15rem)] font-semibold leading-[150%] text-[#374151]">{title}</h3>
 
-        <p className="mt-0.5 text-[clamp(0.72rem,0.68vw,0.96rem)] leading-[150%] text-[#9CA3AF]">{subtitle}</p>
+        <p className="mt-0.5 text-[clamp(0.9rem,0.75vw,1rem)] leading-[150%] text-[#9CA3AF]">{subtitle}</p>
       </div>
     </div>
   );
@@ -949,17 +875,17 @@ function SupportCard({
 }) {
   return (
     <div
-      className={`${bg} ${border} relative overflow-hidden rounded-[clamp(0.72rem,0.78vw,1.12rem)] border p-[clamp(0.9rem,1.2vw,1.6rem)]`}
+      className={`${bg} ${border} relative overflow-hidden rounded-[clamp(0.72rem,0.78vw,1.12rem)] border p-[clamp(0.95rem,1.1vw,1.6rem)]`}
     >
-      <h3 className="max-w-[clamp(13rem,14vw,20rem)] text-[clamp(0.92rem,0.96vw,1.4rem)] font-semibold leading-snug text-[#374151]">
+      <h3 className="max-w-[clamp(13rem,14vw,20rem)] text-[clamp(0.98rem,0.9vw,1.2rem)] font-semibold leading-snug text-[#374151]">
         {title}
       </h3>
 
-      <p className="mt-1.5 max-w-[clamp(13.5rem,15vw,21rem)] text-[clamp(0.74rem,0.72vw,1rem)] leading-[150%] text-[#6B7280]">
+      <p className="mt-1.5 max-w-[clamp(13.5rem,15vw,21rem)] text-[clamp(0.9rem,0.75vw,1rem)] leading-[150%] text-[#6B7280]">
         {description}
       </p>
 
-      <button className="mt-4 inline-flex items-center gap-2 rounded-full border border-[#D1D5DB] bg-white px-[clamp(0.85rem,1.1vw,1.4rem)] py-[clamp(0.35rem,0.55vw,0.6rem)] text-[clamp(0.72rem,0.68vw,0.96rem)] font-medium text-[#4B5563] transition hover:bg-[#FAFAFA]">
+      <button className="mt-4 inline-flex items-center gap-2 rounded-full border border-[#D1D5DB] bg-white px-[clamp(0.85rem,1.1vw,1.4rem)] py-[clamp(0.35rem,0.55vw,0.6rem)] text-[clamp(0.9rem,0.75vw,1rem)] font-medium text-[#4B5563] transition hover:bg-[#FAFAFA]">
         <PlayCircle className="h-[clamp(0.85rem,1.1vw,1.15rem)] w-[clamp(0.85rem,1.1vw,1.15rem)]" />
         Watch video
       </button>

@@ -1,14 +1,10 @@
-@import "tailwindcss";
+/* @import "tailwindcss";
 
 :root {
-  --scale-base-font: 16px;
-  --scale-start-width: 1440px;
-  --scale-growth-per-px: 0.0075;
-  --scale-max-font: 30px;
-  --app-max-width: clamp(95rem, 90vw, 170rem);
+  --app-max-width: min(94vw, 120rem);
   --app-gutter: clamp(0.85rem, 2.6vw, 2.4rem);
   --panel-max-width: clamp(22rem, 24vw, 26rem);
-  --dashboard-max-width: clamp(78rem, 96vw, 220rem);
+  --dashboard-max-width: clamp(96rem, 96vw, 140rem);
   --dashboard-gutter: clamp(0.85rem, 1.4vw, 2.2rem);
   --topbar-h: clamp(3.5rem, 2.8rem + 1vw, 5rem);
   --sidebar-w: clamp(16rem, 13rem + 5vw, 24rem);
@@ -58,11 +54,7 @@ body {
 }
 
 html {
-  font-size: clamp(
-    var(--scale-base-font),
-    calc(var(--scale-base-font) + ((100vw - var(--scale-start-width)) * var(--scale-growth-per-px))),
-    var(--scale-max-font)
-  );
+  font-size: 16px;
 }
 
 @media (min-width: 3000px) {
@@ -123,23 +115,22 @@ button {
 }
 
 .dashboard-shell {
-  display: grid;
-  height: 100dvh;
-  grid-template-rows: auto minmax(0, 1fr);
-  overflow: hidden;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .dashboard-main {
-  min-height: 0;
+  flex: 1;
   overflow: hidden;
-  padding: clamp(0.35rem, 0.9vh, 0.7rem) 0;
+  padding: clamp(0.4rem, 0.5vh, 0.75rem) 0;
   display: flex;
 }
 
 .dashboard-content-frame {
-  width: min(calc(100% - (var(--dashboard-gutter) * 2)), var(--dashboard-max-width));
+  width: 100%;
+  max-width: var(--dashboard-max-width);
   margin-inline: auto;
-  min-height: 100%;
   font-size: clamp(0.95rem, calc(0.88rem + 0.18vw), 1.38rem);
   display: flex;
 }
@@ -148,8 +139,7 @@ button {
   flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  gap: clamp(0.85rem, 1.4vh, 1.8rem);
+  gap: clamp(0.8rem, 1vh, 1.4rem);
 }
 
 @media (min-width: 2800px) {
@@ -164,8 +154,49 @@ button {
 
 @media (max-width: 1024px) {
   .dashboard-main {
-    overflow: hidden;
     padding: 0.75rem 0;
+  }
+}
+
+@media (max-height: 820px) {
+  :root {
+    --panel-gap: 0.75rem;
+  }
+
+  .dashboard-stack {
+    gap: 1rem;
+  }
+
+  .compact-hide {
+    display: none;
+  }
+}
+
+@media (max-height: 720px) {
+  :root {
+    --panel-gap: 0.55rem;
+  }
+
+  .dashboard-stack {
+    gap: 0.75rem;
+  }
+
+  .ultra-compact-hide {
+    display: none;
+  }
+}
+
+@media (min-width: 2400px) {
+  :root {
+    --dashboard-max-width: 150rem;
+  }
+
+  .dashboard-main {
+    padding-block: 1rem;
+  }
+
+  .dashboard-content-frame {
+    font-size: 1.05rem;
   }
 }
 
@@ -174,4 +205,406 @@ button {
     opacity: 0.72;
   }
 }
+ */
 
+
+ @import "tailwindcss";
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   DESIGN TOKENS
+   All sizing is expressed as clamp() so the UI scales continuously from the
+   smallest xl breakpoint (~1280 px) all the way to a 6000 px ultrawide monitor
+   without a single scrollbar appearing on the dashboard.
+
+   Key calibration points
+   ─────────────────────
+   • ~1366 px  HP EliteBook  → should feel like the old layout at 80% zoom
+   • ~1920 px  standard FHD  → comfortable mid-size baseline
+   • ~6000 px  ultrawide 6K  → content must fill the screen, nothing cut off
+
+   clamp(MIN, PREFERRED, MAX)
+   PREFERRED uses `vw` so it grows linearly with viewport width.
+───────────────────────────────────────────────────────────────────────────── */
+
+:root {
+  /* Layout geometry */
+  --app-max-width:        min(94vw, 120rem);
+  --app-gutter:           clamp(0.85rem, 2.6vw, 2.4rem);
+  --panel-max-width:      clamp(22rem, 24vw, 26rem);
+
+  /*
+    Dashboard max-width: uncapped at the top so the 6000 px screen is used
+    fully. 96vw keeps a small gutter on any screen size.
+  */
+  --dashboard-max-width:  96vw;
+  --dashboard-gutter:     clamp(0.85rem, 1.6vw, 3rem);
+
+  /*
+    Topbar height: scales up on large screens so it doesn't look like a sliver.
+  */
+  --topbar-h:             clamp(3.2rem, 2.4rem + 1.2vw, 6rem);
+
+  /*
+    Panel gap: the space between cards. Grows on large screens so cards don't
+    stretch awkwardly when there's more room.
+  */
+  --panel-gap:            clamp(0.7rem, 0.5rem + 0.8vw, 2rem);
+
+  /* Misc layout tokens (unchanged) */
+  --sidebar-w:            clamp(16rem, 13rem + 5vw, 24rem);
+  --controls-h:           clamp(3.5rem, 2.8rem + 1vw, 5rem);
+  --content-pad:          clamp(0.75rem, 0.45rem + 0.8vw, 1.5rem);
+  --rail-w:               clamp(3.25rem, 2.8rem + 1vw, 4.5rem);
+  --modal-max-w:          clamp(20rem, 50vw, 48rem);
+  --content-h:            calc(100dvh - var(--topbar-h));
+  --stage-h:              calc(var(--content-h) - var(--controls-h));
+
+  /* Auth tokens (unchanged) */
+  --auth-form-max-w:      clamp(17.5rem, 20vw, 21.5rem);
+  --auth-space-1:         clamp(0.125rem, 0.12rem + 0.02vw, 0.16rem);
+  --auth-space-2:         clamp(0.375rem, 0.36rem + 0.04vw, 0.44rem);
+  --auth-space-3:         clamp(0.75rem, 0.72rem + 0.08vw, 0.86rem);
+  --auth-input-h:         clamp(2.125rem, 2.1rem + 0.08vw, 2.22rem);
+  --auth-input-radius:    clamp(0.45rem, 0.44rem + 0.03vw, 0.49rem);
+  --auth-label-size:      clamp(0.71rem, 0.705rem + 0.02vw, 0.74rem);
+  --auth-input-size:      clamp(0.74rem, 0.735rem + 0.02vw, 0.77rem);
+  --auth-error-size:      clamp(0.64rem, 0.635rem + 0.02vw, 0.67rem);
+  --auth-button-h:        clamp(2.375rem, 2.35rem + 0.08vw, 2.48rem);
+  --auth-button-size:     clamp(0.8rem, 0.795rem + 0.02vw, 0.83rem);
+  --auth-note-size:       clamp(0.66rem, 0.655rem + 0.02vw, 0.69rem);
+
+  /* Brand colours (unchanged) */
+  --brand-surface:        #eef0f8;
+  --brand-card:           #ffffff;
+  --brand-ink:            #1a1e2a;
+  --brand-muted:          #7a8298;
+  --brand-line:           #dde1ee;
+  --brand-primary:        #4f4ccf;
+  --brand-primary-soft:   #ecebff;
+}
+
+@theme inline {
+  --font-sans:               var(--font-open-sauce);
+  --color-brand-surface:     var(--brand-surface);
+  --color-brand-card:        var(--brand-card);
+  --color-brand-ink:         var(--brand-ink);
+  --color-brand-muted:       var(--brand-muted);
+  --color-brand-line:        var(--brand-line);
+  --color-brand-primary:     var(--brand-primary);
+  --color-brand-primary-soft:var(--brand-primary-soft);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   BASE
+───────────────────────────────────────────────────────────────────────────── */
+
+html,
+body {
+  min-height: 100dvh;
+}
+
+html {
+  /*
+    Dropping the root font-size from 16 px → 14 px achieves the "80% zoom"
+    feel on the HP EliteBook without touching any component styles.
+    On the 6000 px screen the vw-based clamps already scale everything up
+    independently of this value, so it has no negative effect there.
+  */
+  font-size: 14px;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-open-sauce);
+}
+
+a,
+button {
+  transition:
+    color          160ms ease,
+    border-color   160ms ease,
+    background-color 160ms ease,
+    transform      160ms ease;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   APP SHELL (non-dashboard pages)
+───────────────────────────────────────────────────────────────────────────── */
+
+.app-screen {
+  position: relative;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.app-content-wrap {
+  margin-inline: auto;
+  display: grid;
+  height: 100dvh;
+  width: min(calc(100% - (var(--app-gutter) * 2)), var(--app-max-width));
+  grid-template-rows: 1fr auto auto;
+  align-items: center;
+  overflow: hidden;
+  padding-block: clamp(0.5rem, 1.6vh, 1.6rem);
+}
+
+.auth-panel {
+  width: min(100%, var(--panel-max-width));
+  margin-inline: auto;
+}
+
+.auth-card {
+  border-radius: 1.5rem;
+}
+
+.app-page-shell {
+  min-height: 100dvh;
+}
+
+.app-page-wrap {
+  width: min(calc(100% - (var(--app-gutter) * 2)), var(--app-max-width));
+  margin-inline: auto;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   DASHBOARD SHELL
+   The dashboard is a NO-SCROLL fixed viewport layout — everything must fit
+   inside 100dvh at every screen size. We achieve this by:
+
+   1. Locking the outer shell to exactly 100dvh with overflow:hidden.
+   2. Letting the inner content stack grow with flex: 1 and overflow:hidden.
+   3. Scaling font-size with vw so ALL text/spacing grows proportionally on
+      the 6000 px screen, filling the available space naturally.
+───────────────────────────────────────────────────────────────────────────── */
+
+.dashboard-screen {
+  height: 100dvh;
+  overflow: hidden;           /* hard lock — no scrollbars ever */
+}
+
+.dashboard-shell {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.dashboard-header {
+  /* height is driven by --topbar-h token which scales with vw */
+  flex-shrink: 0;
+}
+
+.dashboard-main {
+  flex: 1;
+  overflow: hidden;           /* clip, never scroll */
+  /*
+    Vertical padding uses vh so it proportionally shrinks on short screens
+    and grows on tall/large screens.
+  */
+  padding-block: clamp(0.4rem, 0.8vh, 1.2rem);
+  display: flex;
+}
+
+.dashboard-content-frame {
+  width: 100%;
+  max-width: var(--dashboard-max-width);
+  margin-inline: auto;
+  display: flex;
+
+  /*
+    THIS is the key fix for the 6000 px screen.
+    Font-size is the single multiplier that everything else (padding, gaps,
+    icon sizes expressed in em/clamp) scales against.
+
+    clamp(MIN, PREFERRED, MAX)
+    • MIN  0.72rem  — floor so text never gets unreadably small
+    • PREFERRED  calc(0.6rem + 0.55vw)
+        at 1366 px → 0.6 + 7.5  = ~8.1px  (≈ 80% of old 16px baseline)
+        at 1920 px → 0.6 + 10.6 = ~11.2px (comfortable)
+        at 6000 px → 0.6 + 33   = ~33.6px (fills the huge screen)
+    • MAX  2.4rem   — ceiling so it doesn't go absurd on projectors etc.
+  */
+  font-size: 1rem;
+}
+
+.dashboard-stack {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  /*
+    Gap between sections uses vh so it scales with screen HEIGHT, not width,
+    which is exactly what you want to fill the vertical space on a tall screen.
+  */
+  gap: clamp(0.6rem, 1.1vh, 1.8rem);
+  min-height: 0;
+  overflow: hidden;           /* still no scroll */
+}
+
+.dashboard-section-fill {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.dashboard-section-fill-grid {
+  flex: 1;
+  min-height: 0;
+  align-items: stretch;
+}
+
+.dashboard-section-fill-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.dashboard-section-fill-body {
+  flex: 1;
+  min-height: 0;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   COMPACT / ULTRA-COMPACT (short viewport height) HELPERS
+   These hide lower-priority rows when the viewport height is tight, to keep
+   everything fitting without scrolling.
+───────────────────────────────────────────────────────────────────────────── */
+
+@media (max-height: 820px) {
+  :root {
+    --panel-gap: 0.65rem;
+  }
+
+  .dashboard-stack {
+    gap: 0.8rem;
+  }
+
+  .compact-hide {
+    display: none;
+  }
+}
+
+@media (max-height: 720px) {
+  :root {
+    --panel-gap: 0.5rem;
+  }
+
+  .dashboard-stack {
+    gap: 0.6rem;
+  }
+
+  .ultra-compact-hide {
+    display: none;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   LARGE / ULTRAWIDE TWEAKS
+   These are only needed for edge-case DPI environments. The vw-based
+   font-size clamp above handles the 6000 px screen automatically, so these
+   blocks are very minimal.
+───────────────────────────────────────────────────────────────────────────── */
+
+@media (min-width: 2400px) {
+  .dashboard-main {
+    padding-block: clamp(0.75rem, 1.2vh, 2rem);
+  }
+}
+
+@media (min-width: 3000px) {
+  :root {
+    --panel-max-width: clamp(24rem, 24vw, 34rem);
+  }
+
+  .dashboard-main {
+    padding-block: clamp(1rem, 1.4vh, 2.4rem);
+  }
+}
+
+.chat-screen {
+  min-height: 100dvh;
+  background-color: #eeeff6;
+  background-image: url("/images/hero-pattern.png");
+  background-position: center top;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+.chat-topbar {
+  height: 58px;
+}
+
+.chat-layout {
+  width: 100%;
+  min-height: calc(100dvh - 58px);
+  padding: 10px 14px 10px;
+  box-sizing: border-box;
+}
+
+.chat-list-panel {
+  width: min(100%, 388px);
+  height: calc(100dvh - 78px);
+  border: 1px solid #dfe4ee;
+  border-radius: 10px;
+  background: #f2f4f9;
+  overflow: hidden;
+  box-shadow: none;
+}
+
+.chat-rows {
+  height: calc(100% - 98px);
+  overflow: auto;
+  background: #f3f5fa;
+}
+
+.chat-row {
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid #e0e5ee;
+  background: #f3f5fa;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.58rem 0.52rem;
+  text-align: left;
+}
+
+.chat-avatar-wrap {
+  width: 1.25rem;
+  height: 1.25rem;
+  flex-shrink: 0;
+}
+
+.chat-avatar {
+  width: 100%;
+  height: 100%;
+  border-radius: 0.28rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #0f6a63;
+  color: #ffffff;
+  font-size: 0.66rem;
+  font-weight: 700;
+}
+
+.chat-avatar-photo {
+  width: 100%;
+  height: 100%;
+  border-radius: 999px;
+  display: inline-block;
+  background: linear-gradient(135deg, #855525 0%, #c48a53 38%, #f5d0ac 100%);
+}
+
+.chat-unread {
+  display: inline-flex;
+  width: 0.82rem;
+  height: 0.82rem;
+  border-radius: 999px;
+  align-items: center;
+  justify-content: center;
+  background: #4d49c9;
+  color: #fff;
+  font-size: 0.5rem;
+  font-weight: 700;
+}

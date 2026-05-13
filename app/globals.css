@@ -228,16 +228,16 @@ button {
 
 :root {
   /* Layout geometry */
-  --app-max-width:        min(94vw, 120rem);
-  --app-gutter:           clamp(0.85rem, 2.6vw, 2.4rem);
+  --app-max-width:        min(112rem, 100%);
+  --app-gutter:           clamp(1.2rem, 6.4vw, 6rem);
   --panel-max-width:      clamp(22rem, 24vw, 26rem);
 
   /*
     Dashboard max-width: uncapped at the top so the 6000 px screen is used
     fully. 96vw keeps a small gutter on any screen size.
   */
-  --dashboard-max-width:  96vw;
-  --dashboard-gutter:     clamp(0.85rem, 1.6vw, 3rem);
+  --dashboard-max-width:  var(--app-max-width);
+  --dashboard-gutter:     var(--app-gutter);
 
   /*
     Topbar height: scales up on large screens so it doesn't look like a sliver.
@@ -555,6 +555,43 @@ button {
   height: calc(100% - 98px);
   overflow: auto;
   background: #f3f5fa;
+}
+
+.navbar-scroll {
+  scrollbar-width: none;
+}
+
+.navbar-scroll::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+.scrollbar-hover {
+  scrollbar-width: none;
+}
+
+.scrollbar-hover::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+.scrollbar-hover:hover {
+  scrollbar-width: thin;
+  scrollbar-color: #c7cfdd transparent;
+}
+
+.scrollbar-hover:hover::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.scrollbar-hover:hover::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-hover:hover::-webkit-scrollbar-thumb {
+  background: #c7cfdd;
+  border-radius: 999px;
 }
 
 .chat-row {

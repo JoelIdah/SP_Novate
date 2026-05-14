@@ -1,3 +1,6 @@
+ "use client";
+
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { ChevronDown, ChevronRight, ClipboardList, Compass, MapPin, Search, Star } from "lucide-react";
 
@@ -85,6 +88,28 @@ const tutors: TutorCard[] = [
 ];
 
 export default function BookingsPage() {
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [subject, setSubject] = useState("");
+  const [category, setCategory] = useState("");
+  const [location, setLocation] = useState("");
+  const [days, setDays] = useState("");
+  const [time, setTime] = useState("");
+  const [rating, setRating] = useState("");
+
+  const activeFilterCount = useMemo(
+    () => [subject, category, location, days, time, rating].filter(Boolean).length,
+    [subject, category, location, days, time, rating]
+  );
+
+  const resetFilters = () => {
+    setSubject("");
+    setCategory("");
+    setLocation("");
+    setDays("");
+    setTime("");
+    setRating("");
+  };
+
   return (
     <main className="app-page-shell bg-white text-[#2b3245]">
       <DashboardNavbar active="Bookings" />
@@ -106,32 +131,30 @@ export default function BookingsPage() {
           <p className="mt-1 text-[0.8rem] text-[#7c8498]">You can use the filter to help narrow down and pick your tutor.</p>
         </div>
 
-        <details className="rounded-2xl border border-[#e4e8f3] bg-[#f7f9fd] p-3 md:hidden">
-          <summary className="flex cursor-pointer list-none items-center justify-between text-[0.82rem] font-semibold text-[#4a5166]">
-            <span className="inline-flex items-center gap-2">
+        <div className="sticky top-0 z-20 md:hidden">
+          <button
+            className="flex w-full items-center justify-between rounded-xl border border-[#dce3f0] bg-white/95 px-3 py-2.5 text-left shadow-sm backdrop-blur"
+            onClick={() => setIsFilterOpen(true)}
+            type="button"
+          >
+            <span className="inline-flex items-center gap-2 text-[0.82rem] font-semibold text-[#4a5166]">
               <Compass className="h-4 w-4 text-[#5f60d8]" />
               Filter tutors
             </span>
-            <span className="text-[#8e95a8]">Tap to expand</span>
-          </summary>
-          <div className="mt-3 grid gap-3">
-            <FilterSelect label="What do you want to learn" placeholder="Select subject" />
-            <FilterSelect label="What is the field category?" placeholder="Select department" />
-            <FilterSelect label="Location" placeholder="Select department" />
-            <FilterSelect label="Available days" placeholder="Enter your email" />
-            <FilterSelect label="Preferred time" placeholder="Enter your email" />
-            <FilterSelect label="Tutor rating" placeholder="Select department" />
-          </div>
-        </details>
+            <span className="rounded-full bg-[#eef0ff] px-2 py-0.5 text-[0.72rem] font-semibold text-[#4a46d6]">
+              {activeFilterCount} active
+            </span>
+          </button>
+        </div>
 
         <div className="hidden rounded-2xl border border-[#e4e8f3] bg-[#f7f9fd] p-4 md:block">
           <div className="grid gap-3 md:grid-cols-3">
-            <FilterSelect label="What do you want to learn" placeholder="Select subject" />
-            <FilterSelect label="What is the field category?" placeholder="Select department" />
-            <FilterSelect label="Location" placeholder="Select department" />
-            <FilterSelect label="Available days" placeholder="Enter your email" />
-            <FilterSelect label="Preferred time" placeholder="Enter your email" />
-            <FilterSelect label="Tutor rating" placeholder="Select department" />
+            <FilterSelect label="What do you want to learn" onSelect={setSubject} placeholder="Select subject" value={subject} />
+            <FilterSelect label="What is the field category?" onSelect={setCategory} placeholder="Select department" value={category} />
+            <FilterSelect label="Location" onSelect={setLocation} placeholder="Select department" value={location} />
+            <FilterSelect label="Available days" onSelect={setDays} placeholder="Enter your email" value={days} />
+            <FilterSelect label="Preferred time" onSelect={setTime} placeholder="Enter your email" value={time} />
+            <FilterSelect label="Tutor rating" onSelect={setRating} placeholder="Select department" value={rating} />
           </div>
         </div>
 
@@ -155,7 +178,7 @@ export default function BookingsPage() {
               key={`${tutor.name}-${index}`}
               className="rounded-2xl border border-[#e8ecf3] bg-[#f6f8fc] p-3.5"
             >
-              <div className="rounded-xl border border-[#eef1f6] bg-white px-3 py-3">
+              <div className="ui-card px-3 py-3">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
                   <div className="relative h-16 w-16 shrink-0">
                     <div
@@ -214,15 +237,15 @@ export default function BookingsPage() {
                 </div>
               </div>
 
-              <div className="mt-3 flex flex-wrap justify-end gap-2 px-1">
+              <div className="ui-action-box mt-3 flex flex-wrap justify-end gap-2 px-1">
                 <button
-                  className="min-w-[110px] rounded-full border border-[#dfe4ee] bg-[#f7f7f8] px-4 py-2 text-[0.72rem] font-semibold text-[#5a6174]"
+                  className="ui-btn-secondary min-w-[110px] px-4 py-2 text-[0.72rem] font-semibold"
                   type="button"
                 >
                   Send message
                 </button>
                 <button
-                  className="min-w-[110px] rounded-full border border-[#2f2b88] bg-[#2b276f] px-4 py-2 text-[0.72rem] font-semibold text-white"
+                  className="ui-btn-primary min-w-[110px] px-4 py-2 text-[0.72rem] font-semibold"
                   type="button"
                 >
                   Book tutor
@@ -232,19 +255,57 @@ export default function BookingsPage() {
           ))}
         </div>
       </section>
+
+      {isFilterOpen ? (
+        <div className="fixed inset-0 z-50 flex items-end bg-[#0f1530]/35 p-3 md:hidden" onClick={() => setIsFilterOpen(false)}>
+          <div className="w-full rounded-2xl border border-[#dfe4ef] bg-white p-4" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="text-[0.95rem] font-semibold text-[#3f4670]">Filter tutors</h3>
+              <button className="text-[0.75rem] font-semibold text-[#7c8498]" onClick={resetFilters} type="button">Reset</button>
+            </div>
+            <div className="grid gap-3">
+              <FilterSelect label="What do you want to learn" onSelect={setSubject} placeholder="Select subject" value={subject} />
+              <FilterSelect label="What is the field category?" onSelect={setCategory} placeholder="Select department" value={category} />
+              <FilterSelect label="Location" onSelect={setLocation} placeholder="Select department" value={location} />
+              <FilterSelect label="Available days" onSelect={setDays} placeholder="Enter your email" value={days} />
+              <FilterSelect label="Preferred time" onSelect={setTime} placeholder="Enter your email" value={time} />
+              <FilterSelect label="Tutor rating" onSelect={setRating} placeholder="Select department" value={rating} />
+            </div>
+            <div className="mt-4 flex gap-2">
+              <button className="flex-1 rounded-full border border-[#dfe4ee] bg-white py-2 text-[0.78rem] font-semibold text-[#5a6174]" onClick={() => setIsFilterOpen(false)} type="button">
+                Cancel
+              </button>
+              <button className="flex-1 rounded-full border border-[#2f2b88] bg-[#2b276f] py-2 text-[0.78rem] font-semibold text-white" onClick={() => setIsFilterOpen(false)} type="button">
+                Apply
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </main>
   );
 }
 
-function FilterSelect({ label, placeholder }: { label: string; placeholder: string }) {
+function FilterSelect({
+  label,
+  placeholder,
+  value,
+  onSelect,
+}: {
+  label: string;
+  placeholder: string;
+  value: string;
+  onSelect: (next: string) => void;
+}) {
   return (
     <label className="text-[0.7rem] font-semibold text-[#8891a7]">
       <span className="mb-1 block">{label}</span>
       <button
         className="flex w-full items-center justify-between rounded-lg border border-[#dfe5f2] bg-white px-3 py-2 text-[0.75rem] font-medium text-[#7a8195]"
+        onClick={() => onSelect(value ? "" : placeholder)}
         type="button"
       >
-        <span>{placeholder}</span>
+        <span>{value || placeholder}</span>
         <ChevronDown className="h-4 w-4 text-[#9aa1b4]" />
       </button>
     </label>

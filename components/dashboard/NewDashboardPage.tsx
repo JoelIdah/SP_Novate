@@ -407,15 +407,15 @@
 import Link from "next/link";
 import Image from "next/image";
 import { DashboardNavbar } from "./DashboardNavbar";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Home,
   CalendarDays,
   CreditCard,
   MessageCircle,
   Menu,
+  X,
   Search,
-  ChevronDown,
   ChevronRight,
   MoreVertical,
   PlayCircle,
@@ -699,6 +699,19 @@ export default function Dashboard() {
 
 function MobileDashboardView() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isMenuMounted, setIsMenuMounted] = useState(false);
+
+  useEffect(() => {
+    if (isMenuOpen) {
+      setIsMenuMounted(true);
+      document.body.style.overflow = "hidden";
+      return;
+    }
+
+    document.body.style.overflow = "";
+    const timeout = setTimeout(() => setIsMenuMounted(false), 220);
+    return () => clearTimeout(timeout);
+  }, [isMenuOpen]);
 
   return (
     <main className="min-h-dvh bg-[#f7f8fb] px-4 pb-6 pt-4 sm:px-5 md:px-6 md:pb-8">
@@ -709,32 +722,48 @@ function MobileDashboardView() {
           <Search className="ml-auto h-4 w-4 text-[#6c7387]" />
         </div>
         <button className="inline-flex h-9 w-9 items-center justify-center rounded-md text-[#2e3448]" onClick={() => setIsMenuOpen((prev) => !prev)} type="button">
-          {isMenuOpen ? <ChevronDown className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          <Menu className="h-6 w-6" />
         </button>
       </div>
 
-      {isMenuOpen ? (
-        <nav className="mb-5 grid grid-cols-2 gap-2 rounded-xl border border-[#e2e6ef] bg-white p-2">
-          {[
-            { label: "Home", href: "/dashboard", active: true },
-            { label: "Bookings", href: "/bookings", active: false },
-            { label: "Transactions", href: "/transactions", active: false },
-            { label: "Chat", href: "/chat", active: false },
-          ].map((item) => (
-            <Link
-              key={item.label}
-              href={item.href}
-              className={`rounded-lg border px-3 py-2 text-[0.82rem] font-semibold ${
-                item.active
-                  ? "border-[#d8daf8] bg-[#eef0ff] text-[#4A46D6]"
-                  : "border-[#e6eaf3] bg-white text-[#5F6678]"
-              }`}
-              onClick={() => setIsMenuOpen(false)}
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
+      {isMenuMounted ? (
+        <div className="fixed inset-0 z-[70]">
+          <button
+            aria-label="Close menu backdrop"
+            className={`absolute inset-0 transition-opacity duration-200 ${isMenuOpen ? "bg-[#0f1530]/35 opacity-100" : "bg-[#0f1530]/0 opacity-0"}`}
+            onClick={() => setIsMenuOpen(false)}
+            type="button"
+          />
+          <div className={`absolute right-0 top-0 h-full w-[min(82vw,21rem)] border-l border-[#e6eaf3] bg-white p-4 shadow-2xl transition-transform duration-200 ${isMenuOpen ? "translate-x-0" : "translate-x-full"}`}>
+            <div className="mb-4 flex items-center justify-between">
+              <p className="text-[0.9rem] font-semibold text-[#4a5166]">Navigate</p>
+              <button className="inline-flex h-8 w-8 items-center justify-center rounded-md text-[#2e3448]" onClick={() => setIsMenuOpen(false)} type="button">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <nav className="grid grid-cols-1 gap-2">
+              {[
+                { label: "Home", href: "/dashboard", active: true },
+                { label: "Bookings", href: "/bookings", active: false },
+                { label: "Transactions", href: "/transactions", active: false },
+                { label: "Chat", href: "/chat", active: false },
+              ].map((item) => (
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  className={`rounded-lg border px-3 py-2 text-[0.82rem] font-semibold ${
+                    item.active
+                      ? "border-[#d8daf8] bg-[#eef0ff] text-[#4A46D6]"
+                      : "border-[#e6eaf3] bg-white text-[#5F6678]"
+                  }`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </nav>
+          </div>
+        </div>
       ) : null}
 
       <section className="mb-8 md:mb-9">

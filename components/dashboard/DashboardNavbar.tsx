@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CalendarDays, ChevronDown, CreditCard, Home, Menu, MessageCircle, X } from "lucide-react";
 
 type NavLabel = "Home" | "Bookings" | "Transactions" | "Chat";
@@ -20,6 +20,19 @@ const navItems: Array<{
 
 export function DashboardNavbar({ active = "Home" }: { active?: NavLabel }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isMenuMounted, setIsMenuMounted] = useState(false);
+
+  useEffect(() => {
+    if (isMenuOpen) {
+      setIsMenuMounted(true);
+      document.body.style.overflow = "hidden";
+      return;
+    }
+
+    document.body.style.overflow = "";
+    const timeout = setTimeout(() => setIsMenuMounted(false), 220);
+    return () => clearTimeout(timeout);
+  }, [isMenuOpen]);
 
   return (
     <header className="dashboard-header z-50 border-b border-[#E8EAF1] bg-white shadow-[0_2px_10px_rgba(33,38,79,0.08)]">
@@ -78,28 +91,44 @@ export function DashboardNavbar({ active = "Home" }: { active?: NavLabel }) {
         </div>
       </div>
 
-      {isMenuOpen ? (
-        <div className="border-t border-[#eceff5] bg-white px-4 py-3 lg:hidden">
-          <nav className="grid grid-cols-2 gap-2">
-            {navItems.map((item) => {
-              const isActive = item.label === active;
+      {isMenuMounted ? (
+        <div className="fixed inset-0 z-[70] lg:hidden">
+          <button
+            aria-label="Close menu backdrop"
+            className={`absolute inset-0 transition-opacity duration-200 ${isMenuOpen ? "bg-[#0f1530]/35 opacity-100" : "bg-[#0f1530]/0 opacity-0"}`}
+            onClick={() => setIsMenuOpen(false)}
+            type="button"
+          />
+          <div className={`absolute right-0 top-0 h-full w-[min(82vw,21rem)] border-l border-[#e6eaf3] bg-white p-4 shadow-2xl transition-transform duration-200 ${isMenuOpen ? "translate-x-0" : "translate-x-full"}`}>
+            <div className="mb-4 flex items-center justify-between">
+              <p className="text-[0.9rem] font-semibold text-[#4a5166]">Navigate</p>
+              <button className="inline-flex h-8 w-8 items-center justify-center rounded-md text-[#2e3448]" onClick={() => setIsMenuOpen(false)} type="button">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
 
-              return (
-                <Link
-                  key={item.label}
-                  className={`rounded-lg border px-3 py-2 text-[0.82rem] font-semibold ${
-                    isActive
-                      ? "border-[#d8daf8] bg-[#eef0ff] text-[#4A46D6]"
-                      : "border-[#e6eaf3] bg-white text-[#5F6678]"
-                  }`}
-                  href={item.href}
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  {item.label}
-                </Link>
-              );
-            })}
-          </nav>
+            <nav className="grid grid-cols-1 gap-2">
+              {navItems.map((item) => {
+                const isActive = item.label === active;
+
+                return (
+                  <Link
+                    key={item.label}
+                    className={`rounded-lg border px-3 py-2 text-[0.82rem] font-semibold ${
+                      isActive
+                        ? "border-[#d8daf8] bg-[#eef0ff] text-[#4A46D6]"
+                        : "border-[#e6eaf3] bg-white text-[#5F6678]"
+                    }`}
+                    href={item.href}
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </nav>
+
+          </div>
         </div>
       ) : null}
     </header>

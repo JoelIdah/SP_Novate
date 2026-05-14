@@ -281,6 +281,12 @@ button {
   --brand-line:           #dde1ee;
   --brand-primary:        #4f4ccf;
   --brand-primary-soft:   #ecebff;
+
+  --ui-card-radius: 0.9rem;
+  --ui-pill-radius: 999px;
+  --ui-border-color: #e3e7ef;
+  --ui-title-color: #2f3547;
+  --ui-body-color: #6f7891;
 }
 
 @theme inline {
@@ -325,6 +331,17 @@ button {
     border-color   160ms ease,
     background-color 160ms ease,
     transform      160ms ease;
+}
+
+button:active {
+  transform: translateY(1px);
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible {
+  outline: 2px solid #6b68e8;
+  outline-offset: 2px;
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -618,6 +635,41 @@ button {
   gap: 0.6rem;
   padding: 0.58rem 0.52rem;
   text-align: left;
+}
+
+.chat-row:first-child {
+  background: #eef1f8;
+}
+
+.chat-row:hover {
+  background: #eceff7;
+}
+
+.ui-card {
+  border: 1px solid var(--ui-border-color);
+  border-radius: var(--ui-card-radius);
+  background: #fff;
+}
+
+.ui-btn-primary {
+  border: 1px solid #2f2b88;
+  background: #2b276f;
+  color: #fff;
+  border-radius: var(--ui-pill-radius);
+}
+
+.ui-btn-secondary {
+  border: 1px solid #dfe4ee;
+  background: #f7f7f8;
+  color: #5a6174;
+  border-radius: var(--ui-pill-radius);
+}
+
+.ui-action-box {
+  border: 1px solid #e4e8f1;
+  background: #f4f6fa;
+  border-radius: 0.85rem;
+  padding: 0.5rem;
 }
 
 .chat-avatar-wrap {

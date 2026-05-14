@@ -56,11 +56,11 @@ export default function ChatPage() {
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-[0.72rem] font-semibold text-[#2f3443]">{item.name}</p>
-                  <p className="truncate text-[0.64rem] text-[#8f97ab]">{item.preview}</p>
+                  <p className="truncate text-[0.74rem] font-semibold text-[#2f3443]">{item.name}</p>
+                  <p className="truncate text-[0.66rem] text-[#7f879c]">{item.preview}</p>
                 </div>
                 <div className="ml-2 flex flex-col items-end gap-1">
-                  <span className="text-[0.58rem] font-semibold text-[#7f8799]">{item.time}</span>
+                  <span className="text-[0.6rem] font-semibold text-[#666f86]">{item.time}</span>
                   {item.unread ? <span className="chat-unread">{item.unread}</span> : <span className="h-[0.95rem] w-[0.95rem]" />}
                 </div>
               </button>

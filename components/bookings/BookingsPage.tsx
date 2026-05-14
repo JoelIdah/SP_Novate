@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronDown, ChevronRight, ClipboardList, Clock, Compass, MapPin, Search, Star } from "lucide-react";
+import { ChevronDown, ChevronRight, ClipboardList, Compass, MapPin, Search, Star } from "lucide-react";
 
 import { DashboardNavbar } from "../dashboard/DashboardNavbar";
 
@@ -18,7 +18,7 @@ type TutorCard = {
 const tutors: TutorCard[] = [
   {
     name: "Oluyinka Emmanuel",
-    title: "Software engineer • B.Sc, M.Sc",
+    title: "Software engineer - B.Sc, M.Sc",
     rating: "4.5",
     location: "Omni, Victoria Island",
     distance: "5km from you",
@@ -29,7 +29,7 @@ const tutors: TutorCard[] = [
   },
   {
     name: "Oluyinka Emmanuel",
-    title: "Software engineer • B.Sc, M.Sc",
+    title: "Software engineer - B.Sc, M.Sc",
     rating: "4.5",
     location: "Omni, Victoria Island",
     distance: "5km from you",
@@ -40,7 +40,7 @@ const tutors: TutorCard[] = [
   },
   {
     name: "Oluyinka Emmanuel",
-    title: "Software engineer • B.Sc, M.Sc",
+    title: "Software engineer - B.Sc, M.Sc",
     rating: "4.5",
     location: "Omni, Victoria Island",
     distance: "5km from you",
@@ -51,7 +51,7 @@ const tutors: TutorCard[] = [
   },
   {
     name: "Oluyinka Emmanuel",
-    title: "Software engineer • B.Sc, M.Sc",
+    title: "Software engineer - B.Sc, M.Sc",
     rating: "4.5",
     location: "Omni, Victoria Island",
     distance: "5km from you",
@@ -62,7 +62,7 @@ const tutors: TutorCard[] = [
   },
   {
     name: "Oluyinka Emmanuel",
-    title: "Software engineer • B.Sc, M.Sc",
+    title: "Software engineer - B.Sc, M.Sc",
     rating: "4.5",
     location: "Omni, Victoria Island",
     distance: "5km from you",
@@ -73,7 +73,7 @@ const tutors: TutorCard[] = [
   },
   {
     name: "Oluyinka Emmanuel",
-    title: "Software engineer • B.Sc, M.Sc",
+    title: "Software engineer - B.Sc, M.Sc",
     rating: "4.5",
     location: "Omni, Victoria Island",
     distance: "5km from you",
@@ -106,7 +106,25 @@ export default function BookingsPage() {
           <p className="mt-1 text-[0.8rem] text-[#7c8498]">You can use the filter to help narrow down and pick your tutor.</p>
         </div>
 
-        <div className="rounded-2xl border border-[#e4e8f3] bg-[#f7f9fd] p-4">
+        <details className="rounded-2xl border border-[#e4e8f3] bg-[#f7f9fd] p-3 md:hidden">
+          <summary className="flex cursor-pointer list-none items-center justify-between text-[0.82rem] font-semibold text-[#4a5166]">
+            <span className="inline-flex items-center gap-2">
+              <Compass className="h-4 w-4 text-[#5f60d8]" />
+              Filter tutors
+            </span>
+            <span className="text-[#8e95a8]">Tap to expand</span>
+          </summary>
+          <div className="mt-3 grid gap-3">
+            <FilterSelect label="What do you want to learn" placeholder="Select subject" />
+            <FilterSelect label="What is the field category?" placeholder="Select department" />
+            <FilterSelect label="Location" placeholder="Select department" />
+            <FilterSelect label="Available days" placeholder="Enter your email" />
+            <FilterSelect label="Preferred time" placeholder="Enter your email" />
+            <FilterSelect label="Tutor rating" placeholder="Select department" />
+          </div>
+        </details>
+
+        <div className="hidden rounded-2xl border border-[#e4e8f3] bg-[#f7f9fd] p-4 md:block">
           <div className="grid gap-3 md:grid-cols-3">
             <FilterSelect label="What do you want to learn" placeholder="Select subject" />
             <FilterSelect label="What is the field category?" placeholder="Select department" />
@@ -174,19 +192,20 @@ export default function BookingsPage() {
                           ))}
                         </div>
 
-                        <div className="mt-2 flex flex-wrap items-center gap-3 text-[0.68rem] text-[#7b8197]">
+                        <div className="mt-2 flex flex-wrap items-center gap-2 text-[0.68rem] text-[#7b8197]">
                           <span className="inline-flex items-center gap-1">
                             <MapPin className="h-3.5 w-3.5 text-[#6f6dd5]" />
                             {tutor.location}
                           </span>
+                          <span className="text-[#a0a7b8]">-</span>
                           <span className="inline-flex items-center gap-1">
-                            <Clock className="h-3.5 w-3.5 text-[#6f6dd5]" />
-                            {tutor.distance}
+                            <span className="font-semibold text-[#4f566b]">{tutor.distance}</span>
+                            <span>from you</span>
                           </span>
                         </div>
                       </div>
 
-                      <Link className="inline-flex items-center gap-1 text-[0.7rem] font-semibold text-[#4f46e5]" href="#">
+                      <Link className="inline-flex items-center gap-1 text-[0.7rem] font-semibold text-[#4f46e5]" href="/bookings/tutor-profile">
                         View profile
                         <ChevronRight className="h-3 w-3" />
                       </Link>
@@ -197,7 +216,7 @@ export default function BookingsPage() {
 
               <div className="mt-3 flex flex-wrap justify-end gap-2 px-1">
                 <button
-                  className="min-w-[110px] rounded-full border border-[#e2e6f0] bg-[#f7f7f8] px-4 py-2 text-[0.72rem] font-semibold text-[#5a6174]"
+                  className="min-w-[110px] rounded-full border border-[#dfe4ee] bg-[#f7f7f8] px-4 py-2 text-[0.72rem] font-semibold text-[#5a6174]"
                   type="button"
                 >
                   Send message
@@ -231,3 +250,4 @@ function FilterSelect({ label, placeholder }: { label: string; placeholder: stri
     </label>
   );
 }
+

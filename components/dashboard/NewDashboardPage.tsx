@@ -404,8 +404,10 @@
 
 "use client";
 
+import Link from "next/link";
 import Image from "next/image";
 import { DashboardNavbar } from "./DashboardNavbar";
+import { useState } from "react";
 import {
   Home,
   CalendarDays,
@@ -413,6 +415,7 @@ import {
   MessageCircle,
   Menu,
   Search,
+  ChevronDown,
   ChevronRight,
   MoreVertical,
   PlayCircle,
@@ -695,6 +698,8 @@ export default function Dashboard() {
 }
 
 function MobileDashboardView() {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
   return (
     <main className="min-h-dvh bg-[#f7f8fb] px-4 pb-6 pt-4 sm:px-5 md:px-6 md:pb-8">
       <div className="mb-5 flex items-center gap-3 md:mb-6">
@@ -703,10 +708,34 @@ function MobileDashboardView() {
           <span className="truncate text-sm text-[#7a8195]">Search for any item here</span>
           <Search className="ml-auto h-4 w-4 text-[#6c7387]" />
         </div>
-        <button className="inline-flex h-9 w-9 items-center justify-center rounded-md text-[#2e3448]" type="button">
-          <Menu className="h-6 w-6" />
+        <button className="inline-flex h-9 w-9 items-center justify-center rounded-md text-[#2e3448]" onClick={() => setIsMenuOpen((prev) => !prev)} type="button">
+          {isMenuOpen ? <ChevronDown className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
         </button>
       </div>
+
+      {isMenuOpen ? (
+        <nav className="mb-5 grid grid-cols-2 gap-2 rounded-xl border border-[#e2e6ef] bg-white p-2">
+          {[
+            { label: "Home", href: "/dashboard", active: true },
+            { label: "Bookings", href: "/bookings", active: false },
+            { label: "Transactions", href: "/transactions", active: false },
+            { label: "Chat", href: "/chat", active: false },
+          ].map((item) => (
+            <Link
+              key={item.label}
+              href={item.href}
+              className={`rounded-lg border px-3 py-2 text-[0.82rem] font-semibold ${
+                item.active
+                  ? "border-[#d8daf8] bg-[#eef0ff] text-[#4A46D6]"
+                  : "border-[#e6eaf3] bg-white text-[#5F6678]"
+              }`}
+              onClick={() => setIsMenuOpen(false)}
+            >
+              {item.label}
+            </Link>
+          ))}
+        </nav>
+      ) : null}
 
       <section className="mb-8 md:mb-9">
         <SectionTitle title="Actions" />

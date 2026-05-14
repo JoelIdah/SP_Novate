@@ -45,7 +45,7 @@ export default function ChatPage() {
             </label>
           </div>
 
-          <div className="chat-rows">
+          <div className="chat-rows scrollbar-hover">
             {chatItems.map((item) => (
               <button key={item.id} className="chat-row" type="button">
                 <div className="chat-avatar-wrap">

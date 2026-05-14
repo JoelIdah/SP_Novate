@@ -114,7 +114,7 @@ const managedRows: ManagedBookingRow[] = [
 ];
 
 export default function BookingsPage() {
-  const [view, setView] = useState<"explore" | "manage">("manage");
+  const [view, setView] = useState<"explore" | "manage">("explore");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [subject, setSubject] = useState("");
   const [category, setCategory] = useState("");
@@ -122,11 +122,28 @@ export default function BookingsPage() {
   const [days, setDays] = useState("");
   const [time, setTime] = useState("");
   const [rating, setRating] = useState("");
+  const [isDateMenuOpen, setIsDateMenuOpen] = useState(false);
+  const [isStatusMenuOpen, setIsStatusMenuOpen] = useState(false);
+  const [dateFrom, setDateFrom] = useState("2026-03-12");
+  const [dateTo, setDateTo] = useState("2026-03-16");
+  const [selectedStatus, setSelectedStatus] = useState<ManagedBookingRow["status"] | "All">("Pending");
 
   const activeFilterCount = useMemo(
     () => [subject, category, location, days, time, rating].filter(Boolean).length,
     [subject, category, location, days, time, rating]
   );
+  const filteredManagedRows = useMemo(() => {
+    return managedRows.filter((row) => {
+      const statusPass = selectedStatus === "All" ? true : row.status === selectedStatus;
+      const rowDate = new Date(row.date);
+      const from = new Date(dateFrom);
+      const to = new Date(dateTo);
+      const datePass = !Number.isNaN(rowDate.valueOf()) && rowDate >= from && rowDate <= to;
+      return statusPass && datePass;
+    });
+  }, [dateFrom, dateTo, selectedStatus]);
+
+  const formatRangeLabel = `${dateFrom.replaceAll("-", "/")} - ${dateTo.replaceAll("-", "/")}`;
 
   const resetFilters = () => {
     setSubject("");
@@ -306,13 +323,14 @@ export default function BookingsPage() {
           <section className="space-y-4">
             <div className="flex items-center justify-between gap-3">
               <h1 className="text-[2rem] font-semibold leading-none text-[#2f3547]">Manage booking</h1>
-              <Link
+              <button
                 className="inline-flex h-10 items-center gap-1 rounded-full bg-[#232066] px-4 text-[0.78rem] font-semibold text-white"
-                href="/bookings/tutor-profile"
+                onClick={() => setView("explore")}
+                type="button"
               >
                 <Star className="h-3.5 w-3.5" fill="currentColor" strokeWidth={1} />
                 Book a session
-              </Link>
+              </button>
             </div>
 
             <div className="flex items-center justify-between gap-3">
@@ -330,23 +348,74 @@ export default function BookingsPage() {
               </button>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2 border-b border-[#e7ebf4] pb-3">
-              <span className="inline-flex items-center gap-1 rounded-full border border-[#e2e7f2] bg-white px-2 py-1 text-[0.64rem] font-semibold text-[#747e95]">
-                Date
-                <ChevronDown className="h-3 w-3" />
-              </span>
-              <span className="inline-flex items-center rounded-full bg-[#3236ad] px-2 py-1 text-[0.64rem] font-semibold text-white">12/03/2026- 16/03/2026</span>
-              <span className="inline-flex items-center gap-1 rounded-full border border-[#e2e7f2] bg-white px-2 py-1 text-[0.64rem] font-semibold text-[#747e95]">
-                Statuses
-                <ChevronDown className="h-3 w-3" />
-              </span>
+            <div className="relative flex flex-wrap items-center gap-2 border-b border-[#e7ebf4] pb-3">
+              <div className="relative">
+                <button
+                  className="inline-flex items-center gap-1 rounded-full border border-[#e2e7f2] bg-white px-2 py-1 text-[0.64rem] font-semibold text-[#747e95]"
+                  onClick={() => {
+                    setIsDateMenuOpen((prev) => !prev);
+                    setIsStatusMenuOpen(false);
+                  }}
+                  type="button"
+                >
+                  Date
+                  <ChevronDown className="h-3 w-3" />
+                </button>
+                {isDateMenuOpen ? (
+                  <div className="absolute left-0 top-[115%] z-20 w-[240px] rounded-xl border border-[#dfe4ef] bg-white p-3 shadow-lg">
+                    <p className="mb-2 text-[0.68rem] font-semibold text-[#55607a]">Pick date range</p>
+                    <label className="mb-2 block text-[0.62rem] font-semibold text-[#7a8299]">
+                      From
+                      <input className="mt-1 h-8 w-full rounded-md border border-[#d8deea] px-2 text-[0.72rem]" onChange={(e) => setDateFrom(e.target.value)} type="date" value={dateFrom} />
+                    </label>
+                    <label className="block text-[0.62rem] font-semibold text-[#7a8299]">
+                      To
+                      <input className="mt-1 h-8 w-full rounded-md border border-[#d8deea] px-2 text-[0.72rem]" onChange={(e) => setDateTo(e.target.value)} type="date" value={dateTo} />
+                    </label>
+                  </div>
+                ) : null}
+              </div>
+              <span className="inline-flex items-center rounded-full bg-[#3236ad] px-2 py-1 text-[0.64rem] font-semibold text-white">{formatRangeLabel}</span>
+              <div className="relative">
+                <button
+                  className="inline-flex items-center gap-1 rounded-full border border-[#e2e7f2] bg-white px-2 py-1 text-[0.64rem] font-semibold text-[#747e95]"
+                  onClick={() => {
+                    setIsStatusMenuOpen((prev) => !prev);
+                    setIsDateMenuOpen(false);
+                  }}
+                  type="button"
+                >
+                  Statuses
+                  <ChevronDown className="h-3 w-3" />
+                </button>
+                {isStatusMenuOpen ? (
+                  <div className="absolute left-0 top-[115%] z-20 w-[180px] rounded-xl border border-[#dfe4ef] bg-white p-2 shadow-lg">
+                    {(["All", "On-going", "Pending"] as const).map((status) => (
+                      <button
+                        key={status}
+                        className={`flex w-full items-center justify-between rounded-md px-2 py-1.5 text-[0.72rem] ${
+                          selectedStatus === status ? "bg-[#eef0ff] text-[#2f34aa]" : "text-[#5f667b]"
+                        }`}
+                        onClick={() => {
+                          setSelectedStatus(status);
+                          setIsStatusMenuOpen(false);
+                        }}
+                        type="button"
+                      >
+                        {status}
+                        {selectedStatus === status ? <span>✓</span> : null}
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
               <span className="inline-flex items-center gap-1 rounded-full bg-[#3236ad] px-2 py-1 text-[0.64rem] font-semibold text-white">
-                Pending
+                {selectedStatus}
                 <span className="h-1.5 w-1.5 rounded-full bg-white" />
               </span>
             </div>
 
-            <div className="overflow-hidden rounded-xl border border-[#e3e8f2] bg-white">
+            <div className="hidden overflow-hidden rounded-xl border border-[#e3e8f2] bg-white md:block">
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[920px] border-collapse text-left text-[0.74rem] text-[#5f667b]">
                   <thead className="bg-[#f2f5fa] text-[#676f85]">
@@ -357,7 +426,7 @@ export default function BookingsPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {managedRows.map((row, index) => (
+                    {filteredManagedRows.map((row, index) => (
                       <tr key={`${row.date}-${index}`} className="border-t border-[#edf0f6]">
                         <td className="px-3 py-2.5">{row.date}</td>
                         <td className="px-3 py-2.5">{row.tutor}</td>
@@ -389,6 +458,28 @@ export default function BookingsPage() {
                 </div>
                 <span>Page 1 of 10</span>
               </div>
+            </div>
+
+            <div className="space-y-2 md:hidden">
+              {filteredManagedRows.map((row, index) => (
+                <article key={`${row.date}-${index}`} className="rounded-none border-b border-[#edf0f6] bg-white px-2 py-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className="text-[1rem] font-semibold text-[#2f3547]">{row.tutor}</p>
+                      <p className="text-[0.76rem] text-[#7a8299]">{row.subject}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center gap-1 text-[0.76rem] text-[#5f667b]">
+                        <span className={`h-1.5 w-1.5 rounded-full ${row.status === "On-going" ? "bg-[#9a5cff]" : "bg-[#e7c754]"}`} />
+                        {row.status}
+                      </span>
+                      <button className="inline-flex h-6 w-6 items-center justify-center rounded-md text-[#6f768c]" type="button">
+                        <EllipsisVertical className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                </article>
+              ))}
             </div>
           </section>
         )}

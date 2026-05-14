@@ -1,8 +1,13 @@
+"use client";
+
 import Link from "next/link";
+import { useState } from "react";
 import {
   AlertCircle,
   CalendarDays,
+  Check,
   CheckCircle2,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   CircleDollarSign,
@@ -12,6 +17,7 @@ import {
   PlayCircle,
   Star,
 } from "lucide-react";
+import ResponsiveSheet from "../../../components/ui/ResponsiveSheet";
 
 const guidelineItems = [
   "Communication outside the platform is at your own risk.",
@@ -33,6 +39,24 @@ const testimonials = [
   "The IELTS sessions were very helpful. Oluyinka gave practical tips and practice exercises that improved my score significantly. I highly recommend him.",
 ];
 
+const bookingOptions = {
+  department: ["Common entrance", "Academics", "IELTS", "WAEC", "JAMB"],
+  subject: ["Mathematics", "English Language", "Physics", "Chemistry", "Biology"],
+  weeks: ["1 week", "2 weeks", "3 weeks", "4 weeks", "6 weeks"],
+  hoursPerDay: ["1 hour", "2 hours", "3 hours"],
+  paymentOption: ["Full payment", "Part payment"],
+  availability: ["Monday", "Wednesday", "Friday", "Saturday"],
+};
+
+type BookingForm = {
+  department: string;
+  subject: string;
+  weeks: string;
+  hoursPerDay: string;
+  paymentOption: string;
+  availability: string[];
+};
+
 function WatchButton() {
   return (
     <button
@@ -46,6 +70,56 @@ function WatchButton() {
 }
 
 export default function TutorProfilePage() {
+  const [isBookingOpen, setIsBookingOpen] = useState(false);
+  const [bookingStep, setBookingStep] = useState(1);
+  const [bookingForm, setBookingForm] = useState<BookingForm>({
+    department: "",
+    subject: "",
+    weeks: "",
+    hoursPerDay: "",
+    paymentOption: "",
+    availability: [],
+  });
+  const openBookingPanel = () => {
+    setBookingStep(1);
+    setBookingForm({
+      department: "",
+      subject: "",
+      weeks: "",
+      hoursPerDay: "",
+      paymentOption: "",
+      availability: [],
+    });
+    setIsBookingOpen(true);
+  };
+
+  const closeBookingPanel = () => {
+    setIsBookingOpen(false);
+  };
+
+  const isStepOneComplete =
+    Boolean(bookingForm.department) &&
+    Boolean(bookingForm.subject) &&
+    Boolean(bookingForm.weeks) &&
+    Boolean(bookingForm.hoursPerDay) &&
+    Boolean(bookingForm.paymentOption);
+
+  const isStepTwoComplete = isStepOneComplete && bookingForm.availability.length > 0;
+
+  const updateField = (field: keyof BookingForm, value: string) => {
+    setBookingForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const toggleAvailability = (day: string) => {
+    setBookingForm((prev) => {
+      const exists = prev.availability.includes(day);
+      return {
+        ...prev,
+        availability: exists ? prev.availability.filter((item) => item !== day) : [...prev.availability, day],
+      };
+    });
+  };
+
   return (
     <main className="min-h-dvh bg-white text-[#2f3547]">
       <header className="border-b border-[#e6e9f2] bg-white">
@@ -87,7 +161,7 @@ export default function TutorProfilePage() {
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <h2 className="text-[2.15rem] leading-none font-semibold text-[#30364a]">Oluyinka Emmanuel</h2>
-                    <p className="mt-1 text-[1rem] text-[#6f7689]">Software engineer • B.sc, M.sc</p>
+                    <p className="mt-1 text-[1rem] text-[#6f7689]">Software engineer - B.sc, M.sc</p>
                   </div>
                   <span className="inline-flex items-center gap-1 rounded-full bg-[#e8f8f0] px-2.5 py-1 text-[0.72rem] font-semibold text-[#27a56c]">
                     <CheckCircle2 className="h-3.5 w-3.5" />
@@ -108,7 +182,7 @@ export default function TutorProfilePage() {
                     <MapPin className="h-3.5 w-3.5 text-[#6366d7]" />
                     Oniru, Victoria Island
                   </span>
-                  <span className="text-[#a2a9ba]">•</span>
+                  <span className="text-[#a2a9ba]">-</span>
                   <span className="font-semibold text-[#4d556b]">5km</span>
                   <span>from you</span>
                 </div>
@@ -131,12 +205,16 @@ export default function TutorProfilePage() {
               <CalendarDays className="h-3.5 w-3.5 text-[#5b60d7]" />
               Mondays Wednesdays Fridays
             </p>
-            <div className="ui-action-box mt-4 flex gap-2">
+            <div className="mt-4 flex gap-2">
               <button className="ui-btn-secondary flex-1 py-2 text-[0.74rem] font-semibold" type="button">
                 Send message
               </button>
-              <button className="ui-btn-primary flex-1 py-2 text-[0.74rem] font-semibold" type="button">
-                ✓ Book a session
+              <button
+                className="ui-btn-primary flex-1 py-2 text-[0.74rem] font-semibold"
+                onClick={openBookingPanel}
+                type="button"
+              >
+                Book a session
               </button>
             </div>
           </aside>
@@ -227,7 +305,7 @@ export default function TutorProfilePage() {
               <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
                 {testimonials.map((item, index) => (
                   <div key={index} className="ui-card min-h-[230px] p-4">
-                    <p className="text-[0.74rem] leading-5 text-[#5d667c]">“{item}”</p>
+                    <p className="text-[0.74rem] leading-5 text-[#5d667c]">"{item}"</p>
                     <div className="mt-4 flex items-center gap-2">
                       <span className="h-7 w-7 rounded-full bg-[#c8ccd6]" />
                       <div>
@@ -242,6 +320,180 @@ export default function TutorProfilePage() {
           </div>
         </div>
       </section>
+
+      <ResponsiveSheet open={isBookingOpen} onClose={closeBookingPanel}>
+            <div className="mx-auto mb-2 h-1.5 w-10 rounded-full bg-[#d8dde8] lg:hidden" />
+            <h2 className="text-[1.65rem] font-semibold leading-none text-[#2f3547] lg:text-[2.05rem]">Book a session</h2>
+            <p className="mt-2 text-[0.71rem] text-[#8b93a8]">
+              A finder&apos;s fee is applied to each booking to help match you with the right tutor and support the platform.
+            </p>
+
+            <div className="mt-5 space-y-4 overflow-y-auto pb-3">
+              {bookingStep === 1 ? (
+                <>
+                  <BookingField
+                    hint="Select the department you'd like to learn from the tutor"
+                    label="Department"
+                    onChange={(value) => updateField("department", value)}
+                    options={bookingOptions.department}
+                    placeholder="Select department"
+                    value={bookingForm.department}
+                  />
+                  <BookingField
+                    hint="Select the subject you'd like to learn from the tutor"
+                    label="Subject"
+                    onChange={(value) => updateField("subject", value)}
+                    options={bookingOptions.subject}
+                    placeholder="Select subject"
+                    value={bookingForm.subject}
+                  />
+                  <BookingField
+                    label="Number of weeks"
+                    onChange={(value) => updateField("weeks", value)}
+                    options={bookingOptions.weeks}
+                    placeholder="Select number of weeks"
+                    value={bookingForm.weeks}
+                  />
+                  <BookingField
+                    hint="Please specify your preferred hours for each available day. You will be charged on a pay-as-you-go basis for the hours you book."
+                    label="Hours per day"
+                    onChange={(value) => updateField("hoursPerDay", value)}
+                    options={bookingOptions.hoursPerDay}
+                    placeholder="Select hours per day"
+                    value={bookingForm.hoursPerDay}
+                  />
+                  <BookingField
+                    hint="Choose how you want to pay for your tutoring sessions"
+                    label="Payment option"
+                    onChange={(value) => updateField("paymentOption", value)}
+                    options={bookingOptions.paymentOption}
+                    placeholder="Pick recipient(s)"
+                    value={bookingForm.paymentOption}
+                  />
+                </>
+              ) : null}
+
+              {bookingStep === 2 ? (
+                <div>
+                  <p className="mb-2 text-[0.78rem] font-semibold text-[#3f4760]">Availability</p>
+                  <div className="flex flex-wrap gap-2">
+                    {bookingOptions.availability.map((day) => {
+                      const selected = bookingForm.availability.includes(day);
+                      return (
+                        <button
+                          key={day}
+                          className={`rounded-lg border px-3 py-1.5 text-[0.76rem] font-medium ${
+                            selected
+                              ? "border-[#4b4ad7] bg-[#eff0ff] text-[#2b2d9b]"
+                              : "border-[#d7dce8] bg-white text-[#687085]"
+                          }`}
+                          onClick={() => toggleAvailability(day)}
+                          type="button"
+                        >
+                          {day}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : null}
+
+              {bookingStep >= 2 ? (
+                <article className="rounded-xl border border-[#e5e9f2] bg-[#f8f9fc] p-3">
+                  <h3 className="text-[0.85rem] font-semibold text-[#3b4358]">Cost estimate</h3>
+                  <div className="mt-2 space-y-1.5 text-[0.76rem] text-[#6b7389]">
+                    <div className="flex items-center justify-between"><span>Tutor&apos;s fee</span><span>N3,500</span></div>
+                    <div className="flex items-center justify-between"><span>Finder&apos;s fee</span><span>N500</span></div>
+                    <div className="flex items-center justify-between"><span>VAT (7.5%)</span><span>N37.50</span></div>
+                    <div className="mt-2 border-t border-[#e0e5f0] pt-2 text-[0.8rem] font-semibold text-[#2f3547]">
+                      <div className="flex items-center justify-between"><span>Total</span><span>N4,037.50</span></div>
+                    </div>
+                  </div>
+                </article>
+              ) : null}
+
+              {bookingStep === 3 ? (
+                <article className="rounded-xl border border-[#e5e9f2] bg-white p-3">
+                  <h3 className="text-[0.85rem] font-semibold text-[#3b4358]">Booking summary</h3>
+                  <div className="mt-2 space-y-1.5 text-[0.76rem] text-[#5f667b]">
+                    <div className="flex items-center justify-between"><span>Department type</span><span>{bookingForm.department}</span></div>
+                    <div className="flex items-center justify-between"><span>Subject</span><span>{bookingForm.subject}</span></div>
+                    <div className="flex items-center justify-between"><span>Period</span><span>Evening</span></div>
+                    <div className="flex items-center justify-between"><span>Number of weeks</span><span>{bookingForm.weeks}</span></div>
+                    <div className="flex items-center justify-between"><span>Hours per day</span><span>{bookingForm.hoursPerDay}</span></div>
+                    <div className="flex items-center justify-between"><span>Payment option</span><span>{bookingForm.paymentOption}</span></div>
+                    <div className="flex items-center justify-between"><span>Availability</span><span>{bookingForm.availability.join(", ") || "-"}</span></div>
+                    <div className="flex items-center justify-between"><span>Tutor&apos;s fee</span><span>N3,500</span></div>
+                  </div>
+                </article>
+              ) : null}
+            </div>
+
+            <div className="mt-auto flex items-center gap-2 border-t border-[#eef1f6] bg-white py-3 lg:border-t-0 lg:py-4">
+              <button
+                className="h-11 flex-1 rounded-full bg-[#ececef] text-[0.82rem] font-semibold text-[#4e576d]"
+                onClick={closeBookingPanel}
+                type="button"
+              >
+                Cancel
+              </button>
+              {bookingStep < 3 ? (
+                <button
+                  className="inline-flex h-11 flex-1 items-center justify-center gap-1.5 rounded-full bg-[#232066] text-[0.82rem] font-semibold text-white disabled:cursor-not-allowed disabled:bg-[#a6a9c9]"
+                  disabled={bookingStep === 1 ? !isStepOneComplete : !isStepTwoComplete}
+                  onClick={() => setBookingStep((prev) => Math.min(prev + 1, 3))}
+                  type="button"
+                >
+                  Continue
+                </button>
+              ) : (
+                <button
+                  className="inline-flex h-11 flex-1 items-center justify-center gap-1.5 rounded-full bg-[#232066] text-[0.82rem] font-semibold text-white"
+                  onClick={closeBookingPanel}
+                  type="button"
+                >
+                  <Check className="h-3.5 w-3.5" strokeWidth={3} />
+                  Submit booking request
+                </button>
+              )}
+            </div>
+      </ResponsiveSheet>
     </main>
+  );
+}
+
+function BookingField({
+  label,
+  placeholder,
+  hint,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  placeholder: string;
+  hint?: string;
+  value: string;
+  options: string[];
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label className="block">
+      <span className="mb-1.5 block text-[0.82rem] font-semibold text-[#3f4760]">{label}</span>
+      <div className="relative">
+        <select
+          className="h-10 w-full appearance-none rounded-[10px] border border-[#d7dce8] bg-white px-3 pr-9 text-[0.84rem] text-[#55607a] outline-none focus:border-[#5f64d8]"
+          onChange={(event) => onChange(event.target.value)}
+          value={value}
+        >
+          <option value="">{placeholder}</option>
+          {options.map((option) => (
+            <option key={option} value={option}>{option}</option>
+          ))}
+        </select>
+        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#a3abba]" />
+      </div>
+      {hint ? <span className="mt-1 block text-[0.67rem] text-[#8b93a8]">{hint}</span> : null}
+    </label>
   );
 }

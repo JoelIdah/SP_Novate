@@ -349,12 +349,12 @@ export function LoginPageContent() {
             <label className="block text-[0.71rem] font-semibold text-[#6f778c]">
               Password
               <div
-                className={`mt-1.5 flex h-8.5 items-center rounded-[0.45rem] border px-3 ${
+                className={`mt-1.5 flex h-8.5 items-center rounded-[0.45rem] border px-3 focus-within:outline-2 focus-within:outline-[#6b68e8] focus-within:outline-offset-2 ${
                   passwordError ? "border-[#d04b4b]" : "border-[#d8dde8] focus-within:border-[#b6c0d8]"
                 }`}
               >
                 <input
-                  className="min-w-0 flex-1 bg-transparent text-[0.74rem] font-semibold text-[#4f5980] outline-none"
+                  className="min-w-0 flex-1 bg-transparent text-[0.74rem] font-semibold text-[#4f5980] outline-none focus:outline-none focus-visible:!outline-none focus-visible:!outline-offset-0 [&::-ms-clear]:hidden [&::-ms-reveal]:hidden"
                   onChange={(e) => setPassword(e.target.value)}
                   type={showPassword ? "text" : "password"}
                   value={password}

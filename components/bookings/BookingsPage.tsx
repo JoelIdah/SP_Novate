@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { CalendarDays, ChevronDown, ChevronRight, ClipboardList, Compass, EllipsisVertical, MapPin, Search, Star } from "lucide-react";
 
 import { DashboardNavbar } from "../dashboard/DashboardNavbar";
@@ -114,6 +115,7 @@ const managedRows: ManagedBookingRow[] = [
 ];
 
 export default function BookingsPage() {
+  const router = useRouter();
   const [view, setView] = useState<"explore" | "manage">("explore");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [subject, setSubject] = useState("");
@@ -124,9 +126,9 @@ export default function BookingsPage() {
   const [rating, setRating] = useState("");
   const [isDateMenuOpen, setIsDateMenuOpen] = useState(false);
   const [isStatusMenuOpen, setIsStatusMenuOpen] = useState(false);
-  const [dateFrom, setDateFrom] = useState("2026-03-12");
-  const [dateTo, setDateTo] = useState("2026-03-16");
-  const [selectedStatus, setSelectedStatus] = useState<ManagedBookingRow["status"] | "All">("Pending");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState<ManagedBookingRow["status"] | "All">("All");
 
   const activeFilterCount = useMemo(
     () => [subject, category, location, days, time, rating].filter(Boolean).length,
@@ -136,14 +138,18 @@ export default function BookingsPage() {
     return managedRows.filter((row) => {
       const statusPass = selectedStatus === "All" ? true : row.status === selectedStatus;
       const rowDate = new Date(row.date);
-      const from = new Date(dateFrom);
-      const to = new Date(dateTo);
-      const datePass = !Number.isNaN(rowDate.valueOf()) && rowDate >= from && rowDate <= to;
+      const from = dateFrom ? new Date(dateFrom) : null;
+      const to = dateTo ? new Date(dateTo) : null;
+      const fromPass = from ? rowDate >= from : true;
+      const toPass = to ? rowDate <= to : true;
+      const datePass = !Number.isNaN(rowDate.valueOf()) && fromPass && toPass;
       return statusPass && datePass;
     });
   }, [dateFrom, dateTo, selectedStatus]);
 
-  const formatRangeLabel = `${dateFrom.replaceAll("-", "/")} - ${dateTo.replaceAll("-", "/")}`;
+  const formatRangeLabel = dateFrom || dateTo
+    ? `${dateFrom ? dateFrom.replaceAll("-", "/") : "..."} - ${dateTo ? dateTo.replaceAll("-", "/") : "..."}`
+    : "All dates";
 
   const resetFilters = () => {
     setSubject("");
@@ -237,10 +243,11 @@ export default function BookingsPage() {
         ) : null}
 
         {view === "explore" ? (
-          <div className="grid gap-4 lg:grid-cols-2">
+            <div className="grid gap-4 lg:grid-cols-2">
           {tutors.map((tutor, index) => (
-            <article
+            <Link
               key={`${tutor.name}-${index}`}
+              href="/bookings/tutor-profile"
               className="rounded-2xl border border-[#e8ecf3] bg-[#f6f8fc] p-3.5"
             >
               <div className="ui-card px-3 py-3">
@@ -293,16 +300,16 @@ export default function BookingsPage() {
                         </div>
                       </div>
 
-                      <Link className="inline-flex items-center gap-1 text-[0.7rem] font-semibold text-[#4f46e5]" href="/bookings/tutor-profile">
+                      <span className="inline-flex items-center gap-1 text-[0.7rem] font-semibold text-[#4f46e5]">
                         View profile
                         <ChevronRight className="h-3 w-3" />
-                      </Link>
+                      </span>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div className="mt-3 flex flex-wrap justify-end gap-2 px-1">
+              <div className="mt-3 flex flex-wrap justify-end gap-2 px-1" onClick={(e) => e.preventDefault()}>
                 <button
                   className="ui-btn-secondary min-w-[110px] px-4 py-2 text-[0.72rem] font-semibold"
                   type="button"
@@ -316,7 +323,7 @@ export default function BookingsPage() {
                   Book tutor
                 </button>
               </div>
-            </article>
+            </Link>
           ))}
           </div>
         ) : (
@@ -427,7 +434,13 @@ export default function BookingsPage() {
                   </thead>
                   <tbody>
                     {filteredManagedRows.map((row, index) => (
-                      <tr key={`${row.date}-${index}`} className="border-t border-[#edf0f6]">
+                      <tr
+                        key={`${row.date}-${index}`}
+                        className="cursor-pointer border-t border-[#edf0f6] hover:bg-[#fafbff]"
+                        onClick={() => {
+                          router.push(`/bookings/manage/${index + 1}`);
+                        }}
+                      >
                         <td className="px-3 py-2.5">{row.date}</td>
                         <td className="px-3 py-2.5">{row.tutor}</td>
                         <td className="px-3 py-2.5">{row.department}</td>
@@ -441,7 +454,11 @@ export default function BookingsPage() {
                           </span>
                         </td>
                         <td className="px-3 py-2.5 text-right">
-                          <button className="inline-flex h-6 w-6 items-center justify-center rounded-md text-[#6f768c]" type="button">
+                          <button
+                            className="inline-flex h-6 w-6 items-center justify-center rounded-md text-[#6f768c]"
+                            onClick={(e) => e.stopPropagation()}
+                            type="button"
+                          >
                             <EllipsisVertical className="h-3.5 w-3.5" />
                           </button>
                         </td>
@@ -462,7 +479,11 @@ export default function BookingsPage() {
 
             <div className="space-y-2 md:hidden">
               {filteredManagedRows.map((row, index) => (
-                <article key={`${row.date}-${index}`} className="rounded-none border-b border-[#edf0f6] bg-white px-2 py-3">
+                <Link
+                  key={`${row.date}-${index}`}
+                  className="block rounded-none border-b border-[#edf0f6] bg-white px-2 py-3"
+                  href={`/bookings/manage/${index + 1}`}
+                >
                   <div className="flex items-start justify-between gap-2">
                     <div>
                       <p className="text-[1rem] font-semibold text-[#2f3547]">{row.tutor}</p>
@@ -478,7 +499,7 @@ export default function BookingsPage() {
                       </button>
                     </div>
                   </div>
-                </article>
+                </Link>
               ))}
             </div>
           </section>

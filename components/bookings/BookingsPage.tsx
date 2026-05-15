@@ -6,6 +6,9 @@ import { useRouter } from "next/navigation";
 import { CalendarDays, ChevronDown, ChevronRight, ClipboardList, Compass, EllipsisVertical, MapPin, Search, Star } from "lucide-react";
 
 import { DashboardNavbar } from "../dashboard/DashboardNavbar";
+import { Avatar } from "../ui/Avatar";
+import { Button } from "../ui/Button";
+import { Card } from "../ui/Card";
 import ResponsiveSheet from "../ui/ResponsiveSheet";
 
 type TutorCard = {
@@ -250,20 +253,16 @@ export default function BookingsPage() {
               href="/bookings/tutor-profile"
               className="rounded-2xl border border-[#e8ecf3] bg-[#f6f8fc] p-3.5"
             >
-              <div className="ui-card px-3 py-3">
+              <Card className="px-3 py-3">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
                   <div className="relative h-16 w-16 shrink-0">
-                    <div
+                    <Avatar
+                      alt={tutor.name}
                       className="h-16 w-16 overflow-hidden rounded-xl"
-                      style={{
-                        background: tutor.avatarBg,
-                        color: tutor.avatarText,
-                      }}
-                    >
-                      <span className="flex h-full w-full items-center justify-center text-sm font-semibold">
-                        {tutor.initials}
-                      </span>
-                    </div>
+                      initials={tutor.initials}
+                      randomImage
+                      randomSeed={`${tutor.name}-${index}`}
+                    />
                     <span className="absolute -bottom-2 left-3 flex items-center gap-1 rounded-full bg-[#1b1848] px-2 py-0.5 text-[0.62rem] font-semibold text-white shadow">
                       <Star className="h-3 w-3 text-[#f7c845]" fill="currentColor" strokeWidth={1} />
                       {tutor.rating}
@@ -307,21 +306,15 @@ export default function BookingsPage() {
                     </div>
                   </div>
                 </div>
-              </div>
+              </Card>
 
               <div className="mt-3 flex flex-wrap justify-end gap-2 px-1" onClick={(e) => e.preventDefault()}>
-                <button
-                  className="ui-btn-secondary min-w-[110px] px-4 py-2 text-[0.72rem] font-semibold"
-                  type="button"
-                >
+                <Button className="min-w-[110px] px-4 py-2 text-[0.72rem] font-semibold" variant="secondary">
                   Send message
-                </button>
-                <button
-                  className="ui-btn-primary min-w-[110px] px-4 py-2 text-[0.72rem] font-semibold"
-                  type="button"
-                >
+                </Button>
+                <Button className="min-w-[110px] px-4 py-2 text-[0.72rem] font-semibold" variant="primary">
                   Book tutor
-                </button>
+                </Button>
               </div>
             </Link>
           ))}

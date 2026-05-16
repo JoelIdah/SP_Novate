@@ -53,7 +53,7 @@ function TutorOverviewSection() {
 
 export function TutorDashboardPage() {
   return (
-    <section className="app-page-wrap space-y-7 py-6">
+    <section className="mx-auto w-[min(calc(100%-(var(--app-gutter)*2)),var(--app-max-width))] space-y-7 py-6">
       <TutorActionsSection />
       <TutorOverviewSection />
 

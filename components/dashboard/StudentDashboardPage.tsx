@@ -9,10 +9,10 @@ import {
 
 export function StudentDashboardPage() {
   return (
-    <main className="app-page-shell bg-[#f6f7fb] text-[#2d3448]">
+    <main className="min-h-dvh bg-[#f6f7fb] text-[#2d3448]">
       <DashboardNavbar />
 
-      <section className="app-page-wrap space-y-7 py-6">
+      <section className="mx-auto w-[min(calc(100%-(var(--app-gutter)*2)),var(--app-max-width))] space-y-7 py-6">
         <DashboardActionsSection />
         <DashboardLearningOverviewSection />
 

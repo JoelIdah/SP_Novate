@@ -164,10 +164,10 @@ export default function BookingsPage() {
   };
 
   return (
-    <main className="app-page-shell bg-white text-[#2b3245]">
+    <main className="min-h-dvh bg-white text-[#2b3245]">
       <DashboardNavbar active="Bookings" />
 
-      <section className="app-page-wrap space-y-6 py-6">
+      <section className="mx-auto w-[min(calc(100%-(var(--app-gutter)*2)),var(--app-max-width))] space-y-6 py-6">
         <div className="flex flex-wrap gap-2">
           <button
             className={`inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-[0.72rem] font-semibold ${

@@ -4,13 +4,13 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useRef, useState } from "react";
 
-import { startAppleAuth } from "./social/apple";
 import { startFacebookAuth } from "./social/facebook";
 import { startGoogleAuth } from "./social/google";
 import { SocialAuthButtons } from "./social/SocialAuthButtons";
 
 import { socialAuthApi } from "./social/socialAuthApi";
 import type { SocialProvider } from "./social/types";
+import { DIRECT_ONBOARDING_ENABLED } from "../../config/featureFlags";
 
 function EyeIcon({ open }: { open: boolean }) {
   if (open) {
@@ -71,6 +71,7 @@ export function AccountStep({
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const isDirectOnboardingDisabled = !DIRECT_ONBOARDING_ENABLED;
 
   const focusEmail = () => {
     emailInputRef.current?.focus();
@@ -115,6 +116,11 @@ export function AccountStep({
       }
 
       if (result.profileSetupRequired) {
+        if (isDirectOnboardingDisabled) {
+          router.push("/coming-soon");
+          return;
+        }
+
         if (result.token) {
           localStorage.setItem("sp_profile_setup_token", result.token);
         }
@@ -129,6 +135,10 @@ export function AccountStep({
 
       if (result.token) {
         localStorage.setItem("sp_access_token", result.token);
+      }
+      if (isDirectOnboardingDisabled) {
+        router.push("/coming-soon");
+        return;
       }
       router.push("/dashboard");
     } catch {
@@ -175,26 +185,6 @@ export function AccountStep({
       },
       onToken: (token) => {
         void handleSocialAuth("facebook", token);
-      },
-    });
-  };
-
-  const handleAppleClick = () => {
-    setSuccessMessage("");
-    setEmailError("");
-    setFirstNameError("");
-    setLastNameError("");
-    setPasswordError("");
-    setConfirmPasswordError("");
-    setSocialError("");
-    startAppleAuth({
-      onError: (message) => {
-        if (isIgnorableSocialError(message)) return;
-        setSocialError(message);
-        setSuccessMessage("");
-      },
-      onToken: (token) => {
-        void handleSocialAuth("apple", token);
       },
     });
   };
@@ -380,12 +370,12 @@ export function AccountStep({
         <label className="block text-[0.78em] font-semibold text-[#6f778c]">
           Password
           <div
-            className={`mt-[0.4em] flex h-[2.9em] items-center rounded-[0.5em] border px-[1em] ${
+            className={`mt-[0.4em] flex h-[2.9em] items-center rounded-[0.5em] border px-[1em] focus-within:outline-2 focus-within:outline-[#6b68e8] focus-within:outline-offset-2 ${
               passwordError ? "border-[#d04b4b]" : "border-[#d8dde8] focus-within:border-[#b6c0d8]"
             }`}
           >
             <input
-              className="min-w-0 flex-1 bg-transparent text-[0.82em] font-semibold text-[#4f5980] outline-none [&::-ms-clear]:hidden [&::-ms-reveal]:hidden"
+              className="min-w-0 flex-1 bg-transparent text-[0.82em] font-semibold text-[#4f5980] outline-none focus:outline-none focus-visible:!outline-none focus-visible:!outline-offset-0 [&::-ms-clear]:hidden [&::-ms-reveal]:hidden"
               onChange={(e) => {
                 const nextPassword = e.target.value;
                 setPassword(nextPassword);
@@ -419,12 +409,12 @@ export function AccountStep({
         <label className="block text-[0.78em] font-semibold text-[#6f778c]">
           Confirm password
           <div
-            className={`mt-[0.4em] flex h-[2.9em] items-center rounded-[0.5em] border px-[1em] ${
+            className={`mt-[0.4em] flex h-[2.9em] items-center rounded-[0.5em] border px-[1em] focus-within:outline-2 focus-within:outline-[#6b68e8] focus-within:outline-offset-2 ${
               confirmPasswordError ? "border-[#d04b4b]" : "border-[#d8dde8] focus-within:border-[#b6c0d8]"
             }`}
           >
             <input
-              className="min-w-0 flex-1 bg-transparent text-[0.82em] font-semibold text-[#4f5980] outline-none [&::-ms-clear]:hidden [&::-ms-reveal]:hidden"
+              className="min-w-0 flex-1 bg-transparent text-[0.82em] font-semibold text-[#4f5980] outline-none focus:outline-none focus-visible:!outline-none focus-visible:!outline-offset-0 [&::-ms-clear]:hidden [&::-ms-reveal]:hidden"
               onChange={(e) => {
                 const nextConfirmPassword = e.target.value;
                 setConfirmPassword(nextConfirmPassword);
@@ -475,7 +465,7 @@ export function AccountStep({
 
       <SocialAuthButtons
         activeSocialProvider={activeSocialProvider}
-        onAppleClick={handleAppleClick}
+        enableApple={false}
         onFacebookClick={handleFacebookClick}
         onGoogleClick={handleGoogleClick}
       />

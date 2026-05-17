@@ -6,13 +6,13 @@ import { useState } from "react";
 
 import { AuthCardHeader } from "../signup/AuthCardHeader";
 import { SocialAuthButtons } from "../signup/social/SocialAuthButtons";
-import { startAppleAuth } from "../signup/social/apple";
 import { startFacebookAuth } from "../signup/social/facebook";
 import { startGoogleAuth } from "../signup/social/google";
 
 import { socialAuthApi } from "../signup/social/socialAuthApi";
 import type { SocialProvider } from "../signup/social/types";
 import { AuthShell } from "../signup/AuthShell";
+import { DIRECT_ONBOARDING_ENABLED } from "../../config/featureFlags";
 
 function EyeIcon({ open }: { open: boolean }) {
   if (open) {
@@ -59,7 +59,7 @@ export function LoginPageContent() {
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [redirectError, setRedirectError] = useState("");
-  const isDirectOnboardingDisabled = process.env.NEXT_PUBLIC_DISABLE_NOVATE_DIRECT_ONBOARDING === "true";
+  const isDirectOnboardingDisabled = !DIRECT_ONBOARDING_ENABLED;
   const redirectToComingSoon = () => {
     router.push("/coming-soon");
   };
@@ -320,16 +320,12 @@ export function LoginPageContent() {
             return;
           }
 
-          const role = data?.data?.user?.role;
           const params = new URLSearchParams({
             view: "flow",
             stage: "setup",
             step: "personal",
             mode: "form",
           });
-          if (role === "student" || role === "tutor") {
-            params.set("role", role);
-          }
           router.push(`/signup?${params.toString()}`);
           return;
         }
@@ -440,15 +436,7 @@ export function LoginPageContent() {
           <div className="space-y-[0.55em]">
             <SocialAuthButtons
               activeSocialProvider={activeSocialProvider}
-              onAppleClick={() => {
-                setSocialError("");
-                startAppleAuth({
-                  onError: (message) => setSocialError(message),
-                  onToken: (token) => {
-                    void handleSocialAuth("apple", token);
-                  },
-                });
-              }}
+              enableApple={false}
               onFacebookClick={() => {
                 setSocialError("");
                 startFacebookAuth({

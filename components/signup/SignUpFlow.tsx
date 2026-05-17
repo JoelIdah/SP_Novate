@@ -8,22 +8,17 @@ import { AuthCardHeader } from "./AuthCardHeader";
 import { AuthShell } from "./AuthShell";
 import { OtpStep } from "./OtpStep";
 import { StudentFlow } from "./student/StudentFlow";
-import { TutorFlow } from "./tutor/TutorFlow";
-import type { SetupMode, SetupStepId, SignUpFlowStage, SignUpRole, SignUpView } from "./types";
+import type { SetupMode, SetupStepId, SignUpFlowStage, SignUpView } from "./types";
+import { DIRECT_ONBOARDING_ENABLED } from "../../config/featureFlags";
 
 type SignUpUrlState = {
   mode: SetupMode;
-  role: SignUpRole | null;
   stage: SignUpFlowStage;
   step: SetupStepId;
   view: SignUpView;
 };
 
 type AccountProfile = { email?: string; firstName?: string; lastName?: string };
-
-function parseRole(value: string | null): SignUpRole | null {
-  return value === "student" || value === "tutor" ? value : null;
-}
 
 function parseView(value: string | null): SignUpView {
   return value === "account" || value === "otp" || value === "flow" ? value : "account";
@@ -41,15 +36,14 @@ function parseMode(value: string | null): SetupMode {
   return value === "review" || value === "success" ? value : "form";
 }
 
-function normalizeStepForRole(step: SetupStepId, role: SignUpRole | null): SetupStepId {
-  if (role !== "tutor" && (step === "identification" || step === "compensation")) {
+function normalizeStep(step: SetupStepId): SetupStepId {
+  if (step === "identification" || step === "compensation") {
     return "personal";
   }
   return step;
 }
 
 function readUrlState(searchParams: URLSearchParams): SignUpUrlState {
-  const role = parseRole(searchParams.get("role"));
   const view = parseView(searchParams.get("view"));
 
   let stage = parseStage(searchParams.get("stage"));
@@ -57,12 +51,11 @@ function readUrlState(searchParams: URLSearchParams): SignUpUrlState {
     stage = "overview";
   }
 
-  const step = normalizeStepForRole(parseStep(searchParams.get("step")), role);
+  const step = normalizeStep(parseStep(searchParams.get("step")));
   const mode = parseMode(searchParams.get("mode"));
 
   return {
     mode: stage === "setup" ? mode : "form",
-    role,
     stage,
     step: stage === "setup" ? step : "personal",
     view,
@@ -76,23 +69,18 @@ export function SignUpFlow() {
 
   const urlState = useMemo(() => readUrlState(new URLSearchParams(searchParams.toString())), [searchParams]);
   const [accountProfile, setAccountProfile] = useState<AccountProfile>({});
+  const isDirectOnboardingDisabled = !DIRECT_ONBOARDING_ENABLED;
 
   const writeUrlState = (nextState: Partial<SignUpUrlState>) => {
-    const role = nextState.role !== undefined ? nextState.role : urlState.role;
     const view = nextState.view ?? urlState.view;
     const stage = nextState.stage ?? urlState.stage;
-    const step = normalizeStepForRole(nextState.step ?? urlState.step, role);
+    const step = normalizeStep(nextState.step ?? urlState.step);
     const mode = nextState.mode ?? urlState.mode;
 
     const params = new URLSearchParams(searchParams.toString());
 
     params.set("view", view);
-
-    if (role) {
-      params.set("role", role);
-    } else {
-      params.delete("role");
-    }
+    params.delete("role");
 
     if (view === "flow") {
       params.set("stage", stage);
@@ -117,29 +105,9 @@ export function SignUpFlow() {
     router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
   };
 
-  if (urlState.view === "flow" && urlState.role !== "tutor") {
+  if (urlState.view === "flow") {
     return (
       <StudentFlow
-        accountProfile={accountProfile}
-        onBackToAccount={() => {
-          writeUrlState({ mode: "form", stage: "overview", step: "personal", view: "account" });
-        }}
-        onSetupStateChange={({ mode, stepId }) => {
-          writeUrlState({ mode, stage: "setup", step: stepId, view: "flow" });
-        }}
-        onStageChange={(stage) => {
-          writeUrlState({ mode: "form", stage, view: "flow" });
-        }}
-        setupMode={urlState.mode}
-        setupStepId={urlState.step}
-        stage={urlState.stage}
-      />
-    );
-  }
-
-  if (urlState.view === "flow" && urlState.role === "tutor") {
-    return (
-      <TutorFlow
         accountProfile={accountProfile}
         onBackToAccount={() => {
           writeUrlState({ mode: "form", stage: "overview", step: "personal", view: "account" });
@@ -178,8 +146,9 @@ export function SignUpFlow() {
                 lastName: payload.lastName || prev.lastName,
               }));
 
-              if (payload.role === "student" || payload.role === "tutor") {
-                writeUrlState({ role: payload.role });
+              if (isDirectOnboardingDisabled) {
+                router.push("/coming-soon");
+                return;
               }
 
               writeUrlState({ mode: "form", stage: "overview", step: "personal", view: "flow" });

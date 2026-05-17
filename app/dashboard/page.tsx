@@ -1,8 +1,9 @@
 import { redirect } from "next/navigation";
 import NewDashboardPage from "../../components/dashboard/NewDashboardPage";
+import { DIRECT_ONBOARDING_ENABLED } from "../../config/featureFlags";
 
 export default function DashboardPage() {
-  if (process.env.NEXT_PUBLIC_DISABLE_NOVATE_DIRECT_ONBOARDING === "true") {
+  if (!DIRECT_ONBOARDING_ENABLED) {
     redirect("/coming-soon");
   }
 

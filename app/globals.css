@@ -162,6 +162,41 @@ input:focus-visible {
   min-height: 0;
 }
 
+@media (min-width: 1024px) {
+  .dashboard-content-frame {
+    font-size: clamp(0.68rem, 0.72vw, 1.35rem);
+  }
+}
+
+@media (max-width: 1023px) {
+  .dashboard-main {
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  .dashboard-stack {
+    overflow: visible;
+    min-height: max-content;
+    padding-bottom: clamp(0.8rem, 1.4vh, 1.8rem);
+  }
+
+  .dashboard-section-fill {
+    display: block;
+  }
+
+  .dashboard-section-fill-grid {
+    align-items: start;
+  }
+
+  .dashboard-section-fill-card {
+    display: block;
+  }
+
+  .dashboard-section-fill-body {
+    min-height: auto;
+  }
+}
+
 @media (max-height: 820px) {
   :root { --panel-gap: 0.6rem; }
   .dashboard-stack { gap: 0.75rem; }

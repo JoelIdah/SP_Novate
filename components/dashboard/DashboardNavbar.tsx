@@ -35,7 +35,7 @@ export function DashboardNavbar({ active = "Home" }: { active?: NavLabel }) {
   }, [isMenuOpen]);
 
   return (
-    <header className="dashboard-header z-50 border-b border-[#E8EAF1] bg-white shadow-[0_2px_10px_rgba(33,38,79,0.08)]">
+    <header className="dashboard-header z-50 border-b border-[#E8EAF1] bg-white shadow-[0_0.14em_0.7em_rgba(33,38,79,0.08)]">
       <div className="relative flex h-[var(--topbar-h)] w-full items-center px-[0.9em]">
         <div className="z-10 flex items-center">
           <Link href="/dashboard">
@@ -71,11 +71,12 @@ export function DashboardNavbar({ active = "Home" }: { active?: NavLabel }) {
 
         <div className="z-10 ml-auto flex items-center justify-end gap-[0.65em]">
           <button
-            className="inline-flex h-9 w-9 items-center justify-center rounded-md text-[#2e3448] lg:hidden"
+            aria-label={isMenuOpen ? "Close navigation menu" : "Open navigation menu"}
+            className="inline-flex h-[2.2em] w-[2.2em] items-center justify-center rounded-[0.35em] text-[#2e3448] lg:hidden"
             onClick={() => setIsMenuOpen((prev) => !prev)}
             type="button"
           >
-            {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            {isMenuOpen ? <X className="h-[1.15em] w-[1.15em]" /> : <Menu className="h-[1.15em] w-[1.15em]" />}
           </button>
 
           <button className="hidden rounded-full border border-[#E6E8EF] bg-[#F2F3F7] px-[1em] py-[0.4em] text-[0.9em] font-semibold text-[#454B5D] transition hover:bg-[#EBEDF3] lg:inline-flex">
@@ -99,22 +100,27 @@ export function DashboardNavbar({ active = "Home" }: { active?: NavLabel }) {
             onClick={() => setIsMenuOpen(false)}
             type="button"
           />
-          <div className={`absolute right-0 top-0 h-full w-[min(82vw,21rem)] border-l border-[#e6eaf3] bg-white p-4 shadow-2xl transition-transform duration-200 ${isMenuOpen ? "translate-x-0" : "translate-x-full"}`}>
-            <div className="mb-4 flex items-center justify-between">
-              <p className="text-[0.9rem] font-semibold text-[#4a5166]">Navigate</p>
-              <button className="inline-flex h-8 w-8 items-center justify-center rounded-md text-[#2e3448]" onClick={() => setIsMenuOpen(false)} type="button">
-                <X className="h-5 w-5" />
+          <div className={`absolute right-0 top-0 h-full w-[min(82vw,21em)] border-l border-[#e6eaf3] bg-white p-[1em] shadow-2xl transition-transform duration-200 ${isMenuOpen ? "translate-x-0" : "translate-x-full"}`}>
+            <div className="mb-[1em] flex items-center justify-between">
+              <p className="text-[0.9em] font-semibold text-[#4a5166]">Navigate</p>
+              <button
+                aria-label="Close navigation menu"
+                className="inline-flex h-[2em] w-[2em] items-center justify-center rounded-[0.35em] text-[#2e3448]"
+                onClick={() => setIsMenuOpen(false)}
+                type="button"
+              >
+                <X className="h-[1.15em] w-[1.15em]" />
               </button>
             </div>
 
-            <nav className="grid grid-cols-1 gap-2">
+            <nav className="grid grid-cols-1 gap-[0.5em]">
               {navItems.map((item) => {
                 const isActive = item.label === active;
 
                 return (
                   <Link
                     key={item.label}
-                    className={`rounded-lg border px-3 py-2 text-[0.82rem] font-semibold ${
+                    className={`rounded-[0.55em] border px-[0.9em] py-[0.65em] text-[0.82em] font-semibold ${
                       isActive
                         ? "border-[#d8daf8] bg-[#eef0ff] text-[#4A46D6]"
                         : "border-[#e6eaf3] bg-white text-[#5F6678]"

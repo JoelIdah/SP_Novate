@@ -36,14 +36,14 @@ export function DashboardNavbar({ active = "Home" }: { active?: NavLabel }) {
 
   return (
     <header className="dashboard-header z-50 border-b border-[#E8EAF1] bg-white shadow-[0_2px_10px_rgba(33,38,79,0.08)]">
-      <div className="relative flex h-[var(--topbar-h)] w-full items-center px-[clamp(0.75rem,1.2vw,1.2rem)]">
+      <div className="relative flex h-[var(--topbar-h)] w-full items-center px-[0.9em]">
         <div className="z-10 flex items-center">
           <Link href="/dashboard">
-            <Image alt="SP Novate" className="h-9 w-auto" height={36} src="/logo/logo.png" width={36} />
+            <Image alt="SP Novate" className="h-[2.1em] w-auto" height={36} src="/logo/logo.png" width={36} />
           </Link>
         </div>
 
-        <nav className="absolute left-1/2 top-1/2 hidden h-full -translate-x-1/2 -translate-y-1/2 items-center justify-center gap-[clamp(0.7rem,1.5vw,2.2rem)] overflow-x-auto navbar-scroll px-1 lg:flex">
+        <nav className="absolute left-1/2 top-1/2 hidden h-full -translate-x-1/2 -translate-y-1/2 items-center justify-center gap-[1.2em] overflow-x-auto navbar-scroll px-[0.3em] lg:flex">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = item.label === active;
@@ -52,24 +52,24 @@ export function DashboardNavbar({ active = "Home" }: { active?: NavLabel }) {
               <Link
                 key={item.label}
                 href={item.href}
-                className={`relative flex h-full min-w-[3.5rem] flex-col items-center justify-center gap-[2px] px-2 text-[clamp(0.9rem,0.78vw,1.02rem)] font-semibold leading-[150%] transition-colors ${
+                className={`relative flex h-full min-w-[4em] flex-col items-center justify-center gap-[0.15em] px-[0.55em] text-[0.95em] font-semibold leading-[150%] transition-colors ${
                   isActive ? "text-[#4A46D6]" : "text-[#5F6678] hover:text-[#434B5F]"
                 }`}
               >
                 <Icon
                   strokeWidth={1.9}
-                  className={`h-[clamp(0.76rem,0.76vw,1.08rem)] w-[clamp(0.76rem,0.76vw,1.08rem)] ${isActive ? "text-[#7073EA]" : "text-[#A6ADBD]"}`}
+                  className={`h-[0.95em] w-[0.95em] ${isActive ? "text-[#7073EA]" : "text-[#A6ADBD]"}`}
                 />
                 <span>{item.label}</span>
                 {isActive && (
-                  <span className="absolute bottom-0 h-[clamp(0.12rem,0.16vw,0.24rem)] w-[clamp(3.8rem,4vw,6rem)] rounded-full bg-[#4B49D8]" />
+                  <span className="absolute bottom-0 h-[0.14em] w-[4.4em] rounded-full bg-[#4B49D8]" />
                 )}
               </Link>
             );
           })}
         </nav>
 
-        <div className="z-10 ml-auto flex items-center justify-end gap-[clamp(0.35rem,0.9vw,1.1rem)]">
+        <div className="z-10 ml-auto flex items-center justify-end gap-[0.65em]">
           <button
             className="inline-flex h-9 w-9 items-center justify-center rounded-md text-[#2e3448] lg:hidden"
             onClick={() => setIsMenuOpen((prev) => !prev)}
@@ -78,15 +78,15 @@ export function DashboardNavbar({ active = "Home" }: { active?: NavLabel }) {
             {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
 
-          <button className="hidden rounded-full border border-[#E6E8EF] bg-[#F2F3F7] px-[clamp(0.85rem,1.1vw,1.4rem)] py-[clamp(0.35rem,0.55vw,0.6rem)] text-[clamp(0.9rem,0.75vw,1rem)] font-semibold text-[#454B5D] transition hover:bg-[#EBEDF3] lg:inline-flex">
+          <button className="hidden rounded-full border border-[#E6E8EF] bg-[#F2F3F7] px-[1em] py-[0.4em] text-[0.9em] font-semibold text-[#454B5D] transition hover:bg-[#EBEDF3] lg:inline-flex">
             Become a tutor
           </button>
 
-          <button className="hidden items-center gap-[clamp(0.25rem,0.45vw,0.55rem)] rounded-full bg-[#F1F2F6] px-[clamp(0.25rem,0.45vw,0.55rem)] py-[clamp(0.25rem,0.45vw,0.55rem)] lg:flex">
-            <div className="flex h-[clamp(1.6rem,2.1vw,2.35rem)] w-[clamp(1.6rem,2.1vw,2.35rem)] items-center justify-center rounded-full bg-[#221D71] text-[clamp(0.9rem,0.75vw,1rem)] font-semibold text-white">
+          <button className="hidden items-center gap-[0.35em] rounded-full bg-[#F1F2F6] px-[0.35em] py-[0.35em] lg:flex">
+            <div className="flex h-[2em] w-[2em] items-center justify-center rounded-full bg-[#221D71] text-[0.9em] font-semibold text-white">
               O
             </div>
-            <ChevronDown className="h-[clamp(0.8rem,1vw,1.1rem)] w-[clamp(0.8rem,1vw,1.1rem)] text-[#8E93A1]" />
+            <ChevronDown className="h-[0.9em] w-[0.9em] text-[#8E93A1]" />
           </button>
         </div>
       </div>

@@ -159,7 +159,7 @@ export function SignUpFlow() {
 
   return (
     <AuthShell>
-      <div className="auth-card relative rounded-[1.35em] border-[0.08em] border-[#d9dde8] bg-gradient-to-b from-white to-[#fcfdff] px-[1.5em] pb-[1.35em] pt-[1.3em] shadow-[0_14px_34px_rgba(23,30,63,0.11)]">
+      <div className="auth-card relative rounded-[2em] border-[0.08em] border-[#d9dde8] bg-gradient-to-b from-white to-[#fcfdff] px-[1.5em] pb-[1.35em] pt-[1.3em] shadow-[0_14px_34px_rgba(23,30,63,0.11)]">
         {urlState.view !== "otp" ? <AuthCardHeader /> : null}
         {urlState.view === "account" ? (
           <AccountStep

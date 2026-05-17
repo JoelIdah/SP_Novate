@@ -166,7 +166,7 @@ function ForgotPasswordPageContent() {
 
   return (
     <AuthShell>
-      <div className="auth-card relative rounded-[clamp(1rem,1.05vw,1.4rem)] border border-[#d9dde8] bg-white/95 px-[clamp(0.95rem,0.9vw,1.35rem)] pb-[clamp(0.95rem,1vw,1.35rem)] pt-[clamp(1.9rem,2vw,2.6rem)] shadow-[0_9px_26px_rgba(23,30,63,0.09)]">
+      <div className="auth-card relative rounded-[1.35em] border-[0.08em] border-[#d9dde8] bg-white/95 px-[1.5em] pb-[1.35em] pt-[1.3em] shadow-[0_9px_26px_rgba(23,30,63,0.09)]">
         <AuthCardHeader
           promptLinkHref="/login"
           promptLinkLabel="Log In"
@@ -175,43 +175,43 @@ function ForgotPasswordPageContent() {
         />
 
         {token ? (
-          <form className="mx-auto mt-3.5 w-full max-w-[var(--auth-form-max-w)]" onSubmit={handleReset}>
-            <div className="mt-3.5 space-y-1.5">
-              <label className="block text-[0.71rem] font-semibold text-[#6f778c]">
+          <form className="mx-auto mt-[1.1em] w-full max-w-[22.5em]" onSubmit={handleReset}>
+            <div className="mt-[1.1em] space-y-[0.6em]">
+              <label className="block text-[0.78em] font-semibold text-[#6f778c]">
                 New password
-                <div className={`mt-1.5 flex h-8.5 items-center rounded-[0.45rem] border px-3 ${passwordError ? "border-[#d04b4b]" : "border-[#d8dde8] focus-within:border-[#b6c0d8]"}`}>
-                  <input className="min-w-0 flex-1 bg-transparent text-[0.74rem] font-semibold text-[#4f5980] outline-none" onChange={(e) => setPassword(e.target.value)} type={showPassword ? "text" : "password"} value={password} />
+                <div className={`mt-[0.4em] flex h-[2.9em] items-center rounded-[0.5em] border px-[1em] ${passwordError ? "border-[#d04b4b]" : "border-[#d8dde8] focus-within:border-[#b6c0d8]"}`}>
+                  <input className="min-w-0 flex-1 bg-transparent text-[0.82em] font-semibold text-[#4f5980] outline-none" onChange={(e) => setPassword(e.target.value)} type={showPassword ? "text" : "password"} value={password} />
                   <button aria-label={showPassword ? "Hide password" : "Show password"} className="text-[#7b84a0] hover:text-[#2187d3]" onClick={() => setShowPassword((v) => !v)} type="button"><EyeIcon open={showPassword} /></button>
                 </div>
-                <div className={`overflow-hidden transition-all duration-200 ease-out ${passwordError ? "mt-0.5 max-h-5 opacity-100" : "max-h-0 opacity-0"}`}><span className="block text-[0.64rem] font-medium leading-tight text-[#d04b4b]">{passwordError}</span></div>
+                <div className={`overflow-hidden transition-all duration-200 ease-out ${passwordError ? "mt-[0.25em] max-h-[1.6em] opacity-100" : "max-h-0 opacity-0"}`}><span className="block text-[0.64em] font-medium leading-tight text-[#d04b4b]">{passwordError}</span></div>
               </label>
 
-              <label className="block text-[0.71rem] font-semibold text-[#6f778c]">
+              <label className="block text-[0.78em] font-semibold text-[#6f778c]">
                 Confirm password
-                <div className={`mt-1.5 flex h-8.5 items-center rounded-[0.45rem] border px-3 ${confirmPasswordError ? "border-[#d04b4b]" : "border-[#d8dde8] focus-within:border-[#b6c0d8]"}`}>
-                  <input className="min-w-0 flex-1 bg-transparent text-[0.74rem] font-semibold text-[#4f5980] outline-none" onChange={(e) => setConfirmPassword(e.target.value)} type={showConfirmPassword ? "text" : "password"} value={confirmPassword} />
+                <div className={`mt-[0.4em] flex h-[2.9em] items-center rounded-[0.5em] border px-[1em] ${confirmPasswordError ? "border-[#d04b4b]" : "border-[#d8dde8] focus-within:border-[#b6c0d8]"}`}>
+                  <input className="min-w-0 flex-1 bg-transparent text-[0.82em] font-semibold text-[#4f5980] outline-none" onChange={(e) => setConfirmPassword(e.target.value)} type={showConfirmPassword ? "text" : "password"} value={confirmPassword} />
                   <button aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"} className="text-[#7b84a0] hover:text-[#2187d3]" onClick={() => setShowConfirmPassword((v) => !v)} type="button"><EyeIcon open={showConfirmPassword} /></button>
                 </div>
-                <div className={`overflow-hidden transition-all duration-200 ease-out ${confirmPasswordError ? "mt-0.5 max-h-5 opacity-100" : "max-h-0 opacity-0"}`}><span className="block text-[0.64rem] font-medium leading-tight text-[#d04b4b]">{confirmPasswordError}</span></div>
+                <div className={`overflow-hidden transition-all duration-200 ease-out ${confirmPasswordError ? "mt-[0.25em] max-h-[1.6em] opacity-100" : "max-h-0 opacity-0"}`}><span className="block text-[0.64em] font-medium leading-tight text-[#d04b4b]">{confirmPasswordError}</span></div>
               </label>
             </div>
 
-            <button className="mt-3 h-9.5 w-full rounded-full bg-[#231d71] text-[0.8rem] font-semibold text-white disabled:cursor-not-allowed disabled:opacity-70" disabled={isResetting} type="submit">{isResetting ? "Resetting..." : "Reset password"}</button>
-            <div className={`overflow-hidden text-center transition-all duration-200 ease-out ${successMessage ? "mt-2 max-h-5 opacity-100" : "max-h-0 opacity-0"}`}><p className="text-[0.64rem] font-medium text-[#247f57]">{successMessage}</p></div>
+            <button className="mt-[0.95em] h-[3em] w-full rounded-full bg-[#231d71] text-[0.84em] font-semibold text-white disabled:cursor-not-allowed disabled:opacity-70" disabled={isResetting} type="submit">{isResetting ? "Resetting..." : "Reset password"}</button>
+            <div className={`overflow-hidden text-center transition-all duration-200 ease-out ${successMessage ? "mt-[0.7em] max-h-[1.6em] opacity-100" : "max-h-0 opacity-0"}`}><p className="text-[0.68em] font-medium text-[#247f57]">{successMessage}</p></div>
           </form>
         ) : (
-          <form className="mx-auto mt-3.5 w-full max-w-[var(--auth-form-max-w)]" onSubmit={handleSend}>
-            <div className="mt-3.5 space-y-1.5">
-              <label className="block text-[0.71rem] font-semibold text-[#6f778c]">
+          <form className="mx-auto mt-[1.1em] w-full max-w-[22.5em]" onSubmit={handleSend}>
+            <div className="mt-[1.1em] space-y-[0.6em]">
+              <label className="block text-[0.78em] font-semibold text-[#6f778c]">
                 Email
-                <input className={`mt-1.5 h-8.5 w-full rounded-[0.45rem] border px-3 text-[0.74rem] font-semibold text-[#4f5980] outline-none ${emailError ? "border-[#d04b4b]" : "border-[#d8dde8] focus:border-[#b6c0d8]"}`} onChange={(e) => setEmail(e.target.value)} placeholder="Enter your email" type="email" value={email} />
-                <div className={`overflow-hidden transition-all duration-200 ease-out ${emailError ? "mt-0.5 max-h-5 opacity-100" : "max-h-0 opacity-0"}`}><span className="block text-[0.64rem] font-medium leading-tight text-[#d04b4b]">{emailError}</span></div>
+                <input className={`mt-[0.4em] h-[2.9em] w-full rounded-[0.5em] border px-[1em] text-[0.82em] font-semibold text-[#4f5980] outline-none ${emailError ? "border-[#d04b4b]" : "border-[#d8dde8] focus:border-[#b6c0d8]"}`} onChange={(e) => setEmail(e.target.value)} placeholder="Enter your email" type="email" value={email} />
+                <div className={`overflow-hidden transition-all duration-200 ease-out ${emailError ? "mt-[0.25em] max-h-[1.6em] opacity-100" : "max-h-0 opacity-0"}`}><span className="block text-[0.64em] font-medium leading-tight text-[#d04b4b]">{emailError}</span></div>
               </label>
             </div>
 
-            <button className="mt-3 h-9.5 w-full rounded-full bg-[#231d71] text-[0.8rem] font-semibold text-white disabled:cursor-not-allowed disabled:opacity-70" disabled={isSending} type="submit">{isSending ? "Sending..." : "Send reset link"}</button>
+            <button className="mt-[0.95em] h-[3em] w-full rounded-full bg-[#231d71] text-[0.84em] font-semibold text-white disabled:cursor-not-allowed disabled:opacity-70" disabled={isSending} type="submit">{isSending ? "Sending..." : "Send reset link"}</button>
 
-            <p className="mt-3 text-center text-[0.71rem] font-medium text-[#8d95a8]">
+            <p className="mt-[0.95em] text-center text-[0.78em] font-medium text-[#8d95a8]">
               Back to{" "}
               <Link href="/login" className="font-semibold text-[#2187d3] transition-colors hover:text-[#17679f]">Log In</Link>
             </p>

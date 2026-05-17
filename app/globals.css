@@ -1,43 +1,20 @@
 @import "tailwindcss";
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   DESIGN TOKENS
-
-   Philosophy: everything scales proportionally with viewport width using vw.
-   No pixel breakpoints needed. clamp(MIN, SLOPE, MAX) handles all screen sizes:
-     • MIN  — floor so nothing gets unreadably small on narrow screens
-     • SLOPE — vw-based so it grows proportionally with whatever screen is used
-     • MAX  — ceiling so nothing goes absurd on projectors or huge monitors
-
-   The single most important lever is font-size on the shell wrappers.
-   Everything inside those wrappers uses em, so they all scale for free.
-───────────────────────────────────────────────────────────────────────────── */
-
 :root {
-  /* ── Layout ── */
   --app-max-width:        100%;
   --app-gutter:           clamp(1rem, 2vw, 3rem);
-
   --dashboard-max-width:  100%;
   --dashboard-gutter:     var(--app-gutter);
-
-  /* Topbar scales gently with viewport width */
   --topbar-h:             clamp(3rem, 2.4rem + 1vw, 5.5rem);
-
-  /* Gap between dashboard cards */
   --panel-gap:            clamp(0.6rem, 0.5rem + 0.5vw, 1.8rem);
-
-  /* Sidebar, controls, rail — all proportional */
   --sidebar-w:            clamp(14rem, 12rem + 4vw, 22rem);
   --controls-h:           clamp(3rem, 2.5rem + 0.8vw, 4.5rem);
   --content-pad:          clamp(0.6rem, 0.4rem + 0.6vw, 1.4rem);
   --rail-w:               clamp(3rem, 2.5rem + 0.8vw, 4.2rem);
   --modal-max-w:          clamp(18rem, 40vw, 46rem);
-
   --content-h:            calc(100dvh - var(--topbar-h));
   --stage-h:              calc(var(--content-h) - var(--controls-h));
 
-  /* ── Brand colours ── */
   --brand-surface:        #eef0f8;
   --brand-card:           #ffffff;
   --brand-ink:            #1a1e2a;
@@ -64,20 +41,12 @@
   --color-brand-primary-soft: var(--brand-primary-soft);
 }
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   BASE
-───────────────────────────────────────────────────────────────────────────── */
-
 html,
 body {
   min-height: 100dvh;
 }
 
 html {
-  /*
-    14px base keeps the normal laptop screen feeling like the design.
-    The vw-based font-size on shell wrappers handles all scaling above this.
-  */
   font-size: 14px;
 }
 
@@ -106,15 +75,6 @@ input:focus-visible {
   outline-offset: 2px;
 }
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   AUTH SHELL
-   .app-content-wrap is the single scaling lever for all non-dashboard pages.
-   font-size here uses 1.2vw — meaning the card always occupies the same
-   visual proportion of the screen, on any screen, with no breakpoints needed.
-   Everything inside (.auth-panel, the card, inputs, buttons) uses em, so
-   they all scale automatically for free.
-───────────────────────────────────────────────────────────────────────────── */
-
 .app-screen {
   position: relative;
   height: 100dvh;
@@ -130,36 +90,13 @@ input:focus-visible {
   align-items: center;
   overflow: hidden;
   padding-block: clamp(0.5rem, 1.6vh, 1.6rem);
-
-  /*
-    THE scaling lever for all auth pages.
-    1.2vw means: always be 1.2% of the viewport width.
-    min  0.875rem — never smaller than ~12px, so small laptops stay readable
-    max  2.6rem   — never larger than ~36px, so nothing goes absurd
-    Gradual, continuous, proportional on every screen size.
-  */
   font-size: clamp(0.875rem, 0.8vw, 4.5rem);
 }
 
 .auth-panel {
-  /*
-    28em here means 28× the font-size of .app-content-wrap.
-    So as font-size grows with vw, the panel grows with it proportionally.
-    No fixed pixel width anywhere.
-  */
   width: min(100%, 28em);
   margin-inline: auto;
 }
-
-.auth-card {
-  border-radius: 1.5rem;
-}
-
-/* ─────────────────────────────────────────────────────────────────────────────
-   DASHBOARD SHELL
-   Same philosophy as auth — one font-size lever on the frame, everything
-   inside uses em. The dashboard also locks to 100dvh with no scroll.
-───────────────────────────────────────────────────────────────────────────── */
 
 .dashboard-screen {
   height: 100dvh;
@@ -188,12 +125,6 @@ input:focus-visible {
   max-width: var(--dashboard-max-width);
   margin-inline: auto;
   display: flex;
-
-  /*
-    Same 1.2vw slope as auth — dashboard content scales at the same rate,
-    so both contexts feel visually consistent across all screen sizes.
-    Slightly lower min (0.8rem) since dashboard can be denser.
-  */
   font-size: clamp(0.8rem, 1.2vw, 2.6rem);
 }
 
@@ -231,13 +162,6 @@ input:focus-visible {
   min-height: 0;
 }
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   COMPACT HEIGHT HELPERS
-   These hide lower-priority elements when the viewport is short (e.g. a
-   laptop in landscape or a small external monitor). Width-based scaling
-   is handled by vw above; these only respond to height constraints.
-───────────────────────────────────────────────────────────────────────────── */
-
 @media (max-height: 820px) {
   :root { --panel-gap: 0.6rem; }
   .dashboard-stack { gap: 0.75rem; }
@@ -249,10 +173,6 @@ input:focus-visible {
   .dashboard-stack { gap: 0.55rem; }
   .ultra-compact-hide { display: none; }
 }
-
-/* ─────────────────────────────────────────────────────────────────────────────
-   SCROLLBAR STYLES
-───────────────────────────────────────────────────────────────────────────── */
 
 .navbar-scroll {
   scrollbar-width: none;

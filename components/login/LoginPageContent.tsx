@@ -59,6 +59,10 @@ export function LoginPageContent() {
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [redirectError, setRedirectError] = useState("");
+  const isDirectOnboardingDisabled = process.env.NEXT_PUBLIC_DISABLE_NOVATE_DIRECT_ONBOARDING === "true";
+  const redirectToComingSoon = () => {
+    router.push("/coming-soon");
+  };
 
   const getAllowedReturnOrigins = (): string[] =>
     (process.env.NEXT_PUBLIC_SPMEET_ALLOWED_CALLBACK_ORIGINS ?? "")
@@ -188,6 +192,15 @@ export function LoginPageContent() {
       }
 
       if (result.profileSetupRequired) {
+        if (result.token && redirectToReturnTarget(result.token)) {
+          return;
+        }
+
+        if (isDirectOnboardingDisabled) {
+          redirectToComingSoon();
+          return;
+        }
+
         if (result.token) {
           localStorage.setItem("sp_profile_setup_token", result.token);
         }
@@ -200,6 +213,14 @@ export function LoginPageContent() {
         if (redirectToReturnTarget(result.token)) {
           return;
         }
+
+        if (isDirectOnboardingDisabled) {
+          redirectToComingSoon();
+          return;
+        }
+      } else if (isDirectOnboardingDisabled) {
+        redirectToComingSoon();
+        return;
       }
       router.push("/dashboard");
     } catch {
@@ -290,6 +311,15 @@ export function LoginPageContent() {
         const purpose = getJwtPurpose(token);
 
         if (purpose === "profile_setup") {
+          if (redirectToReturnTarget(token, user)) {
+            return;
+          }
+
+          if (isDirectOnboardingDisabled) {
+            redirectToComingSoon();
+            return;
+          }
+
           const role = data?.data?.user?.role;
           const params = new URLSearchParams({
             view: "flow",
@@ -307,6 +337,14 @@ export function LoginPageContent() {
         if (redirectToReturnTarget(token, user)) {
           return;
         }
+
+        if (isDirectOnboardingDisabled) {
+          redirectToComingSoon();
+          return;
+        }
+      } else if (isDirectOnboardingDisabled) {
+        redirectToComingSoon();
+        return;
       }
 
       router.push("/dashboard");

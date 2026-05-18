@@ -5,7 +5,7 @@
   --app-gutter:           clamp(1rem, 2vw, 3rem);
   --dashboard-max-width:  100%;
   --dashboard-gutter:     var(--app-gutter);
-  --topbar-h:             clamp(3rem, 2.4rem + 1vw, 5.5rem);
+  --topbar-h:             clamp(3.5rem, 3.1rem + 0.35vw, 5rem);
   --panel-gap:            clamp(0.6rem, 0.5rem + 0.5vw, 1.8rem);
   --sidebar-w:            clamp(14rem, 12rem + 4vw, 22rem);
   --controls-h:           clamp(3rem, 2.5rem + 0.8vw, 4.5rem);
@@ -111,6 +111,7 @@ input:focus-visible {
 
 .dashboard-header {
   flex-shrink: 0;
+  font-size: clamp(0.9rem, 0.84rem + 0.18vw, 1.1rem);
 }
 
 .dashboard-main {
@@ -164,7 +165,46 @@ input:focus-visible {
 
 @media (min-width: 1024px) {
   .dashboard-content-frame {
-    font-size: clamp(0.68rem, 0.72vw, 1.35rem);
+    font-size: clamp(0.95rem, 0.68rem + 0.45vw, 1.9rem);
+  }
+}
+
+@media (min-width: 1800px) {
+  .dashboard-content-frame {
+    font-size: clamp(1.05rem, 0.74rem + 0.52vw, 2.2rem);
+  }
+
+  .dashboard-main {
+    padding-block: clamp(0.6rem, 1vh, 1.5rem);
+  }
+
+}
+
+@media (min-width: 2560px) {
+  :root {
+    --topbar-h: clamp(5.8rem, 4.4rem + 1.25vw, 12.8rem);
+  }
+
+  .dashboard-header {
+    font-size: clamp(1.45rem, 1rem + 0.62vw, 3.1rem);
+  }
+
+  .dashboard-content-frame {
+    font-size: clamp(1.45rem, 0.95rem + 0.82vw, 3.4rem);
+  }
+}
+
+@media (min-width: 3840px) {
+  :root {
+    --topbar-h: clamp(6.6rem, 4.8rem + 1.35vw, 15.2rem);
+  }
+
+  .dashboard-header {
+    font-size: clamp(1.9rem, 1.25rem + 0.75vw, 4.2rem);
+  }
+
+  .dashboard-content-frame {
+    font-size: clamp(1.8rem, 1.05rem + 0.95vw, 4.5rem);
   }
 }
 

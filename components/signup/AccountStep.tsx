@@ -4,13 +4,13 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useRef, useState } from "react";
 
-import { startAppleAuth } from "./social/apple";
 import { startFacebookAuth } from "./social/facebook";
 import { startGoogleAuth } from "./social/google";
 import { SocialAuthButtons } from "./social/SocialAuthButtons";
 
 import { socialAuthApi } from "./social/socialAuthApi";
 import type { SocialProvider } from "./social/types";
+import { DIRECT_ONBOARDING_ENABLED } from "../../config/featureFlags";
 
 function EyeIcon({ open }: { open: boolean }) {
   if (open) {
@@ -71,6 +71,7 @@ export function AccountStep({
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const isDirectOnboardingDisabled = !DIRECT_ONBOARDING_ENABLED;
 
   const focusEmail = () => {
     emailInputRef.current?.focus();
@@ -115,6 +116,11 @@ export function AccountStep({
       }
 
       if (result.profileSetupRequired) {
+        if (isDirectOnboardingDisabled) {
+          router.push("/coming-soon");
+          return;
+        }
+
         if (result.token) {
           localStorage.setItem("sp_profile_setup_token", result.token);
         }
@@ -129,6 +135,10 @@ export function AccountStep({
 
       if (result.token) {
         localStorage.setItem("sp_access_token", result.token);
+      }
+      if (isDirectOnboardingDisabled) {
+        router.push("/coming-soon");
+        return;
       }
       router.push("/dashboard");
     } catch {
@@ -175,26 +185,6 @@ export function AccountStep({
       },
       onToken: (token) => {
         void handleSocialAuth("facebook", token);
-      },
-    });
-  };
-
-  const handleAppleClick = () => {
-    setSuccessMessage("");
-    setEmailError("");
-    setFirstNameError("");
-    setLastNameError("");
-    setPasswordError("");
-    setConfirmPasswordError("");
-    setSocialError("");
-    startAppleAuth({
-      onError: (message) => {
-        if (isIgnorableSocialError(message)) return;
-        setSocialError(message);
-        setSuccessMessage("");
-      },
-      onToken: (token) => {
-        void handleSocialAuth("apple", token);
       },
     });
   };
@@ -303,12 +293,12 @@ export function AccountStep({
   };
 
   return (
-    <form className="mx-auto mt-2.5 w-full max-w-[var(--auth-form-max-w)]" onSubmit={handleSubmit}>
-      <div className="space-y-1">
-        <label className="block text-[0.71rem] font-semibold text-[#6f778c]">
+    <form className="mx-auto mt-[1.1em] w-full max-w-[22.5em]" onSubmit={handleSubmit}>
+      <div className="space-y-[0.3em]">
+        <label className="block text-[0.78em] font-semibold text-[#6f778c]">
           Email
           <input
-            className={`mt-1 h-8 w-full rounded-[0.45rem] border px-3 text-[0.74rem] font-semibold text-[#4f5980] outline-none ${
+            className={`mt-[0.4em] h-[2.9em] w-full rounded-[0.5em] border px-[1em] text-[0.82em] font-semibold text-[#4f5980] outline-none ${
               emailError ? "border-[#d04b4b]" : "border-[#d8dde8] focus:border-[#b6c0d8]"
             }`}
             onChange={(e) => {
@@ -322,18 +312,18 @@ export function AccountStep({
           />
           <div
             className={`overflow-hidden transition-all duration-200 ease-out ${
-              emailError ? "mt-0.5 max-h-5 opacity-100" : "max-h-0 opacity-0"
+              emailError ? "mt-[0.25em] max-h-[1.6em] opacity-100" : "max-h-0 opacity-0"
             }`}
           >
-            <span className="block text-[0.64rem] font-medium leading-tight text-[#d04b4b]">{emailError}</span>
+            <span className="block text-[0.64em] font-medium leading-tight text-[#d04b4b]">{emailError}</span>
           </div>
         </label>
 
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-          <label className="block text-[0.71rem] font-semibold text-[#6f778c]">
+        <div className="grid grid-cols-1 gap-[0.8em] sm:grid-cols-2">
+          <label className="block text-[0.78em] font-semibold text-[#6f778c]">
             First name
             <input
-              className={`mt-1 h-8 w-full rounded-[0.45rem] border px-3 text-[0.74rem] font-semibold text-[#4f5980] outline-none ${
+              className={`mt-[0.4em] h-[2.9em] w-full rounded-[0.5em] border px-[1em] text-[0.82em] font-semibold text-[#4f5980] outline-none ${
                 firstNameError ? "border-[#d04b4b]" : "border-[#d8dde8] focus:border-[#b6c0d8]"
               }`}
               onChange={(e) => {
@@ -346,17 +336,17 @@ export function AccountStep({
             />
             <div
               className={`overflow-hidden transition-all duration-200 ease-out ${
-                firstNameError ? "mt-0.5 max-h-5 opacity-100" : "max-h-0 opacity-0"
+                firstNameError ? "mt-[0.25em] max-h-[1.6em] opacity-100" : "max-h-0 opacity-0"
               }`}
             >
-              <span className="block text-[0.64rem] font-medium leading-tight text-[#d04b4b]">{firstNameError}</span>
+              <span className="block text-[0.64em] font-medium leading-tight text-[#d04b4b]">{firstNameError}</span>
             </div>
           </label>
 
-          <label className="block text-[0.71rem] font-semibold text-[#6f778c]">
+          <label className="block text-[0.78em] font-semibold text-[#6f778c]">
             Last name
             <input
-              className={`mt-1 h-8 w-full rounded-[0.45rem] border px-3 text-[0.74rem] font-semibold text-[#4f5980] outline-none ${
+              className={`mt-[0.4em] h-[2.9em] w-full rounded-[0.5em] border px-[1em] text-[0.82em] font-semibold text-[#4f5980] outline-none ${
                 lastNameError ? "border-[#d04b4b]" : "border-[#d8dde8] focus:border-[#b6c0d8]"
               }`}
               onChange={(e) => {
@@ -369,23 +359,23 @@ export function AccountStep({
             />
             <div
               className={`overflow-hidden transition-all duration-200 ease-out ${
-                lastNameError ? "mt-0.5 max-h-5 opacity-100" : "max-h-0 opacity-0"
+                lastNameError ? "mt-[0.25em] max-h-[1.6em] opacity-100" : "max-h-0 opacity-0"
               }`}
             >
-              <span className="block text-[0.64rem] font-medium leading-tight text-[#d04b4b]">{lastNameError}</span>
+              <span className="block text-[0.64em] font-medium leading-tight text-[#d04b4b]">{lastNameError}</span>
             </div>
           </label>
         </div>
 
-        <label className="block text-[0.71rem] font-semibold text-[#6f778c]">
+        <label className="block text-[0.78em] font-semibold text-[#6f778c]">
           Password
           <div
-            className={`mt-1 flex h-8 items-center rounded-[0.45rem] border px-3 ${
+            className={`mt-[0.4em] flex h-[2.9em] items-center rounded-[0.5em] border px-[1em] focus-within:outline-2 focus-within:outline-[#6b68e8] focus-within:outline-offset-2 ${
               passwordError ? "border-[#d04b4b]" : "border-[#d8dde8] focus-within:border-[#b6c0d8]"
             }`}
           >
             <input
-              className="min-w-0 flex-1 bg-transparent text-[0.74rem] font-semibold text-[#4f5980] outline-none [&::-ms-clear]:hidden [&::-ms-reveal]:hidden"
+              className="min-w-0 flex-1 bg-transparent text-[0.82em] font-semibold text-[#4f5980] outline-none focus:outline-none focus-visible:!outline-none focus-visible:!outline-offset-0 [&::-ms-clear]:hidden [&::-ms-reveal]:hidden"
               onChange={(e) => {
                 const nextPassword = e.target.value;
                 setPassword(nextPassword);
@@ -411,20 +401,20 @@ export function AccountStep({
               <EyeIcon open={showPassword} />
             </button>
           </div>
-          <div className={`overflow-hidden transition-all duration-200 ease-out ${passwordError ? "mt-0.5 max-h-5 opacity-100" : "max-h-0 opacity-0"}`}>
-            <span className="block text-[0.64rem] font-medium leading-tight text-[#d04b4b]">{passwordError}</span>
+          <div className={`overflow-hidden transition-all duration-200 ease-out ${passwordError ? "mt-[0.25em] max-h-[1.6em] opacity-100" : "max-h-0 opacity-0"}`}>
+            <span className="block text-[0.64em] font-medium leading-tight text-[#d04b4b]">{passwordError}</span>
           </div>
         </label>
 
-        <label className="block text-[0.71rem] font-semibold text-[#6f778c]">
+        <label className="block text-[0.78em] font-semibold text-[#6f778c]">
           Confirm password
           <div
-            className={`mt-1 flex h-8 items-center rounded-[0.45rem] border px-3 ${
+            className={`mt-[0.4em] flex h-[2.9em] items-center rounded-[0.5em] border px-[1em] focus-within:outline-2 focus-within:outline-[#6b68e8] focus-within:outline-offset-2 ${
               confirmPasswordError ? "border-[#d04b4b]" : "border-[#d8dde8] focus-within:border-[#b6c0d8]"
             }`}
           >
             <input
-              className="min-w-0 flex-1 bg-transparent text-[0.74rem] font-semibold text-[#4f5980] outline-none [&::-ms-clear]:hidden [&::-ms-reveal]:hidden"
+              className="min-w-0 flex-1 bg-transparent text-[0.82em] font-semibold text-[#4f5980] outline-none focus:outline-none focus-visible:!outline-none focus-visible:!outline-offset-0 [&::-ms-clear]:hidden [&::-ms-reveal]:hidden"
               onChange={(e) => {
                 const nextConfirmPassword = e.target.value;
                 setConfirmPassword(nextConfirmPassword);
@@ -451,43 +441,43 @@ export function AccountStep({
               <EyeIcon open={showConfirmPassword} />
             </button>
           </div>
-          <div className={`overflow-hidden transition-all duration-200 ease-out ${confirmPasswordError ? "mt-0.5 max-h-5 opacity-100" : "max-h-0 opacity-0"}`}>
-            <span className="block text-[0.64rem] font-medium leading-tight text-[#d04b4b]">{confirmPasswordError}</span>
+          <div className={`overflow-hidden transition-all duration-200 ease-out ${confirmPasswordError ? "mt-[0.25em] max-h-[1.6em] opacity-100" : "max-h-0 opacity-0"}`}>
+            <span className="block text-[0.64em] font-medium leading-tight text-[#d04b4b]">{confirmPasswordError}</span>
           </div>
         </label>
       </div>
 
-      {successMessage ? <p className="mt-1.5 text-[0.68rem] font-medium text-[#247f57]">{successMessage}</p> : null}
+      {successMessage ? <p className="mt-[0.6em] text-[0.72em] font-medium text-[#247f57]">{successMessage}</p> : null}
 
       <button
-        className="mt-2.5 h-8.5 w-full rounded-full bg-[#231d71] text-[0.78rem] font-semibold text-white hover:bg-[#1c175f] disabled:cursor-not-allowed disabled:opacity-70"
+        className="mt-[0.9em] h-[3em] w-full rounded-full bg-[#231d71] text-[0.84em] font-semibold text-white hover:bg-[#1c175f] disabled:cursor-not-allowed disabled:opacity-70"
         disabled={isSubmitting}
         type="submit"
       >
         {isSubmitting ? "Creating account..." : "Create an account"}
       </button>
 
-      <div className="my-2 flex items-center gap-2.5">
+      <div className="my-[0.8em] flex items-center gap-[0.9em]">
         <span className="h-px flex-1 bg-[#d9deea]" />
-        <span className="text-[0.64rem] font-semibold uppercase text-[#9ba2b4]">or</span>
+        <span className="text-[0.68em] font-semibold uppercase text-[#9ba2b4]">or</span>
         <span className="h-px flex-1 bg-[#d9deea]" />
       </div>
 
       <SocialAuthButtons
         activeSocialProvider={activeSocialProvider}
-        onAppleClick={handleAppleClick}
+        enableApple={false}
         onFacebookClick={handleFacebookClick}
         onGoogleClick={handleGoogleClick}
       />
       <div
         className={`overflow-hidden transition-all duration-200 ease-out ${
-          socialError ? "mt-1 max-h-5 opacity-100" : "max-h-0 opacity-0"
+          socialError ? "mt-[0.35em] max-h-[1.6em] opacity-100" : "max-h-0 opacity-0"
         }`}
       >
-        <p className="text-[0.66rem] font-medium text-[#d04b4b]">{socialError}</p>
+        <p className="text-[0.7em] font-medium text-[#d04b4b]">{socialError}</p>
       </div>
 
-      <p className="mx-auto mt-2 max-w-[16rem] text-center text-[0.64rem] font-medium leading-[1.3] text-[#8e95a8]">
+      <p className="mx-auto mt-[0.8em] w-full max-w-full text-center text-[0.72em] font-medium leading-[1.35] text-[#8e95a8] sm:whitespace-nowrap">
         By continuing you accept the{" "}
         <Link href="#" className="text-[#1d2230] underline decoration-[#aeb6c8] underline-offset-2">
           Term of Use

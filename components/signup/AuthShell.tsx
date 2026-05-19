@@ -9,14 +9,14 @@ export function AuthShell({ children }: { children: ReactNode }) {
         className="auth-pattern absolute inset-0 bg-center bg-repeat opacity-90"
         style={{
           backgroundImage: "url('/images/hero-pattern.png')",
-          backgroundSize: "clamp(760px, 130vw, 1860px)",
+          backgroundSize: "clamp(760px, 80vw, 4000px)",
         }}
       />
       <section className="app-content-wrap relative z-10">
         <div className="auth-panel">{children}</div>
 
-        <footer className="mt-[clamp(0.7rem,0.8vw,1.1rem)] flex w-full flex-wrap items-center justify-between gap-y-2 text-[clamp(0.68rem,0.62vw,0.86rem)] font-medium text-[#697188]">
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+        <footer className="mt-[1.3em] flex w-full flex-wrap items-center justify-between gap-y-[0.5em] text-[0.78em] font-medium text-[#697188]">
+          <div className="flex flex-wrap items-center gap-x-[1.4em] gap-y-[0.5em]">
             <Link href="#" className="transition-colors hover:text-[#1f2430]">
               SP Products
             </Link>
@@ -24,7 +24,7 @@ export function AuthShell({ children }: { children: ReactNode }) {
               Pricing
             </Link>
           </div>
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+          <div className="flex flex-wrap items-center gap-x-[1.4em] gap-y-[0.5em]">
             <Link href="#" className="transition-colors hover:text-[#1f2430]">
               About
             </Link>

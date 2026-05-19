@@ -1,84 +1,142 @@
+ "use client";
+
 import Image from "next/image";
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { CalendarDays, ChevronDown, CreditCard, Home, Menu, MessageCircle, X } from "lucide-react";
 
-function NavGlyph({ type }: { type: "home" | "bookings" | "transactions" | "chat" }) {
-  if (type === "home") {
-    return (
-      <svg aria-hidden="true" className="h-3.5 w-3.5" fill="none" viewBox="0 0 16 16">
-        <path d="M2.8 7.2 8 2.8l5.2 4.4v5.3a1 1 0 0 1-1 1H3.8a1 1 0 0 1-1-1V7.2Z" fill="currentColor" opacity=".35" />
-        <path d="M6.2 13.5V9.9h3.6v3.6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.2" />
-      </svg>
-    );
-  }
+type NavLabel = "Home" | "Bookings" | "Transactions" | "Chat";
 
-  if (type === "bookings") {
-    return (
-      <svg aria-hidden="true" className="h-3.5 w-3.5" fill="none" viewBox="0 0 16 16">
-        <rect fill="currentColor" height="10" opacity=".25" rx="2" width="11" x="2.5" y="3.1" />
-        <path d="M5 2.8v2.1M11 2.8v2.1M2.5 6.2h11" stroke="currentColor" strokeLinecap="round" strokeWidth="1.2" />
-      </svg>
-    );
-  }
+const navItems: Array<{
+  label: NavLabel;
+  href: string;
+  icon: typeof Home;
+}> = [
+  { label: "Home", href: "/dashboard", icon: Home },
+  { label: "Bookings", href: "/bookings", icon: CalendarDays },
+  { label: "Transactions", href: "/transactions", icon: CreditCard },
+  { label: "Chat", href: "/chat", icon: MessageCircle },
+];
 
-  if (type === "transactions") {
-    return (
-      <svg aria-hidden="true" className="h-3.5 w-3.5" fill="none" viewBox="0 0 16 16">
-        <path d="M3 5.3h10M3 8h7.5M3 10.7h8.8" stroke="currentColor" strokeLinecap="round" strokeWidth="1.3" />
-        <circle cx="11.7" cy="8" fill="currentColor" opacity=".35" r="2.2" />
-      </svg>
-    );
-  }
+export function DashboardNavbar({ active = "Home" }: { active?: NavLabel }) {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isMenuMounted, setIsMenuMounted] = useState(false);
+
+  useEffect(() => {
+    if (isMenuOpen) {
+      setIsMenuMounted(true);
+      document.body.style.overflow = "hidden";
+      return;
+    }
+
+    document.body.style.overflow = "";
+    const timeout = setTimeout(() => setIsMenuMounted(false), 220);
+    return () => clearTimeout(timeout);
+  }, [isMenuOpen]);
 
   return (
-    <svg aria-hidden="true" className="h-3.5 w-3.5" fill="none" viewBox="0 0 16 16">
-      <path d="M2.8 4.7a1.8 1.8 0 0 1 1.8-1.8h6.8a1.8 1.8 0 0 1 1.8 1.8v4.1a1.8 1.8 0 0 1-1.8 1.8H8L5.2 13V10.6H4.6a1.8 1.8 0 0 1-1.8-1.8V4.7Z" fill="currentColor" opacity=".28" />
-      <circle cx="6.2" cy="6.8" fill="currentColor" r=".65" />
-      <circle cx="8" cy="6.8" fill="currentColor" r=".65" />
-      <circle cx="9.8" cy="6.8" fill="currentColor" r=".65" />
-    </svg>
-  );
-}
+    <header className="dashboard-header z-50 border-b border-[#E8EAF1] bg-white shadow-[0_0.14em_0.7em_rgba(33,38,79,0.08)]">
+      <div className="relative flex h-[var(--topbar-h)] w-full items-center px-[0.9em]">
+        <div className="z-10 flex items-center">
+          <Link href="/dashboard">
+            <Image alt="SP Novate" className="h-[2.1em] w-auto" height={36} src="/logo/logo.png" width={36} />
+          </Link>
+        </div>
 
-export function DashboardNavbar() {
-  return (
-    <header className="border-b border-[#e6e9f2] bg-white/95 backdrop-blur">
-      <div className="app-page-wrap flex min-h-15 items-center gap-4 py-2">
-        <Image alt="SP Novate" className="h-9 w-auto shrink-0 md:h-10" height={40} src="/logo/logo.png" width={40} />
+        <nav className="absolute left-1/2 top-1/2 hidden h-full -translate-x-1/2 -translate-y-1/2 items-center justify-center gap-[1.2em] overflow-x-auto navbar-scroll px-[0.3em] lg:flex">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = item.label === active;
 
-        <nav className="order-3 -mx-[var(--app-gutter)] w-screen overflow-x-auto border-t border-[#eceef5] px-[var(--app-gutter)] pt-2 md:order-2 md:mx-0 md:w-auto md:flex-1 md:overflow-visible md:border-t-0 md:px-0 md:pt-0">
-          <div className="mx-auto flex min-w-max items-end justify-start gap-8 text-[0.82rem] font-semibold text-[#7b8192] md:justify-center md:gap-10">
-            <button className="relative flex min-w-[4.25rem] flex-col items-center gap-1.5 pb-2 text-[#4d4bc5]" type="button">
-              <span className="inline-flex h-4 w-4 items-center justify-center text-[#6f6dd5]"><NavGlyph type="home" /></span>
-              <span>Home</span>
-              <span className="absolute bottom-0 left-1/2 h-[2px] w-[5.4rem] -translate-x-1/2 rounded-full bg-[#5b57df]" />
-            </button>
-            <button className="flex min-w-[4.25rem] flex-col items-center gap-1.5 pb-2" type="button">
-              <span className="inline-flex h-4 w-4 items-center justify-center text-[#8b90a3]"><NavGlyph type="bookings" /></span>
-              <span>Bookings</span>
-            </button>
-            <button className="flex min-w-[4.25rem] flex-col items-center gap-1.5 pb-2" type="button">
-              <span className="inline-flex h-4 w-4 items-center justify-center text-[#8b90a3]"><NavGlyph type="transactions" /></span>
-              <span>Transactions</span>
-            </button>
-            <button className="flex min-w-[4.25rem] flex-col items-center gap-1.5 pb-2" type="button">
-              <span className="inline-flex h-4 w-4 items-center justify-center text-[#8b90a3]"><NavGlyph type="chat" /></span>
-              <span>Chat</span>
-            </button>
-          </div>
+            return (
+              <Link
+                key={item.label}
+                href={item.href}
+                className={`relative flex h-full min-w-[4em] flex-col items-center justify-center gap-[0.15em] px-[0.55em] text-[0.95em] font-semibold leading-[150%] transition-colors ${
+                  isActive ? "text-[#4A46D6]" : "text-[#5F6678] hover:text-[#434B5F]"
+                }`}
+              >
+                <Icon
+                  strokeWidth={1.9}
+                  className={`h-[0.95em] w-[0.95em] ${isActive ? "text-[#7073EA]" : "text-[#A6ADBD]"}`}
+                />
+                <span>{item.label}</span>
+                {isActive && (
+                  <span className="absolute bottom-0 h-[0.14em] w-[4.4em] rounded-full bg-[#4B49D8]" />
+                )}
+              </Link>
+            );
+          })}
         </nav>
 
-        <div className="order-2 ml-auto flex items-center gap-2 md:order-3">
+        <div className="z-10 ml-auto flex items-center justify-end gap-[0.65em]">
           <button
-            className="hidden rounded-full border border-[#eceff6] bg-[#f5f6fa] px-4 py-1.5 text-[0.75rem] font-semibold text-[#4a4f5f] sm:inline-flex"
+            aria-label={isMenuOpen ? "Close navigation menu" : "Open navigation menu"}
+            className="inline-flex h-[2.2em] w-[2.2em] items-center justify-center rounded-[0.35em] text-[#2e3448] lg:hidden"
+            onClick={() => setIsMenuOpen((prev) => !prev)}
             type="button"
           >
+            {isMenuOpen ? <X className="h-[1.15em] w-[1.15em]" /> : <Menu className="h-[1.15em] w-[1.15em]" />}
+          </button>
+
+          <button className="hidden rounded-full border border-[#E6E8EF] bg-[#F2F3F7] px-[1em] py-[0.4em] text-[0.9em] font-semibold text-[#454B5D] transition hover:bg-[#EBEDF3] lg:inline-flex">
             Become a tutor
           </button>
-          <button className="flex items-center gap-1 rounded-full border border-[#e8eaf3] bg-white px-1.5 py-1.5" type="button">
-            <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#201b6b] text-[0.7rem] font-semibold text-white">O</span>
-            <span className="pr-0.5 text-[0.65rem] text-[#8a90a0]">▼</span>
+
+          <button className="hidden items-center gap-[0.35em] rounded-full bg-[#F1F2F6] px-[0.35em] py-[0.35em] lg:flex">
+            <div className="flex h-[2em] w-[2em] items-center justify-center rounded-full bg-[#221D71] text-[0.9em] font-semibold text-white">
+              O
+            </div>
+            <ChevronDown className="h-[0.9em] w-[0.9em] text-[#8E93A1]" />
           </button>
         </div>
       </div>
+
+      {isMenuMounted ? (
+        <div className="fixed inset-0 z-[70] lg:hidden">
+          <button
+            aria-label="Close menu backdrop"
+            className={`absolute inset-0 transition-opacity duration-200 ${isMenuOpen ? "bg-[#0f1530]/35 opacity-100" : "bg-[#0f1530]/0 opacity-0"}`}
+            onClick={() => setIsMenuOpen(false)}
+            type="button"
+          />
+          <div className={`absolute right-0 top-0 h-full w-[min(82vw,21em)] border-l border-[#e6eaf3] bg-white p-[1em] shadow-2xl transition-transform duration-200 ${isMenuOpen ? "translate-x-0" : "translate-x-full"}`}>
+            <div className="mb-[1em] flex items-center justify-between">
+              <p className="text-[0.9em] font-semibold text-[#4a5166]">Navigate</p>
+              <button
+                aria-label="Close navigation menu"
+                className="inline-flex h-[2em] w-[2em] items-center justify-center rounded-[0.35em] text-[#2e3448]"
+                onClick={() => setIsMenuOpen(false)}
+                type="button"
+              >
+                <X className="h-[1.15em] w-[1.15em]" />
+              </button>
+            </div>
+
+            <nav className="grid grid-cols-1 gap-[0.5em]">
+              {navItems.map((item) => {
+                const isActive = item.label === active;
+
+                return (
+                  <Link
+                    key={item.label}
+                    className={`rounded-[0.55em] border px-[0.9em] py-[0.65em] text-[0.82em] font-semibold ${
+                      isActive
+                        ? "border-[#d8daf8] bg-[#eef0ff] text-[#4A46D6]"
+                        : "border-[#e6eaf3] bg-white text-[#5F6678]"
+                    }`}
+                    href={item.href}
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </nav>
+
+          </div>
+        </div>
+      ) : null}
     </header>
   );
 }

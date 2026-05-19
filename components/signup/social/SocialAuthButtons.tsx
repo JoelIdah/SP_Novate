@@ -10,11 +10,13 @@ export function SocialAuthButtons({
   onGoogleClick,
   onFacebookClick,
   onAppleClick,
+  enableApple = true,
 }: {
   activeSocialProvider: SocialProvider | null;
   onGoogleClick: () => void;
   onFacebookClick: () => void;
-  onAppleClick: () => void;
+  onAppleClick?: () => void;
+  enableApple?: boolean;
 }) {
   return (
     <>
@@ -26,16 +28,18 @@ export function SocialAuthButtons({
           initializeFacebookSdk();
         }}
       />
-      <Script
-        src="https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js"
-        strategy="afterInteractive"
-        onLoad={() => {
-          initializeAppleSdk();
-        }}
-      />
-      <div className="space-y-2">
+      {enableApple ? (
+        <Script
+          src="https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js"
+          strategy="afterInteractive"
+          onLoad={() => {
+            initializeAppleSdk();
+          }}
+        />
+      ) : null}
+      <div className="space-y-[0.55em]">
         <button
-          className="flex h-8.5 w-full items-center justify-center gap-2 rounded-[0.45rem] border border-[#d5dae7] bg-white text-[0.82rem] font-semibold text-[#596379] disabled:cursor-not-allowed disabled:opacity-70"
+          className="flex h-[3em] w-full items-center justify-center gap-[0.7em] rounded-[0.5em] border border-[#d5dae7] bg-white text-[0.84em] font-semibold text-[#596379] disabled:cursor-not-allowed disabled:opacity-70"
           disabled={Boolean(activeSocialProvider)}
           onClick={onGoogleClick}
           type="button"
@@ -44,7 +48,7 @@ export function SocialAuthButtons({
           {activeSocialProvider === "google" ? "Connecting Google..." : "Continue with Google"}
         </button>
         <button
-          className="flex h-8.5 w-full items-center justify-center gap-2 rounded-[0.45rem] border border-[#d5dae7] bg-white text-[0.82rem] font-semibold text-[#596379] disabled:cursor-not-allowed disabled:opacity-70"
+          className="flex h-[3em] w-full items-center justify-center gap-[0.7em] rounded-[0.5em] border border-[#d5dae7] bg-white text-[0.84em] font-semibold text-[#596379] disabled:cursor-not-allowed disabled:opacity-70"
           disabled={Boolean(activeSocialProvider)}
           onClick={onFacebookClick}
           type="button"
@@ -52,15 +56,17 @@ export function SocialAuthButtons({
           <FacebookIcon />
           {activeSocialProvider === "facebook" ? "Connecting Facebook..." : "Continue with Facebook"}
         </button>
-        <button
-          className="flex h-8.5 w-full items-center justify-center gap-2 rounded-[0.45rem] border border-[#d5dae7] bg-white text-[0.82rem] font-semibold text-[#596379] disabled:cursor-not-allowed disabled:opacity-70"
-          disabled={Boolean(activeSocialProvider)}
-          onClick={onAppleClick}
-          type="button"
-        >
-          <AppleIcon />
-          {activeSocialProvider === "apple" ? "Connecting Apple..." : "Continue with Apple"}
-        </button>
+        {enableApple ? (
+          <button
+            className="flex h-[3em] w-full items-center justify-center gap-[0.7em] rounded-[0.5em] border border-[#d5dae7] bg-white text-[0.84em] font-semibold text-[#596379] disabled:cursor-not-allowed disabled:opacity-70"
+            disabled={Boolean(activeSocialProvider)}
+            onClick={onAppleClick}
+            type="button"
+          >
+            <AppleIcon />
+            {activeSocialProvider === "apple" ? "Connecting Apple..." : "Continue with Apple"}
+          </button>
+        ) : null}
       </div>
     </>
   );

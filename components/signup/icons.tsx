@@ -2,7 +2,7 @@
 
 export function GoogleIcon(): JSX.Element {
   return (
-    <svg aria-hidden className="h-4 w-4" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
+    <svg aria-hidden className="h-[1.1em] w-[1.1em] shrink-0" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
       <path
         d="M17.64 9.2045C17.64 8.5663 17.5827 7.9527 17.4764 7.3636H9V10.8455H13.8436C13.635 11.9705 13.0009 12.9232 12.0482 13.5614V15.8195H14.9564C16.6582 14.2527 17.64 11.9459 17.64 9.2045Z"
         fill="#4285F4"
@@ -25,7 +25,7 @@ export function GoogleIcon(): JSX.Element {
 
 export function FacebookIcon(): JSX.Element {
   return (
-    <svg aria-hidden className="h-4 w-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <svg aria-hidden className="h-[1.1em] w-[1.1em] shrink-0" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
       <path
         d="M24 12.073C24 5.404 18.627 0 12 0S0 5.404 0 12.073C0 18.099 4.388 23.094 10.125 24V15.563H7.078V12.073H10.125V9.413C10.125 6.387 11.917 4.716 14.658 4.716C15.97 4.716 17.344 4.951 17.344 4.951V7.922H15.83C14.34 7.922 13.875 8.854 13.875 9.812V12.073H17.203L16.671 15.563H13.875V24C19.612 23.094 24 18.099 24 12.073Z"
         fill="#1877F2"
@@ -36,7 +36,7 @@ export function FacebookIcon(): JSX.Element {
 
 export function AppleIcon(): JSX.Element {
   return (
-    <svg aria-hidden className="h-4 w-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <svg aria-hidden className="h-[1.1em] w-[1.1em] shrink-0" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
       <path
         d="M16.365 12.144C16.38 10.908 17.0598 9.762 18.1515 9.105C17.4585 8.115 16.3297 7.545 15.1448 7.508C13.8975 7.377 12.6885 8.244 12.0533 8.244C11.406 8.244 10.4295 7.521 9.3645 7.5435C7.9665 7.5885 6.6615 8.3745 5.9835 9.615C4.5225 12.1365 5.6115 15.8385 7.0155 17.89C7.7175 18.8955 8.5365 20.019 9.6075 19.9795C10.6545 19.9365 11.046 19.311 12.31 19.311C13.563 19.311 13.932 19.9795 15.021 19.9545C16.146 19.9365 16.856 18.948 17.534 17.9325C18.0405 17.2167 18.4298 16.4258 18.6885 15.5895C17.353 15.0255 16.3672 13.6672 16.365 12.144Z"
         fill="#111111"

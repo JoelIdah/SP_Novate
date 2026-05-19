@@ -34,22 +34,22 @@ function StatusDot({ status }: { status: BookingRow["status"] }) {
 export function DashboardActionsSection() {
   return (
     <div>
-      <h2 className="mb-2 text-[0.93rem] font-semibold text-[#616a82]">Actions</h2>
-      <div className="grid gap-3 md:grid-cols-3">
-        <article className="rounded-lg border border-[#b9dcf8] bg-[#f3f9ff] px-4 py-4">
-          <h3 className="text-[1.7rem] leading-none text-[#2f8fd6]">*</h3>
-          <p className="mt-1 text-[1.02rem] font-semibold text-[#2b3350]">Book a session</p>
-          <p className="mt-0.5 text-[0.82rem] text-[#6d758e]">Find a tutor and schedule your session.</p>
+      <h2 className="mb-[0.55em] text-[0.93em] font-semibold text-[#616a82]">Actions</h2>
+      <div className="grid gap-[0.75em] md:grid-cols-3">
+        <article className="flex min-h-[7.6em] flex-col rounded-[0.7em] border border-[#b9dcf8] bg-[#f3f9ff] px-[1.1em] py-[1.05em]">
+          <span className="inline-block h-[0.8em] w-[0.8em] rounded-full bg-[#2f8fd6]" />
+          <p className="mt-[0.45em] text-[1.02em] font-semibold text-[#2b3350]">Book a session</p>
+          <p className="mt-[0.22em] text-[0.82em] text-[#6d758e]">Find a tutor and schedule your session.</p>
         </article>
-        <article className="rounded-lg border border-[#b4e5e4] bg-[#f4fcfc] px-4 py-4">
-          <h3 className="text-[1.7rem] leading-none text-[#43b8b2]">*</h3>
-          <p className="mt-1 text-[1.02rem] font-semibold text-[#2b3350]">Start a conversation</p>
-          <p className="mt-0.5 text-[0.82rem] text-[#6d758e]">Go to your chat with the tutors</p>
+        <article className="flex min-h-[7.6em] flex-col rounded-[0.7em] border border-[#b4e5e4] bg-[#f4fcfc] px-[1.1em] py-[1.05em]">
+          <span className="inline-block h-[0.8em] w-[0.8em] rounded-full bg-[#43b8b2]" />
+          <p className="mt-[0.45em] text-[1.02em] font-semibold text-[#2b3350]">Start a conversation</p>
+          <p className="mt-[0.22em] text-[0.82em] text-[#6d758e]">Go to your chat with the tutors</p>
         </article>
-        <article className="rounded-lg border border-[#ecd8b2] bg-[#fcf8ef] px-4 py-4">
-          <h3 className="text-[1.7rem] leading-none text-[#d8aa2c]">*</h3>
-          <p className="mt-1 text-[1.02rem] font-semibold text-[#2b3350]">Check transactions</p>
-          <p className="mt-0.5 text-[0.82rem] text-[#6d758e]">Add money to your main balance.</p>
+        <article className="flex min-h-[7.6em] flex-col rounded-[0.7em] border border-[#ecd8b2] bg-[#fcf8ef] px-[1.1em] py-[1.05em]">
+          <span className="inline-block h-[0.8em] w-[0.8em] rounded-full bg-[#d8aa2c]" />
+          <p className="mt-[0.45em] text-[1.02em] font-semibold text-[#2b3350]">Check transactions</p>
+          <p className="mt-[0.22em] text-[0.82em] text-[#6d758e]">Add money to your main balance.</p>
         </article>
       </div>
     </div>
@@ -59,17 +59,17 @@ export function DashboardActionsSection() {
 export function DashboardLearningOverviewSection() {
   return (
     <div>
-      <h2 className="mb-2 text-[0.93rem] font-semibold text-[#616a82]">Learning Overview</h2>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <h2 className="mb-[0.55em] text-[0.93em] font-semibold text-[#616a82]">Learning Overview</h2>
+      <div className="grid gap-[0.75em] sm:grid-cols-2 lg:grid-cols-4">
         {[
           { label: "Sessions booked", value: 8 },
           { label: "Sessions completed", value: 2 },
           { label: "Sessions ongoing", value: 4 },
           { label: "Sessions pending", value: 2 },
         ].map((item) => (
-          <article key={item.label} className="rounded-lg border border-[#e4e8f1] bg-white px-4 py-4">
-            <p className="text-[0.9rem] text-[#747d94]">{item.label}</p>
-            <p className="mt-1 text-[2rem] font-bold leading-none text-[#1f2537]">{item.value}</p>
+          <article key={item.label} className="flex min-h-[6.8em] flex-col justify-center rounded-[0.7em] border border-[#e4e8f1] bg-white px-[1em] py-[1em]">
+            <p className="text-[0.9em] text-[#747d94]">{item.label}</p>
+            <p className="mt-[0.25em] text-[2em] font-bold leading-none text-[#1f2537]">{item.value}</p>
           </article>
         ))}
       </div>
@@ -79,37 +79,49 @@ export function DashboardLearningOverviewSection() {
 
 export function DashboardBookingsSection() {
   return (
-    <section>
-      <div className="mb-2 flex items-center justify-between">
-        <h2 className="text-[0.93rem] font-semibold text-[#616a82]">Managed Bookings</h2>
-        <button className="text-[0.83rem] font-semibold text-[#5954c9]" type="button">Go to managed bookings &gt;</button>
+    <section className="flex h-full min-h-0 flex-col">
+      <div className="mb-[0.55em] flex items-center justify-between">
+        <h2 className="text-[0.93em] font-semibold text-[#616a82]">Managed Bookings</h2>
+        <button className="text-[0.83em] font-semibold text-[#5954c9]" type="button">Go to managed bookings &gt;</button>
       </div>
-      <div className="overflow-hidden rounded-lg border border-[#e4e8f1] bg-white">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[0.7em] border border-[#e4e8f1] bg-white">
         <table className="w-full text-left">
-          <thead className="bg-[#f5f7fb] text-[0.82rem] text-[#616a82]">
+          <thead className="bg-[#f5f7fb] text-[0.82em] text-[#616a82]">
             <tr>
-              <th className="px-3 py-2 font-semibold">Tutor</th>
-              <th className="px-3 py-2 font-semibold">Subject</th>
-              <th className="px-3 py-2 font-semibold">Status</th>
-              <th className="px-3 py-2 font-semibold" />
+              <th className="px-[0.9em] py-[0.65em] font-semibold">Tutor</th>
+              <th className="px-[0.9em] py-[0.65em] font-semibold">Subject</th>
+              <th className="px-[0.9em] py-[0.65em] font-semibold">Status</th>
+              <th className="px-[0.9em] py-[0.65em] font-semibold" />
             </tr>
           </thead>
-          <tbody>
+        </table>
+        <div className="min-h-0 flex-1 overflow-y-auto scrollbar-hover">
+          <table className="w-full text-left">
+            <tbody>
             {bookingRows.map((row, idx) => (
-              <tr key={`${row.tutor}-${idx}`} className="border-t border-[#edf0f6] text-[0.82rem] text-[#49516a]">
-                <td className="px-3 py-2.5">{row.tutor}</td>
-                <td className="px-3 py-2.5">{row.subject}</td>
-                <td className="px-3 py-2.5">
-                  <span className="inline-flex items-center gap-2">
+              <tr key={`${row.tutor}-${idx}`} className="border-t border-[#edf0f6] text-[0.82em] text-[#49516a]">
+                <td className="px-[0.9em] py-[0.85em]">{row.tutor}</td>
+                <td className="px-[0.9em] py-[0.85em]">{row.subject}</td>
+                <td className="px-[0.9em] py-[0.85em]">
+                  <span className="inline-flex items-center gap-[0.5em]">
                     <StatusDot status={row.status} />
                     {row.status}
                   </span>
                 </td>
-                <td className="px-3 py-2.5 text-right text-[#8088a0]">...</td>
+                <td className="px-[0.9em] py-[0.85em] text-right">
+                  <button
+                    aria-label={`More actions for ${row.tutor}`}
+                    className="text-[1.1em] leading-none text-[#8088a0]"
+                    type="button"
+                  >
+                    &hellip;
+                  </button>
+                </td>
               </tr>
             ))}
-          </tbody>
-        </table>
+            </tbody>
+          </table>
+        </div>
       </div>
     </section>
   );
@@ -117,26 +129,26 @@ export function DashboardBookingsSection() {
 
 export function DashboardMessagesSection() {
   return (
-    <section>
-      <div className="mb-2 flex items-center justify-between">
-        <h2 className="text-[0.93rem] font-semibold text-[#616a82]">Messages</h2>
-        <button className="text-[0.83rem] font-semibold text-[#5954c9]" type="button">Go to chat &gt;</button>
+    <section className="flex h-full min-h-0 flex-col">
+      <div className="mb-[0.55em] flex items-center justify-between">
+        <h2 className="text-[0.93em] font-semibold text-[#616a82]">Messages</h2>
+        <button className="text-[0.83em] font-semibold text-[#5954c9]" type="button">Go to chat &gt;</button>
       </div>
-      <div className="overflow-hidden rounded-lg border border-[#e4e8f1] bg-white">
-        <p className="border-b border-[#edf0f6] px-3 py-2 text-[1.6rem] text-[#a4abbf]">Chat</p>
-        <div>
-          {messages.map((message) => (
-            <article key={message.name} className="flex items-center gap-2 border-t border-[#edf0f6] px-3 py-2.5">
-              <span className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-[#276a63] text-[0.72rem] font-semibold text-white">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[0.7em] border border-[#e4e8f1] bg-white">
+        <p className="border-b border-[#edf0f6] px-[0.9em] py-[0.5em] text-[1.2em] font-medium text-[#9aa3b8]">Chat</p>
+        <div className="min-h-0 flex-1 overflow-y-auto scrollbar-hover">
+          {messages.map((message, idx) => (
+            <article key={`${message.name}-${message.time}-${idx}`} className="flex items-center gap-[0.5em] border-t border-[#edf0f6] px-[0.9em] py-[0.85em]">
+              <span className="inline-flex h-[2em] w-[2em] items-center justify-center rounded-[0.35em] bg-[#276a63] text-[0.72em] font-semibold text-white">
                 {message.initials}
               </span>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-[0.83rem] font-semibold text-[#2d3448]">{message.name}</p>
-                <p className="truncate text-[0.74rem] text-[#7c849a]">{message.preview}</p>
+                <p className="truncate text-[0.83em] font-semibold text-[#2d3448]">{message.name}</p>
+                <p className="truncate text-[0.74em] text-[#7c849a]">{message.preview}</p>
               </div>
               <div className="text-right">
-                <p className="text-[0.72rem] text-[#7c849a]">{message.time}</p>
-                <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-[#4a49c6] text-[0.62rem] text-white">1</span>
+                <p className="text-[0.72em] text-[#7c849a]">{message.time}</p>
+                <span className="inline-flex h-[1.3em] w-[1.3em] items-center justify-center rounded-full bg-[#4a49c6] text-[0.62em] text-white">1</span>
               </div>
             </article>
           ))}
@@ -149,31 +161,31 @@ export function DashboardMessagesSection() {
 export function DashboardResourcesSection() {
   return (
     <div>
-      <h2 className="mb-2 text-[0.93rem] font-semibold text-[#616a82]">Resource &amp; Support</h2>
-      <div className="grid gap-3 lg:grid-cols-[2fr_1fr_1fr]">
-        <article className="relative overflow-hidden rounded-xl border border-[#c5dbed] bg-[#e5f2ff] p-4">
-          <h3 className="text-[1.9rem] leading-none text-[#f3c53d]">o</h3>
-          <p className="mt-1 text-[1.05rem] font-semibold text-[#2d3448]">Watch our demo video</p>
-          <p className="mt-1 max-w-[250px] text-[0.83rem] text-[#5c6884]">Watch this intro video to learn how SP novate works.</p>
-          <button className="mt-4 rounded-full border border-[#54607b] bg-white px-4 py-1.5 text-[0.82rem] font-semibold text-[#2d3448]" type="button">
+      <h2 className="mb-[0.55em] text-[0.93em] font-semibold text-[#616a82]">Resource &amp; Support</h2>
+      <div className="grid gap-[0.75em] lg:grid-cols-[2fr_1fr_1fr]">
+        <article className="relative min-h-[8.6em] overflow-hidden rounded-[0.8em] border border-[#c5dbed] bg-[#e5f2ff] p-[1.1em]">
+          <span className="inline-block h-[0.8em] w-[0.8em] rounded-full bg-[#f3c53d]" />
+          <p className="mt-[0.45em] text-[1.05em] font-semibold text-[#2d3448]">Watch our demo video</p>
+          <p className="mt-[0.35em] max-w-[18em] text-[0.83em] text-[#5c6884]">Watch this intro video to learn how SP novate works.</p>
+          <button className="mt-[1.1em] rounded-full border border-[#54607b] bg-white px-[1em] py-[0.35em] text-[0.82em] font-semibold text-[#2d3448]" type="button">
             Watch video
           </button>
         </article>
 
-        <article className="rounded-xl border border-[#e6decf] bg-[#f7f2e8] p-4">
-          <p className="text-[1.7rem] leading-none text-[#caa33a]">o</p>
-          <p className="mt-1 text-[1.05rem] font-semibold text-[#2d3448]">Learn about our tutors</p>
-          <p className="mt-1 text-[0.83rem] text-[#5c6884]">Watch this intro video to learn more about our tutors</p>
-          <button className="mt-4 rounded-full border border-[#54607b] bg-white px-4 py-1.5 text-[0.82rem] font-semibold text-[#2d3448]" type="button">
+        <article className="min-h-[8.6em] rounded-[0.8em] border border-[#e6decf] bg-[#f7f2e8] p-[1.1em]">
+          <span className="inline-block h-[0.8em] w-[0.8em] rounded-full bg-[#caa33a]" />
+          <p className="mt-[0.45em] text-[1.05em] font-semibold text-[#2d3448]">Learn about our tutors</p>
+          <p className="mt-[0.35em] text-[0.83em] text-[#5c6884]">Watch this intro video to learn more about our tutors</p>
+          <button className="mt-[1.1em] rounded-full border border-[#54607b] bg-white px-[1em] py-[0.35em] text-[0.82em] font-semibold text-[#2d3448]" type="button">
             Watch video
           </button>
         </article>
 
-        <article className="rounded-xl border border-[#dfe4ed] bg-[#eef2f7] p-4">
-          <p className="text-[1.7rem] leading-none text-[#9aa3b6]">o</p>
-          <p className="mt-1 text-[1.05rem] font-semibold text-[#2d3448]">What is a finder&apos;s fee</p>
-          <p className="mt-1 text-[0.83rem] text-[#5c6884]">Watch this intro video to learn about our finder&apos;s fee</p>
-          <button className="mt-4 rounded-full border border-[#54607b] bg-white px-4 py-1.5 text-[0.82rem] font-semibold text-[#2d3448]" type="button">
+        <article className="min-h-[8.6em] rounded-[0.8em] border border-[#dfe4ed] bg-[#eef2f7] p-[1.1em]">
+          <span className="inline-block h-[0.8em] w-[0.8em] rounded-full bg-[#9aa3b6]" />
+          <p className="mt-[0.45em] text-[1.05em] font-semibold text-[#2d3448]">What is a finder&apos;s fee</p>
+          <p className="mt-[0.35em] text-[0.83em] text-[#5c6884]">Watch this intro video to learn about our finder&apos;s fee</p>
+          <button className="mt-[1.1em] rounded-full border border-[#54607b] bg-white px-[1em] py-[0.35em] text-[0.82em] font-semibold text-[#2d3448]" type="button">
             Watch video
           </button>
         </article>

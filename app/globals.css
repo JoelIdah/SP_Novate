@@ -149,6 +149,18 @@ input:focus-visible {
   overflow: hidden;
 }
 
+.dashboard-home-fit .dashboard-main {
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-block: clamp(0.16rem, 0.42vh, 0.62rem);
+}
+
+.dashboard-home-fit .dashboard-stack {
+  gap: clamp(0.26rem, 0.42vh, 0.62rem);
+  overflow: visible;
+  padding-bottom: clamp(0.3rem, 0.75vh, 0.8rem);
+}
+
 .dashboard-section-fill {
   flex: 1;
   display: flex;

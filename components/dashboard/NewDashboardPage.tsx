@@ -11,7 +11,7 @@ import {
 
 export default function NewDashboardPage() {
   return (
-    <div className="dashboard-screen bg-white text-[#1E1E1E]">
+    <div className="dashboard-screen dashboard-home-fit bg-white text-[#1E1E1E]">
       <div className="dashboard-shell">
         <DashboardNavbar active="Home" />
 

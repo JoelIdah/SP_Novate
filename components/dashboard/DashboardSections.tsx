@@ -38,18 +38,18 @@ export function DashboardActionsSection() {
   return (
     <div>
       <h2 className="mb-[0.45em] text-[0.9em] font-semibold text-[#616a82]">Actions</h2>
-      <div className="grid gap-[0.75em] md:grid-cols-3">
-        <article className="flex min-h-[6.45em] flex-col rounded-[0.7em] border border-[#b9dcf8] bg-[#f3f9ff] px-[1em] py-[0.78em]">
+      <div className="grid gap-[0.65em] md:grid-cols-3">
+        <article className="flex min-h-[5.95em] flex-col rounded-[0.7em] border border-[#b9dcf8] bg-[#f3f9ff] px-[0.9em] py-[0.68em]">
           <span className="inline-block h-[0.8em] w-[0.8em] rounded-full bg-[#2f8fd6]" />
           <p className="mt-[0.45em] text-[1.06em] font-bold text-[#2b3350]">Book a session</p>
           <p className="mt-[0.2em] text-[0.78em] text-[#6d758e]">Find a tutor and schedule your session.</p>
         </article>
-        <article className="flex min-h-[6.45em] flex-col rounded-[0.7em] border border-[#b4e5e4] bg-[#f4fcfc] px-[1em] py-[0.78em]">
+        <article className="flex min-h-[5.95em] flex-col rounded-[0.7em] border border-[#b4e5e4] bg-[#f4fcfc] px-[0.9em] py-[0.68em]">
           <span className="inline-block h-[0.8em] w-[0.8em] rounded-full bg-[#43b8b2]" />
           <p className="mt-[0.45em] text-[1.06em] font-bold text-[#2b3350]">Start a conversation</p>
           <p className="mt-[0.2em] text-[0.78em] text-[#6d758e]">Go to your chat with the tutors</p>
         </article>
-        <article className="flex min-h-[6.45em] flex-col rounded-[0.7em] border border-[#ecd8b2] bg-[#fcf8ef] px-[1em] py-[0.78em]">
+        <article className="flex min-h-[5.95em] flex-col rounded-[0.7em] border border-[#ecd8b2] bg-[#fcf8ef] px-[0.9em] py-[0.68em]">
           <span className="inline-block h-[0.8em] w-[0.8em] rounded-full bg-[#d8aa2c]" />
           <p className="mt-[0.45em] text-[1.06em] font-bold text-[#2b3350]">Check transactions</p>
           <p className="mt-[0.2em] text-[0.78em] text-[#6d758e]">Add money to your main balance.</p>
@@ -63,14 +63,14 @@ export function DashboardLearningOverviewSection() {
   return (
     <div>
       <h2 className="mb-[0.35em] text-[0.86em] font-semibold text-[#616a82]">Learning Overview</h2>
-      <div className="grid gap-[0.5em] sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-[0.42em] sm:grid-cols-2 lg:grid-cols-4">
         {[
           { label: "Sessions booked", value: 8 },
           { label: "Sessions completed", value: 2 },
           { label: "Sessions ongoing", value: 4 },
           { label: "Sessions pending", value: 2 },
         ].map((item) => (
-          <article key={item.label} className="flex min-h-[4.35em] flex-col justify-center rounded-[0.65em] border border-[#e4e8f1] bg-white px-[0.8em] py-[0.48em]">
+          <article key={item.label} className="flex min-h-[4em] flex-col justify-center rounded-[0.65em] border border-[#e4e8f1] bg-white px-[0.75em] py-[0.4em]">
             <p className="text-[0.72em] text-[#747d94]">{item.label}</p>
             <p className="mt-[0.18em] text-[1.45em] font-bold leading-none text-[#1f2537]">{item.value}</p>
           </article>
@@ -165,8 +165,8 @@ export function DashboardResourcesSection() {
   return (
     <div>
       <h2 className="mb-[0.42em] text-[0.9em] font-semibold text-[#616a82]">Resource &amp; Support</h2>
-      <div className="grid gap-[0.75em] lg:grid-cols-[2fr_1fr_1fr]">
-        <article className="relative min-h-[6.95em] overflow-hidden rounded-[0.8em] border border-[#c5dbed] bg-[#e5f2ff] p-[0.8em]">
+      <div className="grid gap-[0.65em] lg:grid-cols-[2fr_1fr_1fr]">
+        <article className="relative min-h-[6.2em] overflow-hidden rounded-[0.8em] border border-[#c5dbed] bg-[#e5f2ff] p-[0.72em]">
           <span className="inline-block h-[0.8em] w-[0.8em] rounded-full bg-[#f3c53d]" />
           <p className="mt-[0.45em] text-[1.05em] font-semibold text-[#2d3448]">Watch our demo video</p>
           <p className="mt-[0.28em] max-w-[18em] text-[0.8em] text-[#5c6884]">Watch this intro video to learn how SP novate works.</p>
@@ -175,7 +175,7 @@ export function DashboardResourcesSection() {
           </button>
         </article>
 
-        <article className="min-h-[6.95em] rounded-[0.8em] border border-[#e6decf] bg-[#f7f2e8] p-[0.8em]">
+        <article className="min-h-[6.2em] rounded-[0.8em] border border-[#e6decf] bg-[#f7f2e8] p-[0.72em]">
           <span className="inline-block h-[0.8em] w-[0.8em] rounded-full bg-[#caa33a]" />
           <p className="mt-[0.45em] text-[1.05em] font-semibold text-[#2d3448]">Learn about our tutors</p>
           <p className="mt-[0.28em] text-[0.8em] text-[#5c6884]">Watch this intro video to learn more about our tutors</p>
@@ -184,7 +184,7 @@ export function DashboardResourcesSection() {
           </button>
         </article>
 
-        <article className="min-h-[6.95em] rounded-[0.8em] border border-[#dfe4ed] bg-[#eef2f7] p-[0.8em]">
+        <article className="min-h-[6.2em] rounded-[0.8em] border border-[#dfe4ed] bg-[#eef2f7] p-[0.72em]">
           <span className="inline-block h-[0.8em] w-[0.8em] rounded-full bg-[#9aa3b6]" />
           <p className="mt-[0.45em] text-[1.05em] font-semibold text-[#2d3448]">What is a finder&apos;s fee</p>
           <p className="mt-[0.28em] text-[0.8em] text-[#5c6884]">Watch this intro video to learn about our finder&apos;s fee</p>

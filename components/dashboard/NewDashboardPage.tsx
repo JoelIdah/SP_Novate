@@ -27,7 +27,7 @@ export default function NewDashboardPage() {
               </section>
 
               <section className="dashboard-section-fill h-[16.5em] xl:h-[17.5em]">
-                <div className="dashboard-section-fill-grid grid h-full grid-cols-1 gap-[var(--panel-gap)] lg:grid-cols-2">
+                <div className="dashboard-section-fill-grid grid h-full grid-cols-1 gap-[0.95em] lg:grid-cols-2">
                   <div className="dashboard-section-fill-card">
                     <DashboardBookingsSection />
                   </div>

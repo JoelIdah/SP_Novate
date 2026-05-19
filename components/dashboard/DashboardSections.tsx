@@ -38,18 +38,18 @@ export function DashboardActionsSection() {
       <div className="grid gap-[0.75em] md:grid-cols-3">
         <article className="flex min-h-[7.6em] flex-col rounded-[0.7em] border border-[#b9dcf8] bg-[#f3f9ff] px-[1.1em] py-[1.05em]">
           <span className="inline-block h-[0.8em] w-[0.8em] rounded-full bg-[#2f8fd6]" />
-          <p className="mt-[0.45em] text-[1.02em] font-semibold text-[#2b3350]">Book a session</p>
-          <p className="mt-[0.22em] text-[0.82em] text-[#6d758e]">Find a tutor and schedule your session.</p>
+          <p className="mt-[0.45em] text-[1.06em] font-bold text-[#2b3350]">Book a session</p>
+          <p className="mt-[0.2em] text-[0.78em] text-[#6d758e]">Find a tutor and schedule your session.</p>
         </article>
         <article className="flex min-h-[7.6em] flex-col rounded-[0.7em] border border-[#b4e5e4] bg-[#f4fcfc] px-[1.1em] py-[1.05em]">
           <span className="inline-block h-[0.8em] w-[0.8em] rounded-full bg-[#43b8b2]" />
-          <p className="mt-[0.45em] text-[1.02em] font-semibold text-[#2b3350]">Start a conversation</p>
-          <p className="mt-[0.22em] text-[0.82em] text-[#6d758e]">Go to your chat with the tutors</p>
+          <p className="mt-[0.45em] text-[1.06em] font-bold text-[#2b3350]">Start a conversation</p>
+          <p className="mt-[0.2em] text-[0.78em] text-[#6d758e]">Go to your chat with the tutors</p>
         </article>
         <article className="flex min-h-[7.6em] flex-col rounded-[0.7em] border border-[#ecd8b2] bg-[#fcf8ef] px-[1.1em] py-[1.05em]">
           <span className="inline-block h-[0.8em] w-[0.8em] rounded-full bg-[#d8aa2c]" />
-          <p className="mt-[0.45em] text-[1.02em] font-semibold text-[#2b3350]">Check transactions</p>
-          <p className="mt-[0.22em] text-[0.82em] text-[#6d758e]">Add money to your main balance.</p>
+          <p className="mt-[0.45em] text-[1.06em] font-bold text-[#2b3350]">Check transactions</p>
+          <p className="mt-[0.2em] text-[0.78em] text-[#6d758e]">Add money to your main balance.</p>
         </article>
       </div>
     </div>
@@ -59,17 +59,17 @@ export function DashboardActionsSection() {
 export function DashboardLearningOverviewSection() {
   return (
     <div>
-      <h2 className="mb-[0.55em] text-[0.93em] font-semibold text-[#616a82]">Learning Overview</h2>
-      <div className="grid gap-[0.75em] sm:grid-cols-2 lg:grid-cols-4">
+      <h2 className="mb-[0.45em] text-[0.88em] font-semibold text-[#616a82]">Learning Overview</h2>
+      <div className="grid gap-[0.6em] sm:grid-cols-2 lg:grid-cols-4">
         {[
           { label: "Sessions booked", value: 8 },
           { label: "Sessions completed", value: 2 },
           { label: "Sessions ongoing", value: 4 },
           { label: "Sessions pending", value: 2 },
         ].map((item) => (
-          <article key={item.label} className="flex min-h-[6.8em] flex-col justify-center rounded-[0.7em] border border-[#e4e8f1] bg-white px-[1em] py-[1em]">
-            <p className="text-[0.9em] text-[#747d94]">{item.label}</p>
-            <p className="mt-[0.25em] text-[2em] font-bold leading-none text-[#1f2537]">{item.value}</p>
+          <article key={item.label} className="flex min-h-[5.2em] flex-col justify-center rounded-[0.65em] border border-[#e4e8f1] bg-white px-[0.85em] py-[0.7em]">
+            <p className="text-[0.72em] text-[#747d94]">{item.label}</p>
+            <p className="mt-[0.18em] text-[1.45em] font-bold leading-none text-[#1f2537]">{item.value}</p>
           </article>
         ))}
       </div>
@@ -80,13 +80,13 @@ export function DashboardLearningOverviewSection() {
 export function DashboardBookingsSection() {
   return (
     <section className="flex h-full min-h-0 flex-col">
-      <div className="mb-[0.55em] flex items-center justify-between">
+      <div className="mb-[0.45em] flex items-center justify-between">
         <h2 className="text-[0.93em] font-semibold text-[#616a82]">Managed Bookings</h2>
-        <button className="text-[0.83em] font-semibold text-[#5954c9]" type="button">Go to managed bookings &gt;</button>
+        <button className="text-[0.73em] font-semibold text-[#6f74a7] hover:text-[#5954c9]" type="button">Go to managed bookings &gt;</button>
       </div>
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[0.7em] border border-[#e4e8f1] bg-white">
         <table className="w-full text-left">
-          <thead className="bg-[#f5f7fb] text-[0.82em] text-[#616a82]">
+          <thead className="bg-[#f7f9fc] text-[0.72em] text-[#6f7892]">
             <tr>
               <th className="px-[0.9em] py-[0.65em] font-semibold">Tutor</th>
               <th className="px-[0.9em] py-[0.65em] font-semibold">Subject</th>
@@ -99,16 +99,16 @@ export function DashboardBookingsSection() {
           <table className="w-full text-left">
             <tbody>
             {bookingRows.map((row, idx) => (
-              <tr key={`${row.tutor}-${idx}`} className="border-t border-[#edf0f6] text-[0.82em] text-[#49516a]">
-                <td className="px-[0.9em] py-[0.85em]">{row.tutor}</td>
-                <td className="px-[0.9em] py-[0.85em]">{row.subject}</td>
-                <td className="px-[0.9em] py-[0.85em]">
+              <tr key={`${row.tutor}-${idx}`} className="border-t border-[#edf0f6] text-[0.78em] text-[#4f576f]">
+                <td className="px-[0.9em] py-[0.76em]">{row.tutor}</td>
+                <td className="px-[0.9em] py-[0.76em]">{row.subject}</td>
+                <td className="px-[0.9em] py-[0.76em]">
                   <span className="inline-flex items-center gap-[0.5em]">
                     <StatusDot status={row.status} />
                     {row.status}
                   </span>
                 </td>
-                <td className="px-[0.9em] py-[0.85em] text-right">
+                <td className="px-[0.9em] py-[0.76em] text-right">
                   <button
                     aria-label={`More actions for ${row.tutor}`}
                     className="text-[1.1em] leading-none text-[#8088a0]"
@@ -130,24 +130,24 @@ export function DashboardBookingsSection() {
 export function DashboardMessagesSection() {
   return (
     <section className="flex h-full min-h-0 flex-col">
-      <div className="mb-[0.55em] flex items-center justify-between">
+      <div className="mb-[0.45em] flex items-center justify-between">
         <h2 className="text-[0.93em] font-semibold text-[#616a82]">Messages</h2>
-        <button className="text-[0.83em] font-semibold text-[#5954c9]" type="button">Go to chat &gt;</button>
+        <button className="text-[0.73em] font-semibold text-[#6f74a7] hover:text-[#5954c9]" type="button">Go to chat &gt;</button>
       </div>
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[0.7em] border border-[#e4e8f1] bg-white">
-        <p className="border-b border-[#edf0f6] px-[0.9em] py-[0.5em] text-[1.2em] font-medium text-[#9aa3b8]">Chat</p>
+        <p className="border-b border-[#edf0f6] px-[0.9em] py-[0.42em] text-[0.92em] font-medium text-[#9aa3b8]">Chat</p>
         <div className="min-h-0 flex-1 overflow-y-auto scrollbar-hover">
           {messages.map((message, idx) => (
-            <article key={`${message.name}-${message.time}-${idx}`} className="flex items-center gap-[0.5em] border-t border-[#edf0f6] px-[0.9em] py-[0.85em]">
+            <article key={`${message.name}-${message.time}-${idx}`} className="flex items-center gap-[0.5em] border-t border-[#edf0f6] px-[0.9em] py-[0.72em]">
               <span className="inline-flex h-[2em] w-[2em] items-center justify-center rounded-[0.35em] bg-[#276a63] text-[0.72em] font-semibold text-white">
                 {message.initials}
               </span>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-[0.83em] font-semibold text-[#2d3448]">{message.name}</p>
-                <p className="truncate text-[0.74em] text-[#7c849a]">{message.preview}</p>
+                <p className="truncate text-[0.8em] font-semibold text-[#2d3448]">{message.name}</p>
+                <p className="truncate text-[0.68em] leading-[1.2] text-[#7c849a]">{message.preview}</p>
               </div>
               <div className="text-right">
-                <p className="text-[0.72em] text-[#7c849a]">{message.time}</p>
+                <p className="text-[0.66em] text-[#7c849a]">{message.time}</p>
                 <span className="inline-flex h-[1.3em] w-[1.3em] items-center justify-center rounded-full bg-[#4a49c6] text-[0.62em] text-white">1</span>
               </div>
             </article>

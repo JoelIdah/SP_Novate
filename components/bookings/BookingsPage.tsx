@@ -169,7 +169,7 @@ export default function BookingsPage() {
         <DashboardNavbar active="Bookings" />
         <section className="dashboard-main overflow-y-auto overflow-x-hidden">
           <div className="dashboard-content-frame px-[var(--dashboard-gutter)]">
-            <section className="w-full space-y-[1.25em] py-[1.2em] 2xl:space-y-[1.4em] min-[3200px]:text-[1.04em] min-[4800px]:text-[1.1em]">
+            <section className="w-full space-y-[1.25em] py-[1.2em] 2xl:space-y-[1.4em]">
         <div className="flex flex-wrap gap-[0.55em]">
           <button
             className={`inline-flex items-center gap-[0.55em] rounded-full border px-[1em] py-[0.45em] text-[0.74em] font-semibold ${

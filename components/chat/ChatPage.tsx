@@ -109,7 +109,7 @@ export default function ChatPage() {
 
         <section className="dashboard-main">
           <div className="dashboard-content-frame px-[var(--dashboard-gutter)]">
-            <section className="grid h-full w-full grid-cols-[minmax(20em,24em)_minmax(0,1fr)] gap-[clamp(0.9em,1vw,1.5em)] overflow-hidden py-[clamp(0.9em,1.2vw,1.4em)] max-[1100px]:grid-cols-1 max-[1100px]:grid-rows-[minmax(0,0.95fr)_minmax(0,1.05fr)] 2xl:grid-cols-[minmax(22em,27em)_minmax(0,1fr)] min-[3200px]:text-[1.08em] min-[4800px]:text-[1.18em]">
+            <section className="grid h-full w-full grid-cols-[minmax(20em,24em)_minmax(0,1fr)] gap-[clamp(0.9em,1vw,1.5em)] overflow-hidden py-[clamp(0.9em,1.2vw,1.4em)] max-[1100px]:grid-cols-1 max-[1100px]:grid-rows-[minmax(0,0.95fr)_minmax(0,1.05fr)] 2xl:grid-cols-[minmax(22em,27em)_minmax(0,1fr)]">
               <aside className="flex h-full w-full flex-col overflow-hidden rounded-[1em] border border-[#d7dced] bg-white shadow-[0_0.7em_2em_rgba(42,50,88,0.06)]">
                 <div className="border-b border-[#edf0f6] px-[1em] pb-[0.82em] pt-[0.86em] text-[1.1em] font-medium text-[#8992a8]">Chat</div>
 

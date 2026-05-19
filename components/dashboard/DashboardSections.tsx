@@ -25,9 +25,6 @@ const messages: MessageRow[] = [
   { initials: "Q", name: "Quadri Ahmed", preview: "Hi Oluyinka, I would love to book a session.", time: "11:25" },
 ];
 
-const visibleBookingRows = bookingRows.slice(0, 4);
-const visibleMessages = messages.slice(0, 3);
-
 function StatusDot({ status }: { status: BookingRow["status"] }) {
   const color =
     status === "Completed" ? "bg-[#1ab26e]" : status === "Ongoing" ? "bg-[#9b57f6]" : "bg-[#2295ea]";
@@ -82,12 +79,12 @@ export function DashboardLearningOverviewSection() {
 
 export function DashboardBookingsSection() {
   return (
-    <section className="flex min-h-0 flex-col">
+    <section className="flex h-full min-h-0 flex-col">
       <div className="mb-[0.45em] flex items-center justify-between">
         <h2 className="text-[0.93em] font-semibold text-[#616a82]">Managed Bookings</h2>
         <button className="text-[0.73em] font-semibold text-[#6f74a7] hover:text-[#5954c9]" type="button">Go to managed bookings &gt;</button>
       </div>
-      <div className="overflow-hidden rounded-[0.7em] border border-[#e4e8f1] bg-white">
+      <div className="flex min-h-[12.8em] flex-col overflow-hidden rounded-[0.7em] border border-[#e4e8f1] bg-white lg:h-[14.2em] lg:min-h-0">
         <table className="w-full text-left">
           <thead className="bg-[#f7f9fc] text-[0.72em] text-[#6f7892]">
             <tr>
@@ -98,10 +95,10 @@ export function DashboardBookingsSection() {
             </tr>
           </thead>
         </table>
-        <div>
+        <div className="min-h-0 flex-1 overflow-y-auto scrollbar-hover">
           <table className="w-full text-left">
             <tbody>
-            {visibleBookingRows.map((row, idx) => (
+            {bookingRows.map((row, idx) => (
               <tr key={`${row.tutor}-${idx}`} className="border-t border-[#edf0f6] text-[0.78em] text-[#4f576f]">
                 <td className="px-[0.9em] py-[0.76em]">{row.tutor}</td>
                 <td className="px-[0.9em] py-[0.76em]">{row.subject}</td>
@@ -132,15 +129,15 @@ export function DashboardBookingsSection() {
 
 export function DashboardMessagesSection() {
   return (
-    <section className="flex min-h-0 flex-col">
+    <section className="flex h-full min-h-0 flex-col">
       <div className="mb-[0.45em] flex items-center justify-between">
         <h2 className="text-[0.93em] font-semibold text-[#616a82]">Messages</h2>
         <button className="text-[0.73em] font-semibold text-[#6f74a7] hover:text-[#5954c9]" type="button">Go to chat &gt;</button>
       </div>
-      <div className="overflow-hidden rounded-[0.7em] border border-[#e4e8f1] bg-white">
+      <div className="flex min-h-[12.8em] flex-col overflow-hidden rounded-[0.7em] border border-[#e4e8f1] bg-white lg:h-[14.2em] lg:min-h-0">
         <p className="border-b border-[#edf0f6] px-[0.9em] py-[0.42em] text-[0.92em] font-medium text-[#9aa3b8]">Chat</p>
-        <div>
-          {visibleMessages.map((message, idx) => (
+        <div className="min-h-0 flex-1 overflow-y-auto scrollbar-hover">
+          {messages.map((message, idx) => (
             <article key={`${message.name}-${message.time}-${idx}`} className="flex items-center gap-[0.5em] border-t border-[#edf0f6] px-[0.9em] py-[0.72em]">
               <span className="inline-flex h-[2em] w-[2em] items-center justify-center rounded-[0.35em] bg-[#276a63] text-[0.72em] font-semibold text-white">
                 {message.initials}

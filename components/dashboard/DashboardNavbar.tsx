@@ -36,14 +36,14 @@ export function DashboardNavbar({ active = "Home" }: { active?: NavLabel }) {
 
   return (
     <header className="dashboard-header z-50 border-b border-[#E8EAF1] bg-white shadow-[0_0.14em_0.7em_rgba(33,38,79,0.08)]">
-      <div className="grid min-h-[var(--topbar-h)] w-full grid-cols-[auto_1fr_auto] items-center gap-[1em] px-[0.9em] py-[0.3em]">
+      <div className="grid min-h-[var(--topbar-h)] w-full grid-cols-[auto_1fr_auto] items-center gap-[1em] px-[0.9em] py-0">
         <div className="flex items-center">
           <Link href="/dashboard">
             <Image alt="SP Novate" className="h-[2.05em] w-auto" height={36} src="/logo/logo.png" width={36} />
           </Link>
         </div>
 
-        <nav className="hidden items-center justify-center gap-[1.25em] overflow-x-auto overflow-y-visible navbar-scroll px-[0.4em] lg:flex">
+        <nav className="navbar-scroll hidden self-stretch overflow-x-auto overflow-y-visible px-[0.4em] lg:flex lg:items-center lg:justify-center lg:gap-[1.25em]">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = item.label === active;
@@ -52,7 +52,7 @@ export function DashboardNavbar({ active = "Home" }: { active?: NavLabel }) {
               <Link
                 key={item.label}
                 href={item.href}
-                className={`relative flex min-w-[4.7em] flex-col items-center justify-center gap-[0.14em] px-[0.6em] py-[0.3em] text-[0.96em] font-semibold leading-[1.2] transition-colors ${
+                className={`relative flex h-full min-w-[4.7em] flex-col items-center justify-center gap-[0.14em] px-[0.6em] pb-[0.34em] pt-[0.28em] text-[0.96em] font-semibold leading-[1.2] transition-colors ${
                   isActive ? "text-[#4A46D6]" : "text-[#5F6678] hover:text-[#434B5F]"
                 }`}
               >
@@ -62,7 +62,7 @@ export function DashboardNavbar({ active = "Home" }: { active?: NavLabel }) {
                 />
                 <span>{item.label}</span>
                 {isActive && (
-                  <span className="absolute -bottom-[0.12em] left-1/2 h-[0.12em] w-[4.2em] -translate-x-1/2 rounded-full bg-[#4B49D8]" />
+                  <span className="absolute bottom-0 left-1/2 h-[0.12em] w-[4.2em] -translate-x-1/2 rounded-full bg-[#4B49D8]" />
                 )}
               </Link>
             );

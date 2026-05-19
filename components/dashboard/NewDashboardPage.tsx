@@ -27,14 +27,15 @@ export default function NewDashboardPage() {
               </section>
 
               <section>
-                <div className="grid grid-cols-1 gap-[0.95em] lg:grid-cols-[1.45fr_1fr]">
-                  <div>
+                <div className="grid grid-cols-1 gap-[0.95em] lg:grid-cols-[1.45fr_1fr] lg:items-stretch">
+                  <div className="h-full min-h-0">
                     <DashboardBookingsSection />
                   </div>
-                  <div className="grid gap-[0.8em]">
+                  <div className="h-full min-h-0">
                     <DashboardMessagesSection />
                   </div>
                 </div>
+
               </section>
 
               <section>

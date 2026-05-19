@@ -26,12 +26,12 @@ export default function NewDashboardPage() {
                 <DashboardLearningOverviewSection />
               </section>
 
-              <section className="dashboard-section-fill h-[16.5em] xl:h-[17.5em]">
-                <div className="dashboard-section-fill-grid grid h-full grid-cols-1 gap-[0.95em] lg:grid-cols-2">
-                  <div className="dashboard-section-fill-card">
+              <section>
+                <div className="grid grid-cols-1 gap-[0.95em] lg:grid-cols-[1.45fr_1fr]">
+                  <div>
                     <DashboardBookingsSection />
                   </div>
-                  <div className="dashboard-section-fill-card">
+                  <div className="grid gap-[0.8em]">
                     <DashboardMessagesSection />
                   </div>
                 </div>

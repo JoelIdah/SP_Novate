@@ -45,7 +45,7 @@ export default function BookingDetailsPage() {
 
         <article className="rounded-xl border border-[#e3e8f2] bg-white p-4">
           <h2 className="mb-3 text-[0.92rem] font-semibold text-[#3c4359]">Booking summary</h2>
-          <div className="grid gap-3 text-[0.76rem] text-[#687086] sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-3 text-[0.76rem] text-[#687086] sm:grid-cols-2 xl:grid-cols-4">
             <SummaryItem label="Department type" value="Academics" />
             <SummaryItem label="Session" value="Online" />
             <SummaryItem label="Period" value="Evening" />
@@ -57,7 +57,7 @@ export default function BookingDetailsPage() {
           </div>
         </article>
 
-        <div className="grid gap-4 lg:grid-cols-[1fr_1.5fr]">
+        <div className="grid gap-4 xl:grid-cols-[1fr_1.5fr]">
           <div className="space-y-4">
             <article className="rounded-xl border border-[#e3e8f2] bg-white p-4">
               <h3 className="mb-3 text-[0.9rem] font-semibold text-[#3c4359]">Tutor details</h3>

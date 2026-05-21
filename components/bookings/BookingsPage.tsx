@@ -167,7 +167,7 @@ export default function BookingsPage() {
     <main className="dashboard-screen bg-white text-[#2b3245]">
       <div className="dashboard-shell">
         <DashboardNavbar active="Bookings" />
-        <section className="dashboard-main overflow-y-auto overflow-x-hidden">
+        <section className="dashboard-main scrollbar-hover min-h-0 overflow-y-auto overflow-x-hidden" style={{ overflowY: "auto", overflowX: "hidden" }}>
           <div className="dashboard-content-frame px-[var(--dashboard-gutter)]">
             <section className="w-full space-y-[1.25em] py-[1.2em] 2xl:space-y-[1.4em]">
         <div className="flex flex-wrap gap-[0.55em]">
@@ -248,7 +248,7 @@ export default function BookingsPage() {
         ) : null}
 
         {view === "explore" ? (
-            <div className="grid gap-[1.1em] lg:grid-cols-2 2xl:grid-cols-3">
+            <div className="grid gap-[1.1em] xl:grid-cols-2 2xl:grid-cols-3">
           {tutors.map((tutor, index) => (
             <Link
               key={`${tutor.name}-${index}`}
@@ -556,6 +556,7 @@ function FilterSelect({
     </label>
   );
 }
+
 
 
 

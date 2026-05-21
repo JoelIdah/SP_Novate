@@ -43,7 +43,7 @@ export function DashboardNavbar({ active = "Home" }: { active?: NavLabel }) {
           </Link>
         </div>
 
-        <nav className="navbar-scroll hidden self-stretch overflow-x-auto overflow-y-visible px-[0.4em] lg:flex lg:items-center lg:justify-center lg:gap-[1.25em]">
+        <nav className="navbar-scroll hidden self-stretch overflow-x-auto overflow-y-visible px-[0.4em] xl:flex xl:items-center xl:justify-center xl:gap-[1.25em]">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = item.label === active;
@@ -72,18 +72,18 @@ export function DashboardNavbar({ active = "Home" }: { active?: NavLabel }) {
         <div className="ml-auto flex items-center justify-end gap-[0.6em]">
           <button
             aria-label={isMenuOpen ? "Close navigation menu" : "Open navigation menu"}
-            className="inline-flex h-[2.2em] w-[2.2em] items-center justify-center rounded-[0.35em] text-[#2e3448] lg:hidden"
+            className="inline-flex h-[2.2em] w-[2.2em] items-center justify-center rounded-[0.35em] text-[#2e3448] xl:hidden"
             onClick={() => setIsMenuOpen((prev) => !prev)}
             type="button"
           >
             {isMenuOpen ? <X className="h-[1.15em] w-[1.15em]" /> : <Menu className="h-[1.15em] w-[1.15em]" />}
           </button>
 
-          <button className="hidden rounded-full border border-[#E6E8EF] bg-[#F2F3F7] px-[0.9em] py-[0.32em] text-[0.8em] font-semibold text-[#454B5D] transition hover:bg-[#EBEDF3] lg:inline-flex">
+          <button className="hidden rounded-full border border-[#E6E8EF] bg-[#F2F3F7] px-[0.9em] py-[0.32em] text-[0.8em] font-semibold text-[#454B5D] transition hover:bg-[#EBEDF3] xl:inline-flex">
             Become a tutor
           </button>
 
-          <button className="hidden items-center gap-[0.24em] rounded-full bg-[#F1F2F6] px-[0.28em] py-[0.28em] lg:flex">
+          <button className="hidden items-center gap-[0.24em] rounded-full bg-[#F1F2F6] px-[0.28em] py-[0.28em] xl:flex">
             <div className="flex h-[1.7em] w-[1.7em] items-center justify-center rounded-full bg-[#221D71] text-[0.8em] font-semibold text-white">
               O
             </div>
@@ -93,7 +93,7 @@ export function DashboardNavbar({ active = "Home" }: { active?: NavLabel }) {
       </div>
 
       {isMenuMounted ? (
-        <div className="fixed inset-0 z-[70] lg:hidden">
+        <div className="fixed inset-0 z-[70] xl:hidden">
           <button
             aria-label="Close menu backdrop"
             className={`absolute inset-0 transition-opacity duration-200 ${isMenuOpen ? "bg-[#0f1530]/35 opacity-100" : "bg-[#0f1530]/0 opacity-0"}`}
@@ -140,3 +140,4 @@ export function DashboardNavbar({ active = "Home" }: { active?: NavLabel }) {
     </header>
   );
 }
+

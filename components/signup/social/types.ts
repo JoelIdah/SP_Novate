@@ -12,3 +12,4 @@ export type SocialAuthResult =
       message: string;
       status: number;
     };
+

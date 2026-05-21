@@ -9,3 +9,4 @@ export default function DashboardPage() {
 
   return <NewDashboardPage />;
 }
+

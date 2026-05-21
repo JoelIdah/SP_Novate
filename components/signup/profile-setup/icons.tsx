@@ -1,4 +1,4 @@
-﻿export function LocationTargetIcon() {
+export function LocationTargetIcon() {
   return (
     <svg aria-hidden className="h-16 w-16" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
       <circle cx="40" cy="40" fill="#eef2f8" r="38" />
@@ -27,3 +27,4 @@ export function SuccessBadgeIcon() {
     </svg>
   );
 }
+

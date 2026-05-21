@@ -66,6 +66,23 @@ body {
   font-family: var(--font-open-sauce);
 }
 
+/* Global subtle scrollbar styling */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #c7cfdd transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: #c7cfdd;
+  border-radius: 999px;
+}
+
 a,
 button {
   transition:
@@ -150,8 +167,7 @@ input:focus-visible {
 }
 
 .dashboard-home-fit .dashboard-main {
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden;
   padding-block: clamp(0.16rem, 0.42vh, 0.62rem);
 }
 
@@ -186,12 +202,7 @@ input:focus-visible {
   min-height: 0;
 }
 
-@media (max-width: 1023px) {
-  .dashboard-main {
-    overflow-y: auto;
-    overflow-x: hidden;
-  }
-
+@media (max-width: 1279px) {
   .dashboard-stack {
     overflow: visible;
     min-height: max-content;
@@ -229,10 +240,29 @@ input:focus-visible {
 
 .navbar-scroll {
   scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 .navbar-scroll::-webkit-scrollbar {
   width: 0;
   height: 0;
+  display: none;
+}
+
+.scrollbar-hidden {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+.scrollbar-hidden::-webkit-scrollbar {
+  width: 0 !important;
+  height: 0 !important;
+  display: none !important;
+  background: transparent !important;
+}
+.scrollbar-hidden::-webkit-scrollbar-thumb {
+  background: transparent !important;
+}
+.scrollbar-hidden::-webkit-scrollbar-track {
+  background: transparent !important;
 }
 
 .scrollbar-hover {
@@ -257,3 +287,4 @@ input:focus-visible {
   background: #c7cfdd;
   border-radius: 999px;
 }
+

@@ -76,3 +76,4 @@ export async function startAppleAuth(options: { onToken: (token: string) => void
     options.onError("Apple sign in was cancelled or failed. Please try again.");
   }
 }
+

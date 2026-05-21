@@ -67,3 +67,4 @@ export async function socialAuthApi({ provider, token }: SocialAuthPayload): Pro
     profileSetupRequired: false,
   };
 }
+

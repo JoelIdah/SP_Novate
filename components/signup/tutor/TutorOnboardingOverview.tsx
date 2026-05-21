@@ -1,4 +1,4 @@
-﻿import { OnboardingChecklistStep } from "../shared/OnboardingChecklistStep";
+import { OnboardingChecklistStep } from "../shared/OnboardingChecklistStep";
 
 export function TutorOnboardingOverview({ onCancel, onContinue }: { onCancel: () => void; onContinue: () => void }) {
   return (
@@ -11,3 +11,4 @@ export function TutorOnboardingOverview({ onCancel, onContinue }: { onCancel: ()
     />
   );
 }
+

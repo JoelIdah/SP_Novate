@@ -1,4 +1,4 @@
-﻿export type ProfileFormState = {
+export type ProfileFormState = {
   email: string;
   lastName: string;
   firstName: string;
@@ -106,3 +106,4 @@ export function parseReverseGeocodeResult(
     city: address.city ?? address.town ?? address.village ?? address.county ?? "",
   };
 }
+

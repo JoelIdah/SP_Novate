@@ -1,4 +1,4 @@
-﻿import type { JSX } from "react";
+import type { JSX } from "react";
 
 export function GoogleIcon(): JSX.Element {
   return (
@@ -48,3 +48,4 @@ export function AppleIcon(): JSX.Element {
     </svg>
   );
 }
+

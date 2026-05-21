@@ -111,3 +111,4 @@ export function startGoogleAuth(options: { onToken: (token: string) => void; onE
 
   googleButton.click();
 }
+

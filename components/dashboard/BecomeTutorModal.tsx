@@ -38,3 +38,4 @@ export function BecomeTutorModal({ open, onCancel, onConfirm }: BecomeTutorModal
     </div>
   );
 }
+

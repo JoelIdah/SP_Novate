@@ -15,3 +15,4 @@ export function Button({ variant, className = "", type = "button", ...props }: B
 
   return <button className={classes} type={type} {...props} />;
 }
+

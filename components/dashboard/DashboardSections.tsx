@@ -60,7 +60,7 @@ export function DashboardLearningOverviewSection() {
   return (
     <div>
       <h2 className="mb-[0.35em] text-[0.86em] font-semibold text-[#616a82]">Learning Overview</h2>
-      <div className="grid gap-[0.42em] sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-[0.42em] sm:grid-cols-2 xl:grid-cols-4">
         {[
           { label: "Sessions booked", value: 8 },
           { label: "Sessions completed", value: 2 },
@@ -84,7 +84,7 @@ export function DashboardBookingsSection() {
         <h2 className="text-[0.93em] font-semibold text-[#616a82]">Managed Bookings</h2>
         <button className="text-[0.73em] font-semibold text-[#6f74a7] hover:text-[#5954c9]" type="button">Go to managed bookings &gt;</button>
       </div>
-      <div className="flex min-h-[12.8em] flex-col overflow-hidden rounded-[0.7em] border border-[#e4e8f1] bg-white lg:h-[14.2em] lg:min-h-0">
+      <div className="flex min-h-[12.8em] flex-col overflow-hidden rounded-[0.7em] border border-[#e4e8f1] bg-white xl:h-[14.2em] xl:min-h-0">
         <table className="w-full text-left">
           <thead className="bg-[#f7f9fc] text-[0.72em] text-[#6f7892]">
             <tr>
@@ -134,7 +134,7 @@ export function DashboardMessagesSection() {
         <h2 className="text-[0.93em] font-semibold text-[#616a82]">Messages</h2>
         <button className="text-[0.73em] font-semibold text-[#6f74a7] hover:text-[#5954c9]" type="button">Go to chat &gt;</button>
       </div>
-      <div className="flex min-h-[12.8em] flex-col overflow-hidden rounded-[0.7em] border border-[#e4e8f1] bg-white lg:h-[14.2em] lg:min-h-0">
+      <div className="flex min-h-[12.8em] flex-col overflow-hidden rounded-[0.7em] border border-[#e4e8f1] bg-white xl:h-[14.2em] xl:min-h-0">
         <p className="border-b border-[#edf0f6] px-[0.9em] py-[0.42em] text-[0.92em] font-medium text-[#9aa3b8]">Chat</p>
         <div className="min-h-0 flex-1 overflow-y-auto scrollbar-hover">
           {messages.map((message, idx) => (
@@ -162,7 +162,7 @@ export function DashboardResourcesSection() {
   return (
     <div>
       <h2 className="mb-[0.42em] text-[0.9em] font-semibold text-[#616a82]">Resource &amp; Support</h2>
-      <div className="grid gap-[0.65em] lg:grid-cols-[2fr_1fr_1fr]">
+      <div className="grid gap-[0.65em] xl:grid-cols-[2fr_1fr_1fr]">
         <article className="relative min-h-[6.2em] overflow-hidden rounded-[0.8em] border border-[#c5dbed] bg-[#e5f2ff] p-[0.72em]">
           <span className="inline-block h-[0.8em] w-[0.8em] rounded-full bg-[#f3c53d]" />
           <p className="mt-[0.45em] text-[1.05em] font-semibold text-[#2d3448]">Watch our demo video</p>
@@ -193,3 +193,4 @@ export function DashboardResourcesSection() {
     </div>
   );
 }
+

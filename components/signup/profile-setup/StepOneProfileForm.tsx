@@ -1,4 +1,4 @@
-﻿import { FieldLabel } from "./FieldLabel";
+import { FieldLabel } from "./FieldLabel";
 import type { ProfileFormState } from "../utils";
 
 type StepOneProfileFormProps = {
@@ -50,3 +50,4 @@ export function StepOneProfileForm({ profileForm, onProfileFieldChange }: StepOn
     </section>
   );
 }
+

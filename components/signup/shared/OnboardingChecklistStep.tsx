@@ -1,4 +1,4 @@
-﻿import Image from "next/image";
+import Image from "next/image";
 
 import { getStepIconKindFromLabel, StepItemIcon } from "./StepItemIcon";
 
@@ -47,7 +47,7 @@ export function OnboardingChecklistStep({
 
           <div className="mx-auto mt-4 flex w-full max-w-[380px] justify-start">
             <button className="inline-flex h-8.5 items-center gap-2 rounded-full bg-[#231d71] px-4 text-[0.76rem] font-semibold text-white hover:bg-[#1c175f]" onClick={onContinue} type="button">
-              <span aria-hidden>→</span>
+              <span aria-hidden>?</span>
               Let&apos;s get started
             </button>
           </div>
@@ -68,3 +68,4 @@ export function OnboardingChecklistStep({
     </main>
   );
 }
+

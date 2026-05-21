@@ -65,3 +65,4 @@ export function startFacebookAuth(options: { onToken: (token: string) => void; o
     { scope: "email,public_profile" }
   );
 }
+

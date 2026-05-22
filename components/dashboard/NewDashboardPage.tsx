@@ -26,8 +26,8 @@ export default function NewDashboardPage() {
                 <DashboardLearningOverviewSection />
               </section>
 
-              <section>
-                <div className="grid grid-cols-1 gap-[0.95em] xl:grid-cols-[1.45fr_1fr] xl:items-stretch">
+              <section className="dashboard-home-panels">
+                <div className="dashboard-home-panels-grid grid grid-cols-1 gap-[0.95em] xl:h-full xl:grid-cols-[1.45fr_1fr] xl:items-stretch">
                   <div className="h-full min-h-0">
                     <DashboardBookingsSection />
                   </div>

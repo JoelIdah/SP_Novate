@@ -84,7 +84,7 @@ export function DashboardBookingsSection() {
         <h2 className="text-[0.93em] font-semibold text-[#616a82]">Managed Bookings</h2>
         <button className="text-[0.73em] font-semibold text-[#6f74a7] hover:text-[#5954c9]" type="button">Go to managed bookings &gt;</button>
       </div>
-      <div className="flex min-h-[12.8em] flex-col overflow-hidden rounded-[0.7em] border border-[#e4e8f1] bg-white xl:h-[14.2em] xl:min-h-0">
+      <div className="flex min-h-[12.8em] flex-col overflow-hidden rounded-[0.7em] border border-[#e4e8f1] bg-white xl:h-full xl:min-h-0">
         <table className="w-full text-left">
           <thead className="bg-[#f7f9fc] text-[0.72em] text-[#6f7892]">
             <tr>
@@ -134,7 +134,7 @@ export function DashboardMessagesSection() {
         <h2 className="text-[0.93em] font-semibold text-[#616a82]">Messages</h2>
         <button className="text-[0.73em] font-semibold text-[#6f74a7] hover:text-[#5954c9]" type="button">Go to chat &gt;</button>
       </div>
-      <div className="flex min-h-[12.8em] flex-col overflow-hidden rounded-[0.7em] border border-[#e4e8f1] bg-white xl:h-[14.2em] xl:min-h-0">
+      <div className="flex min-h-[12.8em] flex-col overflow-hidden rounded-[0.7em] border border-[#e4e8f1] bg-white xl:h-full xl:min-h-0">
         <p className="border-b border-[#edf0f6] px-[0.9em] py-[0.42em] text-[0.92em] font-medium text-[#9aa3b8]">Chat</p>
         <div className="min-h-0 flex-1 overflow-y-auto scrollbar-hover">
           {messages.map((message, idx) => (

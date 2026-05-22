@@ -109,7 +109,7 @@ export default function ChatPage() {
 
         <section className="dashboard-main">
           <div className="dashboard-content-frame px-[var(--dashboard-gutter)]">
-            <section className="grid h-full w-full grid-cols-[minmax(20em,24em)_minmax(0,1fr)] gap-[clamp(0.9em,1vw,1.5em)] overflow-hidden py-[clamp(0.9em,1.2vw,1.4em)] max-[1100px]:grid-cols-1 max-[1100px]:grid-rows-[minmax(0,0.95fr)_minmax(0,1.05fr)] 2xl:grid-cols-[minmax(22em,27em)_minmax(0,1fr)]">
+            <section className="grid h-full min-h-0 w-full box-border grid-cols-[minmax(20em,24em)_minmax(0,1fr)] gap-[clamp(0.9em,1vw,1.5em)] overflow-hidden py-[clamp(0.9em,1.2vw,1.4em)] max-[1100px]:grid-cols-1 max-[1100px]:grid-rows-[minmax(0,0.95fr)_minmax(0,1.05fr)] 2xl:grid-cols-[minmax(22em,27em)_minmax(0,1fr)]">
               <aside className="flex h-full w-full flex-col overflow-hidden rounded-[1em] border border-[#d7dced] bg-white shadow-[0_0.7em_2em_rgba(42,50,88,0.06)]">
                 <div className="border-b border-[#edf0f6] px-[1em] pb-[0.82em] pt-[0.86em] text-[1.1em] font-medium text-[#8992a8]">Chat</div>
 
@@ -167,7 +167,7 @@ export default function ChatPage() {
                   </span>
                 </header>
 
-                <div className="flex flex-1 flex-col gap-[0.9em] px-[1.05em] pb-[0.8em] pt-[1.05em]">
+                <div className="flex min-h-0 flex-1 flex-col gap-[0.9em] overflow-y-auto px-[1.05em] pb-[0.8em] pt-[1.05em]">
                   <div className="flex items-end gap-[0.55em]">
                     <Avatar avatar={activeChat.avatar} name={activeChat.name} size={1.5} />
                     <p className="max-w-[38ch] rounded-[0.85em] bg-[#d6d7f4] px-[0.85em] py-[0.45em] text-[0.78em] font-semibold leading-[1.25] text-[#5960a8] shadow-[0_0.45em_1.1em_rgba(95,99,162,0.14)]">

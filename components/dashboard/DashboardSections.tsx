@@ -80,47 +80,69 @@ export function DashboardLearningOverviewSection() {
 export function DashboardBookingsSection() {
   return (
     <section className="flex h-full min-h-0 flex-col">
-      <div className="mb-[0.45em] flex items-center justify-between">
+      <div className="mb-[0.45em] flex flex-wrap items-center justify-between gap-x-[0.6em] gap-y-[0.35em]">
         <h2 className="text-[0.93em] font-semibold text-[#616a82]">Managed Bookings</h2>
         <button className="text-[0.73em] font-semibold text-[#6f74a7] hover:text-[#5954c9]" type="button">Go to managed bookings &gt;</button>
       </div>
       <div className="flex min-h-[12.8em] flex-col overflow-hidden rounded-[0.7em] border border-[#e4e8f1] bg-white xl:h-full xl:min-h-0">
-        <table className="w-full text-left">
-          <thead className="bg-[#f7f9fc] text-[0.72em] text-[#6f7892]">
-            <tr>
-              <th className="px-[0.9em] py-[0.65em] font-semibold">Tutor</th>
-              <th className="px-[0.9em] py-[0.65em] font-semibold">Subject</th>
-              <th className="px-[0.9em] py-[0.65em] font-semibold">Status</th>
-              <th className="px-[0.9em] py-[0.65em] font-semibold" />
-            </tr>
-          </thead>
-        </table>
-        <div className="min-h-0 flex-1 overflow-y-auto scrollbar-hover">
-          <table className="w-full text-left">
-            <tbody>
-            {bookingRows.map((row, idx) => (
-              <tr key={`${row.tutor}-${idx}`} className="border-t border-[#edf0f6] text-[0.78em] text-[#4f576f]">
-                <td className="px-[0.9em] py-[0.76em]">{row.tutor}</td>
-                <td className="px-[0.9em] py-[0.76em]">{row.subject}</td>
-                <td className="px-[0.9em] py-[0.76em]">
-                  <span className="inline-flex items-center gap-[0.5em]">
-                    <StatusDot status={row.status} />
-                    {row.status}
-                  </span>
-                </td>
-                <td className="px-[0.9em] py-[0.76em] text-right">
-                  <button
-                    aria-label={`More actions for ${row.tutor}`}
-                    className="text-[1.1em] leading-none text-[#8088a0]"
-                    type="button"
-                  >
-                    &hellip;
-                  </button>
-                </td>
-              </tr>
-            ))}
-            </tbody>
-          </table>
+        <div className="md:hidden">
+          {bookingRows.map((row, idx) => (
+            <article
+              key={`${row.tutor}-${idx}`}
+              className="flex items-start justify-between gap-[0.7em] border-t border-[#edf0f6] px-[0.85em] py-[0.7em] first:border-t-0"
+            >
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[0.78em] font-semibold text-[#2f3547]">{row.tutor}</p>
+                <p className="truncate text-[0.72em] text-[#6b748b]">{row.subject}</p>
+              </div>
+              <span className="inline-flex shrink-0 items-center gap-[0.4em] text-[0.7em] text-[#4f576f]">
+                <StatusDot status={row.status} />
+                <span>{row.status}</span>
+              </span>
+            </article>
+          ))}
+        </div>
+
+        <div className="hidden min-h-0 flex-1 overflow-y-auto scrollbar-hover md:block">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[34em] text-left">
+              <thead className="bg-[#f7f9fc] text-[0.72em] text-[#6f7892]">
+                <tr>
+                  <th className="px-[0.9em] py-[0.65em] font-semibold">Tutor</th>
+                  <th className="px-[0.9em] py-[0.65em] font-semibold">Subject</th>
+                  <th className="px-[0.9em] py-[0.65em] font-semibold">Status</th>
+                  <th className="px-[0.9em] py-[0.65em] font-semibold" />
+                </tr>
+              </thead>
+              <tbody>
+                {bookingRows.map((row, idx) => (
+                  <tr key={`${row.tutor}-${idx}`} className="border-t border-[#edf0f6] text-[0.78em] text-[#4f576f]">
+                    <td className="px-[0.9em] py-[0.76em]">
+                      <span className="block max-w-[14em] truncate">{row.tutor}</span>
+                    </td>
+                    <td className="px-[0.9em] py-[0.76em]">
+                      <span className="block max-w-[12em] truncate">{row.subject}</span>
+                    </td>
+                    <td className="px-[0.9em] py-[0.76em]">
+                      <span className="inline-flex items-center gap-[0.5em]">
+                        <StatusDot status={row.status} />
+                        {row.status}
+                      </span>
+                    </td>
+                    <td className="px-[0.9em] py-[0.76em] text-right">
+                      <button
+                        aria-label={`More actions for ${row.tutor}`}
+                        className="text-[1.1em] leading-none text-[#8088a0]"
+                        type="button"
+                      >
+                        &hellip;
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </section>

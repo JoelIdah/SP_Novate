@@ -48,6 +48,9 @@
 html,
 body {
   min-height: 100dvh;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 html {
@@ -127,10 +130,13 @@ input:focus-visible {
 }
 
 .dashboard-screen {
+  height: 100dvh;
   min-height: 100dvh;
+  overflow: hidden;
 }
 
 .dashboard-shell {
+  height: 100%;
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
@@ -154,6 +160,8 @@ input:focus-visible {
   max-width: var(--dashboard-max-width);
   margin-inline: auto;
   display: flex;
+  min-height: 0;
+  min-width: 0;
   font-size: 1rem;
 }
 
@@ -163,7 +171,12 @@ input:focus-visible {
   flex-direction: column;
   gap: clamp(0.35rem, 0.55vh, 0.85rem);
   min-height: 0;
+  min-width: 0;
   overflow: hidden;
+}
+
+.dashboard-stack > section {
+  min-width: 0;
 }
 
 .dashboard-home-fit .dashboard-main {
@@ -172,27 +185,29 @@ input:focus-visible {
   padding-block: clamp(0.16rem, 0.42vh, 0.62rem);
 }
 
+.dashboard-home-fit .dashboard-content-frame {
+  display: flex;
+  min-height: 100%;
+}
+
 .dashboard-home-fit .dashboard-stack {
+  flex: 1 0 auto;
   gap: clamp(0.26rem, 0.42vh, 0.62rem);
   min-height: 100%;
+  overflow: visible;
   padding-bottom: clamp(0.3rem, 0.75vh, 0.8rem);
 }
 
-.dashboard-home-panels {
-  min-height: 0;
+.dashboard-home-fit .dashboard-stack > section:last-child {
+  margin-top: auto;
 }
 
-@media (min-width: 1280px) {
-  .dashboard-home-fit .dashboard-home-panels {
-    flex: 1;
-    display: flex;
-    min-height: 0;
-  }
+.dashboard-home-action-card {
+  min-height: clamp(5.95em, 12dvh, 8.4em);
+}
 
-  .dashboard-home-fit .dashboard-home-panels-grid {
-    flex: 1;
-    min-height: 0;
-  }
+.dashboard-home-metric-card {
+  min-height: clamp(4em, 8.5dvh, 5.8em);
 }
 
 .dashboard-section-fill {

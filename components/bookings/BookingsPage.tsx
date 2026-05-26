@@ -1,6 +1,6 @@
  "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { CalendarDays, ChevronDown, ChevronRight, ClipboardList, Compass, EllipsisVertical, MapPin, Search, Star } from "lucide-react";
@@ -132,6 +132,8 @@ export default function BookingsPage() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [selectedStatus, setSelectedStatus] = useState<ManagedBookingRow["status"] | "All">("All");
+  const [managePage, setManagePage] = useState(1);
+  const rowsPerPage = 6;
 
   const activeFilterCount = useMemo(
     () => [subject, category, location, days, time, rating].filter(Boolean).length,
@@ -148,6 +150,17 @@ export default function BookingsPage() {
       const datePass = !Number.isNaN(rowDate.valueOf()) && fromPass && toPass;
       return statusPass && datePass;
     });
+  }, [dateFrom, dateTo, selectedStatus]);
+
+  const totalManagePages = Math.max(1, Math.ceil(filteredManagedRows.length / rowsPerPage));
+  const currentManagePage = Math.min(managePage, totalManagePages);
+  const paginatedManagedRows = useMemo(() => {
+    const start = (currentManagePage - 1) * rowsPerPage;
+    return filteredManagedRows.slice(start, start + rowsPerPage);
+  }, [currentManagePage, filteredManagedRows]);
+
+  useEffect(() => {
+    setManagePage(1);
   }, [dateFrom, dateTo, selectedStatus]);
 
   const formatRangeLabel = dateFrom || dateTo
@@ -167,7 +180,12 @@ export default function BookingsPage() {
     <main className="dashboard-screen bg-white text-[#2b3245]">
       <div className="dashboard-shell">
         <DashboardNavbar active="Bookings" />
-        <section className="dashboard-main scrollbar-hover min-h-0 overflow-y-auto overflow-x-hidden" style={{ overflowY: "auto", overflowX: "hidden" }}>
+        <section
+          className={`dashboard-main min-h-0 overflow-x-hidden ${
+            view === "explore" ? "scrollbar-hover overflow-y-auto" : "overflow-y-hidden"
+          }`}
+          style={{ overflowX: "hidden", overflowY: view === "explore" ? "auto" : "hidden" }}
+        >
           <div className="dashboard-content-frame px-[var(--dashboard-gutter)]">
             <section className="w-full space-y-[1.25em] py-[1.2em] 2xl:space-y-[1.4em]">
         <div className="flex flex-wrap gap-[0.55em]">
@@ -350,10 +368,10 @@ export default function BookingsPage() {
               </button>
             </div>
 
-            <div className="relative flex flex-wrap items-center gap-2 border-b border-[#e7ebf4] pb-3">
+            <div className="relative flex flex-wrap items-center gap-2 border-b border-[#e7ebf4] pb-3 md:gap-2.5">
               <div className="relative">
                 <button
-                  className="inline-flex items-center gap-1 rounded-full border border-[#e2e7f2] bg-white px-2 py-1 text-[0.64em] font-semibold text-[#747e95]"
+                  className="inline-flex h-7 items-center gap-1 rounded-full border border-[#e2e7f2] bg-white px-3 text-[0.68em] font-semibold text-[#747e95]"
                   onClick={() => {
                     setIsDateMenuOpen((prev) => !prev);
                     setIsStatusMenuOpen(false);
@@ -364,23 +382,23 @@ export default function BookingsPage() {
                   <ChevronDown className="h-3 w-3" />
                 </button>
                 {isDateMenuOpen ? (
-                  <div className="absolute left-0 top-[115%] z-20 w-[240px] rounded-xl border border-[#dfe4ef] bg-white p-3 shadow-lg">
-                    <p className="mb-2 text-[0.68em] font-semibold text-[#55607a]">Pick date range</p>
-                    <label className="mb-2 block text-[0.62em] font-semibold text-[#7a8299]">
+                  <div className="absolute left-0 top-[calc(100%+0.45rem)] z-30 w-[16.25rem] rounded-xl border border-[#dfe4ef] bg-white p-3 shadow-[0_10px_28px_rgba(32,41,78,0.18)] 2xl:w-[19rem] 2xl:p-4">
+                    <p className="mb-2 text-[0.78rem] font-semibold text-[#55607a] 2xl:mb-2.5 2xl:text-[0.92rem]">Pick date range</p>
+                    <label className="mb-2 block text-[0.72rem] font-semibold text-[#7a8299] 2xl:mb-2.5 2xl:text-[0.84rem]">
                       From
-                      <input className="mt-1 h-8 w-full rounded-md border border-[#d8deea] px-2 text-[0.72em]" onChange={(e) => setDateFrom(e.target.value)} type="date" value={dateFrom} />
+                      <input className="mt-1 h-9 w-full rounded-md border border-[#d8deea] px-2 text-[0.78rem] 2xl:mt-1.5 2xl:h-10 2xl:text-[0.9rem]" onChange={(e) => setDateFrom(e.target.value)} type="date" value={dateFrom} />
                     </label>
-                    <label className="block text-[0.62em] font-semibold text-[#7a8299]">
+                    <label className="block text-[0.72rem] font-semibold text-[#7a8299] 2xl:text-[0.84rem]">
                       To
-                      <input className="mt-1 h-8 w-full rounded-md border border-[#d8deea] px-2 text-[0.72em]" onChange={(e) => setDateTo(e.target.value)} type="date" value={dateTo} />
+                      <input className="mt-1 h-9 w-full rounded-md border border-[#d8deea] px-2 text-[0.78rem] 2xl:mt-1.5 2xl:h-10 2xl:text-[0.9rem]" onChange={(e) => setDateTo(e.target.value)} type="date" value={dateTo} />
                     </label>
                   </div>
                 ) : null}
               </div>
-              <span className="inline-flex items-center rounded-full bg-[#3236ad] px-2 py-1 text-[0.64em] font-semibold text-white">{formatRangeLabel}</span>
+              <span className="inline-flex h-7 items-center rounded-full bg-[#3236ad] px-3 text-[0.68em] font-semibold text-white">{formatRangeLabel}</span>
               <div className="relative">
                 <button
-                  className="inline-flex items-center gap-1 rounded-full border border-[#e2e7f2] bg-white px-2 py-1 text-[0.64em] font-semibold text-[#747e95]"
+                  className="inline-flex h-7 items-center gap-1 rounded-full border border-[#e2e7f2] bg-white px-3 text-[0.68em] font-semibold text-[#747e95]"
                   onClick={() => {
                     setIsStatusMenuOpen((prev) => !prev);
                     setIsDateMenuOpen(false);
@@ -391,11 +409,11 @@ export default function BookingsPage() {
                   <ChevronDown className="h-3 w-3" />
                 </button>
                 {isStatusMenuOpen ? (
-                  <div className="absolute left-0 top-[115%] z-20 w-[180px] rounded-xl border border-[#dfe4ef] bg-white p-2 shadow-lg">
+                  <div className="absolute left-0 top-[calc(100%+0.45rem)] z-30 w-[11.9rem] rounded-xl border border-[#dfe4ef] bg-white p-2 shadow-[0_10px_28px_rgba(32,41,78,0.18)] 2xl:w-[13.8rem] 2xl:p-2.5">
                     {(["All", "On-going", "Pending"] as const).map((status) => (
                       <button
                         key={status}
-                        className={`flex w-full items-center justify-between rounded-md px-2 py-1.5 text-[0.72em] ${
+                        className={`flex w-full items-center justify-between rounded-md px-2 py-1.5 text-[0.78rem] 2xl:px-2.5 2xl:py-2 2xl:text-[0.92rem] ${
                           selectedStatus === status ? "bg-[#eef0ff] text-[#2f34aa]" : "text-[#5f667b]"
                         }`}
                         onClick={() => {
@@ -411,7 +429,7 @@ export default function BookingsPage() {
                   </div>
                 ) : null}
               </div>
-              <span className="inline-flex items-center gap-1 rounded-full bg-[#3236ad] px-2 py-1 text-[0.64em] font-semibold text-white">
+              <span className="inline-flex h-7 items-center gap-1 rounded-full bg-[#3236ad] px-3 text-[0.68em] font-semibold text-white">
                 {selectedStatus}
                 <span className="h-1.5 w-1.5 rounded-full bg-white" />
               </span>
@@ -428,12 +446,14 @@ export default function BookingsPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredManagedRows.map((row, index) => (
+                    {paginatedManagedRows.map((row, index) => {
+                      const rowIndex = (currentManagePage - 1) * rowsPerPage + index;
+                      return (
                       <tr
-                        key={`${row.date}-${index}`}
+                        key={`${row.date}-${rowIndex}`}
                         className="cursor-pointer border-t border-[#edf0f6] hover:bg-[#fafbff]"
                         onClick={() => {
-                          router.push(`/bookings/manage/${index + 1}`);
+                          router.push(`/bookings/manage/${rowIndex + 1}`);
                         }}
                       >
                         <td className="px-3 py-2.5">{row.date}</td>
@@ -458,26 +478,43 @@ export default function BookingsPage() {
                           </button>
                         </td>
                       </tr>
-                    ))}
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
 
               <div className="flex items-center justify-between border-t border-[#edf0f6] px-3 py-2.5 text-[0.68em] text-[#6f768c]">
                 <div className="flex items-center gap-1.5">
-                  <button className="rounded-md border border-[#e2e7f2] px-2 py-1 text-[#5f667b]" type="button">Previous</button>
-                  <button className="rounded-md border border-[#e2e7f2] px-2 py-1 text-[#5f667b]" type="button">Next</button>
+                  <button
+                    className="rounded-md border border-[#e2e7f2] px-2 py-1 text-[#5f667b] disabled:cursor-not-allowed disabled:opacity-50"
+                    disabled={currentManagePage === 1}
+                    onClick={() => setManagePage((prev) => Math.max(1, prev - 1))}
+                    type="button"
+                  >
+                    Previous
+                  </button>
+                  <button
+                    className="rounded-md border border-[#e2e7f2] px-2 py-1 text-[#5f667b] disabled:cursor-not-allowed disabled:opacity-50"
+                    disabled={currentManagePage >= totalManagePages}
+                    onClick={() => setManagePage((prev) => Math.min(totalManagePages, prev + 1))}
+                    type="button"
+                  >
+                    Next
+                  </button>
                 </div>
-                <span>Page 1 of 10</span>
+                <span>Page {currentManagePage} of {totalManagePages}</span>
               </div>
             </div>
 
             <div className="space-y-2 md:hidden">
-              {filteredManagedRows.map((row, index) => (
+              {paginatedManagedRows.map((row, index) => {
+                const rowIndex = (currentManagePage - 1) * rowsPerPage + index;
+                return (
                 <Link
-                  key={`${row.date}-${index}`}
+                  key={`${row.date}-${rowIndex}`}
                   className="block rounded-none border-b border-[#edf0f6] bg-white px-2 py-3"
-                  href={`/bookings/manage/${index + 1}`}
+                  href={`/bookings/manage/${rowIndex + 1}`}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div>
@@ -495,7 +532,27 @@ export default function BookingsPage() {
                     </div>
                   </div>
                 </Link>
-              ))}
+                );
+              })}
+              <div className="flex items-center justify-between border-t border-[#edf0f6] pt-2 text-[0.72em] text-[#6f768c]">
+                <button
+                  className="rounded-md border border-[#e2e7f2] px-2 py-1 text-[#5f667b] disabled:cursor-not-allowed disabled:opacity-50"
+                  disabled={currentManagePage === 1}
+                  onClick={() => setManagePage((prev) => Math.max(1, prev - 1))}
+                  type="button"
+                >
+                  Previous
+                </button>
+                <span>Page {currentManagePage} of {totalManagePages}</span>
+                <button
+                  className="rounded-md border border-[#e2e7f2] px-2 py-1 text-[#5f667b] disabled:cursor-not-allowed disabled:opacity-50"
+                  disabled={currentManagePage >= totalManagePages}
+                  onClick={() => setManagePage((prev) => Math.min(totalManagePages, prev + 1))}
+                  type="button"
+                >
+                  Next
+                </button>
+              </div>
             </div>
           </section>
         )}

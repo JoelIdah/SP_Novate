@@ -1,3 +1,5 @@
+import { BookOpenCheck, MessageCircleMore, ReceiptText } from "lucide-react";
+
 type BookingRow = {
   tutor: string;
   subject: string;
@@ -36,20 +38,38 @@ export function DashboardActionsSection() {
     <div>
       <h2 className="mb-[0.45em] text-[0.9em] font-semibold text-[#616a82]">Actions</h2>
       <div className="grid gap-[0.65em] md:grid-cols-3">
-        <article className="flex min-h-[5.95em] flex-col rounded-[0.7em] border border-[#b9dcf8] bg-[#f3f9ff] px-[0.9em] py-[0.68em]">
-          <span className="inline-block h-[0.8em] w-[0.8em] rounded-full bg-[#2f8fd6]" />
-          <p className="mt-[0.45em] text-[1.06em] font-bold text-[#2b3350]">Book a session</p>
-          <p className="mt-[0.2em] text-[0.78em] text-[#6d758e]">Find a tutor and schedule your session.</p>
+        <article className="flex min-h-[5.95em] items-center rounded-[0.7em] border border-[#b9dcf8] bg-[#f3f9ff] px-[0.9em] py-[0.68em]">
+          <div className="flex items-center gap-[0.5em]">
+            <span className="inline-flex h-[1.65em] w-[1.65em] shrink-0 items-center justify-center rounded-[0.4em] bg-[#d8ebfa] text-[#2f8fd6]">
+              <BookOpenCheck className="h-[1.05em] w-[1.05em]" />
+            </span>
+            <div>
+              <p className="text-[1.06em] font-bold text-[#2b3350]">Book a session</p>
+              <p className="mt-[0.26em] text-[0.78em] text-[#6d758e]">Find a tutor and schedule your session.</p>
+            </div>
+          </div>
         </article>
-        <article className="flex min-h-[5.95em] flex-col rounded-[0.7em] border border-[#b4e5e4] bg-[#f4fcfc] px-[0.9em] py-[0.68em]">
-          <span className="inline-block h-[0.8em] w-[0.8em] rounded-full bg-[#43b8b2]" />
-          <p className="mt-[0.45em] text-[1.06em] font-bold text-[#2b3350]">Start a conversation</p>
-          <p className="mt-[0.2em] text-[0.78em] text-[#6d758e]">Go to your chat with the tutors</p>
+        <article className="flex min-h-[5.95em] items-center rounded-[0.7em] border border-[#b4e5e4] bg-[#f4fcfc] px-[0.9em] py-[0.68em]">
+          <div className="flex items-center gap-[0.5em]">
+            <span className="inline-flex h-[1.65em] w-[1.65em] shrink-0 items-center justify-center rounded-[0.4em] bg-[#daf3f1] text-[#43b8b2]">
+              <MessageCircleMore className="h-[1.05em] w-[1.05em]" />
+            </span>
+            <div>
+              <p className="text-[1.06em] font-bold text-[#2b3350]">Start a conversation</p>
+              <p className="mt-[0.26em] text-[0.78em] text-[#6d758e]">Go to your chat with the tutors</p>
+            </div>
+          </div>
         </article>
-        <article className="flex min-h-[5.95em] flex-col rounded-[0.7em] border border-[#ecd8b2] bg-[#fcf8ef] px-[0.9em] py-[0.68em]">
-          <span className="inline-block h-[0.8em] w-[0.8em] rounded-full bg-[#d8aa2c]" />
-          <p className="mt-[0.45em] text-[1.06em] font-bold text-[#2b3350]">Check transactions</p>
-          <p className="mt-[0.2em] text-[0.78em] text-[#6d758e]">Add money to your main balance.</p>
+        <article className="flex min-h-[5.95em] items-center rounded-[0.7em] border border-[#ecd8b2] bg-[#fcf8ef] px-[0.9em] py-[0.68em]">
+          <div className="flex items-center gap-[0.5em]">
+            <span className="inline-flex h-[1.65em] w-[1.65em] shrink-0 items-center justify-center rounded-[0.4em] bg-[#f6ead0] text-[#d8aa2c]">
+              <ReceiptText className="h-[1.05em] w-[1.05em]" />
+            </span>
+            <div>
+              <p className="text-[1.06em] font-bold text-[#2b3350]">Check transactions</p>
+              <p className="mt-[0.26em] text-[0.78em] text-[#6d758e]">Add money to your main balance.</p>
+            </div>
+          </div>
         </article>
       </div>
     </div>

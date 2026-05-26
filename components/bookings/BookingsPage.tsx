@@ -1,6 +1,6 @@
  "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { CalendarDays, ChevronDown, ChevronRight, ClipboardList, Compass, EllipsisVertical, MapPin, Search, Star } from "lucide-react";
@@ -133,7 +133,36 @@ export default function BookingsPage() {
   const [dateTo, setDateTo] = useState("");
   const [selectedStatus, setSelectedStatus] = useState<ManagedBookingRow["status"] | "All">("All");
   const [managePage, setManagePage] = useState(1);
-  const rowsPerPage = 6;
+  const [rowsPerPage, setRowsPerPage] = useState(8);
+  const desktopTableViewportRef = useRef<HTMLDivElement | null>(null);
+  const desktopTableRef = useRef<HTMLTableElement | null>(null);
+
+  useEffect(() => {
+    const computeRowsPerPage = () => {
+      if (view !== "manage") return;
+      const viewport = desktopTableViewportRef.current;
+      const table = desktopTableRef.current;
+      if (!viewport || !table) return;
+
+      const headHeight = table.tHead?.getBoundingClientRect().height ?? 40;
+      const firstRow = table.tBodies[0]?.rows[0];
+      const rowHeight = firstRow?.getBoundingClientRect().height ?? 40;
+      const availableHeight = viewport.clientHeight - headHeight;
+      const nextRowsPerPage = Math.max(1, Math.floor(availableHeight / Math.max(rowHeight, 1)));
+
+      setRowsPerPage((prev) => (prev === nextRowsPerPage ? prev : nextRowsPerPage));
+    };
+
+    computeRowsPerPage();
+    const resizeObserver = new ResizeObserver(computeRowsPerPage);
+    if (desktopTableViewportRef.current) resizeObserver.observe(desktopTableViewportRef.current);
+    if (desktopTableRef.current) resizeObserver.observe(desktopTableRef.current);
+    window.addEventListener("resize", computeRowsPerPage);
+    return () => {
+      resizeObserver.disconnect();
+      window.removeEventListener("resize", computeRowsPerPage);
+    };
+  }, [view, dateFrom, dateTo, selectedStatus]);
 
   const activeFilterCount = useMemo(
     () => [subject, category, location, days, time, rating].filter(Boolean).length,
@@ -187,7 +216,7 @@ export default function BookingsPage() {
           style={{ overflowX: "hidden", overflowY: view === "explore" ? "auto" : "hidden" }}
         >
           <div className="dashboard-content-frame px-[var(--dashboard-gutter)]">
-            <section className="w-full space-y-[1.25em] py-[1.2em] 2xl:space-y-[1.4em]">
+            <section className={`w-full py-[1.2em] ${view === "manage" ? "flex h-full min-h-0 flex-col" : "space-y-[1.25em] 2xl:space-y-[1.4em]"}`}>
         <div className="flex flex-wrap gap-[0.55em]">
           <button
             className={`inline-flex items-center gap-[0.55em] rounded-full border px-[1em] py-[0.45em] text-[0.74em] font-semibold ${
@@ -340,7 +369,7 @@ export default function BookingsPage() {
           ))}
           </div>
         ) : (
-          <section className="space-y-4">
+          <section className="flex h-full min-h-0 flex-col space-y-4">
             <div className="flex items-center justify-between gap-3">
               <h1 className="text-[2em] font-semibold leading-none text-[#2f3547]">Manage booking</h1>
               <button
@@ -354,10 +383,10 @@ export default function BookingsPage() {
             </div>
 
             <div className="flex items-center justify-between gap-3">
-              <div className="relative w-full max-w-[360px]">
+              <div className="relative w-full max-w-[230px] md:max-w-[280px] xl:max-w-[360px] 2xl:max-w-[440px] [@media(min-width:2100px)]:max-w-[860px]">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#9aa1b4]" />
                 <input
-                  className="h-9 w-full rounded-full border border-[#e0e5f0] bg-white pl-9 pr-3 text-[0.76em] text-[#4a5265] placeholder:text-[#b1b7c6]"
+                  className="h-7 w-full rounded-full border border-[#e0e5f0] bg-white pl-9 pr-3 text-[0.76em] text-[#4a5265] placeholder:text-[#b1b7c6]"
                   placeholder="Search tutor name or booking ID"
                   type="search"
                 />
@@ -435,9 +464,9 @@ export default function BookingsPage() {
               </span>
             </div>
 
-            <div className="hidden overflow-hidden rounded-xl border border-[#e3e8f2] bg-white md:block">
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[920px] border-collapse text-left text-[0.74em] text-[#5f667b]">
+            <div className="hidden min-h-0 flex-1 overflow-hidden rounded-xl border border-[#e3e8f2] bg-white md:flex md:flex-col">
+              <div className="min-h-0 flex-1 overflow-x-auto" ref={desktopTableViewportRef}>
+                <table className="w-full min-w-[920px] border-collapse text-left text-[0.74em] text-[#5f667b]" ref={desktopTableRef}>
                   <thead className="bg-[#f2f5fa] text-[#676f85]">
                     <tr>
                       {["Date", "Tutor", "Department", "Subject", "Time", "Duration", "Status", ""].map((head) => (

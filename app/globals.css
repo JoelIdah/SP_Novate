@@ -180,9 +180,8 @@ input:focus-visible {
 }
 
 .dashboard-home-fit .dashboard-main {
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding-block: clamp(0.16rem, 0.42vh, 0.62rem);
+  overflow: hidden;
+  padding-block: clamp(0.12rem, 0.32vh, 0.4rem);
 }
 
 .dashboard-home-fit .dashboard-content-frame {
@@ -191,15 +190,15 @@ input:focus-visible {
 }
 
 .dashboard-home-fit .dashboard-stack {
-  flex: 1 0 auto;
-  gap: clamp(0.26rem, 0.42vh, 0.62rem);
-  min-height: 100%;
-  overflow: visible;
-  padding-bottom: clamp(0.3rem, 0.75vh, 0.8rem);
+  flex: 1 1 auto;
+  gap: clamp(0.42rem, 0.72vh, 0.72rem);
+  min-height: 0;
+  overflow: hidden;
+  padding-bottom: 0;
 }
 
 .dashboard-home-fit .dashboard-stack > section:last-child {
-  margin-top: auto;
+  margin-top: 0;
 }
 
 .dashboard-home-action-card {

@@ -17,7 +17,7 @@ export default function NewDashboardPage() {
 
         <main className="dashboard-main">
           <div className="dashboard-content-frame px-[var(--dashboard-gutter)]">
-            <div className="dashboard-stack" data-dashboard-content>
+            <div className="dashboard-stack gap-3 2xl:gap-4" data-dashboard-content>
               <section>
                 <DashboardActionsSection />
               </section>
@@ -27,7 +27,7 @@ export default function NewDashboardPage() {
               </section>
 
               <section>
-                <div className="grid grid-cols-1 gap-[0.95em] xl:grid-cols-[1.45fr_1fr] xl:items-stretch">
+                <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.45fr_1fr] xl:items-stretch">
                   <div className="h-full min-h-0">
                     <DashboardBookingsSection />
                   </div>

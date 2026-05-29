@@ -81,10 +81,10 @@ export function TutorNavbar({ active = "Home" }: { active?: TutorNavLabel }) {
           })}
         </nav>
 
-        <div className="ml-auto flex items-center justify-end gap-[0.52em]">
+        <div className="flex items-center justify-end gap-[0.52em]">
           <button
             aria-label={isMenuOpen ? "Close navigation menu" : "Open navigation menu"}
-            className="inline-flex h-[2.2em] w-[2.2em] items-center justify-center rounded-[0.35em] text-[#2e3448] xl:hidden"
+            className="-mr-[0.72em] inline-flex h-[2.2em] w-[2.2em] items-center justify-center rounded-[0.35em] text-[#2e3448] xl:hidden"
             onClick={isMenuOpen ? closeMenu : openMenu}
             type="button"
           >

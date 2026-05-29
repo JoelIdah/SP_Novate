@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Search, SendHorizontal } from "lucide-react";
+import { ArrowLeft, Plus, Search, SendHorizontal } from "lucide-react";
 import { useState, type ReactNode } from "react";
 
 import { Avatar } from "../ui/Avatar";
@@ -100,7 +100,7 @@ function ContactAvatar({ contact, size = "h-7 w-7" }: { contact: ChatContact; si
 
 export default function ChatWorkspace({ role, navbar }: ChatWorkspaceProps) {
   const contacts = role === "tutor" ? tutorContacts : studentContacts;
-  const [activeContactId, setActiveContactId] = useState(contacts[0]?.id ?? null);
+  const [activeContactId, setActiveContactId] = useState<number | null>(null);
   const activeContact = contacts.find((contact) => contact.id === activeContactId) ?? contacts[0];
   const searchPlaceholder = role === "tutor" ? "Search for students" : "Search for tutors";
   const composerValue = role === "tutor" ? "Great Kene. please what day works for you" : "Hi Oluyinka, I would love to book a sessio";
@@ -113,7 +113,7 @@ export default function ChatWorkspace({ role, navbar }: ChatWorkspaceProps) {
         <section className="dashboard-main p-0">
           <div className="dashboard-content-frame px-4 py-4 md:px-5">
             <section className="grid h-full min-h-0 w-full gap-5 xl:grid-cols-[23rem_minmax(0,1fr)]">
-              <aside className="flex min-h-0 flex-col overflow-hidden rounded-xl border border-[#dfe3ee] bg-white shadow-[0_10px_24px_rgba(31,40,74,0.05)]">
+              <aside className={`${activeContactId ? "hidden xl:flex" : "flex"} min-h-0 flex-col overflow-hidden rounded-xl border border-[#dfe3ee] bg-white shadow-[0_10px_24px_rgba(31,40,74,0.05)]`}>
                 <div className="border-b border-[#edf0f6] px-4 py-4">
                   <h1 className="text-[1rem] font-medium text-[#858ea2]">Chat</h1>
                 </div>
@@ -161,9 +161,17 @@ export default function ChatWorkspace({ role, navbar }: ChatWorkspaceProps) {
                 </div>
               </aside>
 
-              <section className="flex min-h-0 flex-col overflow-hidden rounded-xl border border-[#dfe3ee] bg-white shadow-[0_10px_24px_rgba(31,40,74,0.05)]">
+              <section className={`${activeContactId ? "flex" : "hidden xl:flex"} min-h-0 flex-col overflow-hidden rounded-xl border border-[#dfe3ee] bg-white shadow-[0_10px_24px_rgba(31,40,74,0.05)]`}>
                 <header className="flex h-[4.4rem] items-center justify-between border-b border-[#edf0f6] px-4">
-                  <div className="flex min-w-0 items-center gap-3">
+                  <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+                    <button
+                      aria-label="Back to chats"
+                      className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[#4f576d] hover:bg-[#f1f3f8] xl:hidden"
+                      onClick={() => setActiveContactId(null)}
+                      type="button"
+                    >
+                      <ArrowLeft className="h-4 w-4" />
+                    </button>
                     <ContactAvatar contact={activeContact} size="h-8 w-8" />
                     <p className="truncate text-[1rem] font-semibold text-[#222838]">{activeContact.name}</p>
                   </div>

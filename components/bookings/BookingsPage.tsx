@@ -117,6 +117,8 @@ const managedRows: ManagedBookingRow[] = [
   { date: "March 18, 2026", tutor: "Mr. Oluyinka Alabi", department: "Academics", subject: "Information Technology", time: "4:00 PM", duration: "1 Hour", status: "Pending" },
 ];
 
+const mobileRowsPerPage = 5;
+
 export default function BookingsPage() {
   const router = useRouter();
   const [view, setView] = useState<"explore" | "manage">("explore");
@@ -143,6 +145,7 @@ export default function BookingsPage() {
       const viewport = desktopTableViewportRef.current;
       const table = desktopTableRef.current;
       if (!viewport || !table) return;
+      if (viewport.clientHeight <= 0 || table.offsetParent === null) return;
 
       const headHeight = table.tHead?.getBoundingClientRect().height ?? 40;
       const firstRow = table.tBodies[0]?.rows[0];
@@ -187,6 +190,12 @@ export default function BookingsPage() {
     const start = (currentManagePage - 1) * rowsPerPage;
     return filteredManagedRows.slice(start, start + rowsPerPage);
   }, [currentManagePage, filteredManagedRows, rowsPerPage]);
+  const mobileTotalManagePages = Math.max(1, Math.ceil(filteredManagedRows.length / mobileRowsPerPage));
+  const mobileCurrentManagePage = Math.min(managePage, mobileTotalManagePages);
+  const mobilePaginatedManagedRows = useMemo(() => {
+    const start = (mobileCurrentManagePage - 1) * mobileRowsPerPage;
+    return filteredManagedRows.slice(start, start + mobileRowsPerPage);
+  }, [filteredManagedRows, mobileCurrentManagePage]);
 
   const formatRangeLabel = dateFrom || dateTo
     ? `${dateFrom ? dateFrom.replaceAll("-", "/") : "..."} - ${dateTo ? dateTo.replaceAll("-", "/") : "..."}`
@@ -549,22 +558,23 @@ export default function BookingsPage() {
               </div>
             </div>
 
-            <div className="space-y-2 md:hidden">
-              {paginatedManagedRows.map((row, index) => {
-                const rowIndex = (currentManagePage - 1) * rowsPerPage + index;
+            <div className="space-y-1.5 pb-6 md:hidden">
+              {mobilePaginatedManagedRows.map((row, index) => {
+                const originalIndex = managedRows.indexOf(row);
+                const rowIndex = originalIndex >= 0 ? originalIndex : index;
                 return (
                 <Link
                   key={`${row.date}-${rowIndex}`}
-                  className="block rounded-none border-b border-[#edf0f6] bg-white px-2 py-3"
+                  className="block rounded-lg border border-[#e6eaf3] bg-white px-2.5 py-2"
                   href={`/students/bookings/manage/${rowIndex + 1}`}
                 >
                   <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <p className="text-[1em] font-semibold text-[#2f3547]">{row.tutor}</p>
-                      <p className="text-[0.76em] text-[#7a8299]">{row.subject}</p>
+                    <div className="min-w-0">
+                      <p className="truncate text-[0.78em] font-semibold text-[#2f3547]">{row.tutor}</p>
+                      <p className="mt-0.5 truncate text-[0.64em] text-[#7a8299]">{row.subject} - {row.time}</p>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="inline-flex items-center gap-1 text-[0.76em] text-[#5f667b]">
+                    <div className="flex shrink-0 items-center gap-1.5">
+                      <span className="inline-flex items-center gap-1 text-[0.66em] text-[#5f667b]">
                         <span className={`h-1.5 w-1.5 rounded-full ${row.status === "On-going" ? "bg-[#9a5cff]" : "bg-[#e7c754]"}`} />
                         {row.status}
                       </span>
@@ -573,23 +583,27 @@ export default function BookingsPage() {
                       </button>
                     </div>
                   </div>
+                  <div className="mt-1.5 flex items-center justify-between text-[0.66em] text-[#596177]">
+                    <span>{row.date}</span>
+                    <span>{row.duration}</span>
+                  </div>
                 </Link>
                 );
               })}
               <div className="flex items-center justify-between border-t border-[#edf0f6] pt-2 text-[0.72em] text-[#6f768c]">
                 <button
                   className="rounded-md border border-[#e2e7f2] px-2 py-1 text-[#5f667b] disabled:cursor-not-allowed disabled:opacity-50"
-                  disabled={currentManagePage === 1}
+                  disabled={mobileCurrentManagePage === 1}
                   onClick={() => setManagePage((prev) => Math.max(1, prev - 1))}
                   type="button"
                 >
                   Previous
                 </button>
-                <span>Page {currentManagePage} of {totalManagePages}</span>
+                <span>Page {mobileCurrentManagePage} of {mobileTotalManagePages}</span>
                 <button
                   className="rounded-md border border-[#e2e7f2] px-2 py-1 text-[#5f667b] disabled:cursor-not-allowed disabled:opacity-50"
-                  disabled={currentManagePage >= totalManagePages}
-                  onClick={() => setManagePage((prev) => Math.min(totalManagePages, prev + 1))}
+                  disabled={mobileCurrentManagePage >= mobileTotalManagePages}
+                  onClick={() => setManagePage((prev) => Math.min(mobileTotalManagePages, prev + 1))}
                   type="button"
                 >
                   Next

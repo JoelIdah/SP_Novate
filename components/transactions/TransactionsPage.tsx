@@ -36,6 +36,8 @@ const statusColor: Record<TxStatus, string> = {
   Failed: "bg-[#e04f4f]",
 };
 
+const mobileRowsPerPage = 5;
+
 export default function TransactionsPage() {
   const [selectedStatus, setSelectedStatus] = useState<"All" | TxStatus>("All");
   const [isDateMenuOpen, setIsDateMenuOpen] = useState(false);
@@ -54,6 +56,7 @@ export default function TransactionsPage() {
       const viewport = desktopTableViewportRef.current;
       const table = desktopTableRef.current;
       if (!viewport || !table) return;
+      if (viewport.clientHeight <= 0 || table.offsetParent === null) return;
 
       const headHeight = table.tHead?.getBoundingClientRect().height ?? 40;
       const firstRow = table.tBodies[0]?.rows[0];
@@ -93,7 +96,13 @@ export default function TransactionsPage() {
   const paginatedRows = useMemo(() => {
     const start = (currentPage - 1) * rowsPerPage;
     return filteredRows.slice(start, start + rowsPerPage);
-  }, [currentPage, filteredRows]);
+  }, [currentPage, filteredRows, rowsPerPage]);
+  const mobileTotalPages = Math.max(1, Math.ceil(filteredRows.length / mobileRowsPerPage));
+  const mobileCurrentPage = Math.min(page, mobileTotalPages);
+  const mobilePaginatedRows = useMemo(() => {
+    const start = (mobileCurrentPage - 1) * mobileRowsPerPage;
+    return filteredRows.slice(start, start + mobileRowsPerPage);
+  }, [filteredRows, mobileCurrentPage]);
 
   const openDetails = (tx: Transaction) => {
     setSelectedTx(tx);
@@ -108,9 +117,9 @@ export default function TransactionsPage() {
     <main className="dashboard-screen bg-white text-[#2b3245]">
       <div className="dashboard-shell">
         <StudentDashboardNavbar active="Transactions" />
-        <section className="dashboard-main min-h-0 overflow-hidden">
+        <section className="dashboard-main min-h-0 overflow-y-auto overflow-x-hidden md:overflow-hidden">
           <div className="dashboard-content-frame px-[var(--dashboard-gutter)]">
-            <section className="flex h-full min-h-0 w-full flex-col py-[1.1em]">
+            <section className="flex min-h-full w-full flex-col py-[1.1em] md:h-full md:min-h-0">
               <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
                 <SummaryCard icon={<Wallet className="h-4 w-4 text-[#dca95a]" />} label="Total Value" value="N200,000.00" />
                 <SummaryCard icon={<CheckCircle2 className="h-4 w-4 text-[#289c7f]" />} label="Successful Transactions" value="10" />
@@ -241,28 +250,33 @@ export default function TransactionsPage() {
                 </div>
               </div>
 
-              <div className="mt-3 min-h-0 flex-1 space-y-1.5 overflow-y-auto md:hidden">
-                {filteredRows.map((row, idx) => (
+              <div className="mt-3 space-y-1.5 pb-6 md:hidden">
+                {mobilePaginatedRows.map((row, idx) => (
                   <button className="w-full rounded-lg border border-[#e6eaf3] bg-white px-2.5 py-2 text-left" key={`${row.id}-mobile-${idx}`} onClick={() => openDetails(row)} type="button">
                     <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <div className="inline-flex items-center gap-1.5 text-[0.8em] font-semibold text-[#2f3547]">
-                          {row.id}
+                      <div className="min-w-0">
+                        <div className="inline-flex max-w-full items-center gap-1.5 text-[0.76em] font-semibold text-[#2f3547]">
+                          <span className="truncate">{row.id}</span>
                           <Copy className="h-3 w-3 text-[#4b69d2]" />
                         </div>
-                        <p className="mt-0.5 text-[0.7em] text-[#7a8299]">{row.method}</p>
+                        <p className="mt-0.5 text-[0.64em] text-[#7a8299]">{row.method}</p>
                       </div>
-                      <EllipsisVertical className="h-3.5 w-3.5 text-[#7b8296]" />
+                      <EllipsisVertical className="h-3.5 w-3.5 shrink-0 text-[#7b8296]" />
                     </div>
                     <div className="mt-1.5 flex items-center justify-between">
-                      <span className="inline-flex items-center gap-1 text-[0.72em] text-[#596177]">
+                      <span className="inline-flex items-center gap-1 text-[0.66em] text-[#596177]">
                         <span className={`h-1.5 w-1.5 rounded-full ${statusColor[row.status]}`} />
                         {row.status}
                       </span>
-                      <span className="text-[0.72em] font-semibold text-[#4a5166]">{row.amount}</span>
+                      <span className="text-[0.68em] font-semibold text-[#4a5166]">{row.amount}</span>
                     </div>
                   </button>
                 ))}
+                <div className="flex items-center justify-between border-t border-[#edf0f6] pt-2 text-[0.72em] text-[#6f768c]">
+                  <button className="rounded-md border border-[#e2e7f2] px-2 py-1 text-[#5f667b] disabled:opacity-50" disabled={mobileCurrentPage === 1} onClick={() => setPage((prev) => Math.max(1, prev - 1))} type="button">Previous</button>
+                  <span>Page {mobileCurrentPage} of {mobileTotalPages}</span>
+                  <button className="rounded-md border border-[#e2e7f2] px-2 py-1 text-[#5f667b] disabled:opacity-50" disabled={mobileCurrentPage >= mobileTotalPages} onClick={() => setPage((prev) => Math.min(mobileTotalPages, prev + 1))} type="button">Next</button>
+                </div>
               </div>
             </section>
           </div>

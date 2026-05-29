@@ -54,18 +54,31 @@ const statusColor: Record<ResourceStatus | ArchivedBy, string> = {
   Admin: "bg-[#1c8ddd]",
 };
 
+const desktopRowsPerPage = 10;
+const mobileRowsPerPage = 5;
+
 export default function TutorResourcesPage() {
   const [activeTab, setActiveTab] = useState<ResourceTab>("manage");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [successOpen, setSuccessOpen] = useState(false);
   const [page, setPage] = useState(1);
 
-  const totalPages = 10;
+  const totalPages = Math.max(1, Math.ceil(resources.length / desktopRowsPerPage));
+  const currentPage = Math.min(page, totalPages);
+  const mobileTotalPages = Math.max(1, Math.ceil(resources.length / mobileRowsPerPage));
+  const mobileCurrentPage = Math.min(page, mobileTotalPages);
   const tableHeads = activeTab === "manage"
     ? ["Title", "Type", "Department", "Subject", "Date", "Duration", "Status", ""]
     : ["Title", "Type", "Department", "Subject", "Date", "Duration", "Archived by", ""];
 
-  const visibleRows = useMemo(() => resources.slice(0, 10), []);
+  const visibleRows = useMemo(() => {
+    const start = (currentPage - 1) * desktopRowsPerPage;
+    return resources.slice(start, start + desktopRowsPerPage);
+  }, [currentPage]);
+  const mobileVisibleRows = useMemo(() => {
+    const start = (mobileCurrentPage - 1) * mobileRowsPerPage;
+    return resources.slice(start, start + mobileRowsPerPage);
+  }, [mobileCurrentPage]);
 
   const closeCreate = () => setIsCreateOpen(false);
   const showSuccess = () => {
@@ -77,33 +90,33 @@ export default function TutorResourcesPage() {
     <main className="dashboard-screen bg-white text-[#2b3245]">
       <div className="dashboard-shell">
         <TutorNavbar active="Resources" />
-        <section className="dashboard-main min-h-0 overflow-hidden">
+        <section className="dashboard-main min-h-0 overflow-y-auto overflow-x-hidden md:overflow-hidden">
           <div className="dashboard-content-frame px-[var(--dashboard-gutter)]">
-            <section className="flex h-full min-h-0 w-full flex-col py-[1.1em]">
-              <div className="flex items-center gap-3 border-b border-[#e4e8f2] pb-4">
+            <section className="w-full py-[1.1em] md:flex md:h-full md:min-h-0 md:flex-col">
+              <div className="flex flex-wrap items-center gap-3 border-b border-[#e4e8f2] pb-4">
                 <TabButton active={activeTab === "manage"} icon={<Boxes className="h-3.5 w-3.5" />} label="Manage resources" onClick={() => setActiveTab("manage")} />
                 <TabButton active={activeTab === "archive"} icon={<Archive className="h-3.5 w-3.5" />} label="Archive resources" onClick={() => setActiveTab("archive")} />
               </div>
 
-              <section className="mt-5 grid items-center gap-4 rounded-xl bg-[#f3f6fb] px-7 py-7 xl:grid-cols-[1.1fr_2fr]">
+              <section className="mt-3 grid items-center gap-4 rounded-xl bg-[#f3f6fb] px-3 py-4 sm:mt-5 sm:px-5 md:px-7 md:py-7 xl:grid-cols-[1.1fr_2fr]">
                 <div>
-                  <h1 className="text-[1.35em] font-semibold text-[#1f2550]">Create Educational resources</h1>
-                  <p className="mt-2 max-w-[23rem] text-[0.8em] leading-relaxed text-[#6f7891]">
+                  <h1 className="text-[1em] font-semibold text-[#1f2550] sm:text-[1.1em] md:text-[1.35em]">Create Educational resources</h1>
+                  <p className="mt-1.5 max-w-[23rem] text-[0.74em] leading-relaxed text-[#6f7891] sm:mt-2 sm:text-[0.8em]">
                     Upload and organize videos, links, and documents to support your students&apos; learning.
                   </p>
-                  <button className="mt-5 h-10 rounded-full bg-[#262563] px-5 text-[0.78em] font-semibold text-white" onClick={() => setIsCreateOpen(true)} type="button">
+                  <button className="mt-3 h-9 rounded-full bg-[#262563] px-4 text-[0.74em] font-semibold text-white sm:mt-5 sm:h-10 sm:px-5 sm:text-[0.78em]" onClick={() => setIsCreateOpen(true)} type="button">
                     Create Resource
                   </button>
                 </div>
 
-                <div className="grid gap-4 md:grid-cols-3">
+                <div className="hidden gap-3 md:grid md:grid-cols-3 md:gap-4">
                   <FeatureCard icon={<Video className="h-4 w-4" />} iconClassName="bg-[#d9b4f8] text-[#8d4bd6]" title="Resources content" text="Upload educational materials to enhance your students&apos; learning" />
                   <FeatureCard icon={<BookOpen className="h-4 w-4" />} iconClassName="bg-[#b9eceb] text-[#168b8a]" title="Multiple subjects" text="Create resources across various departments and subjects" />
                   <FeatureCard icon={<Info className="h-4 w-4" />} iconClassName="bg-[#c4e6ff] text-[#2688d1]" title="Guidelines" text="Ensure courses are educational and aligns with the course objectives" />
                 </div>
               </section>
 
-              <div className="mt-6 flex items-center justify-between gap-2">
+              <div className="mt-4 flex items-center justify-between gap-2 md:mt-6">
                 <div className="relative w-full max-w-[24rem]">
                   <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#a1a9bc]" />
                   <input className="h-9 w-full rounded-full border border-transparent bg-white pl-9 pr-3 text-[0.76em] text-[#495167] placeholder:text-[#adb4c5]" placeholder="Search resource title or subject" type="search" />
@@ -155,24 +168,24 @@ export default function TutorResourcesPage() {
 
                 <div className="flex items-center justify-between border-t border-[#edf0f6] px-3 py-2.5 text-[0.68em] text-[#6f768c]">
                   <div className="flex items-center gap-1.5">
-                    <button className="rounded-md border border-[#e2e7f2] px-2 py-1 text-[#5f667b] disabled:opacity-50" disabled={page === 1} onClick={() => setPage((prev) => Math.max(1, prev - 1))} type="button">Previous</button>
-                    <button className="rounded-md border border-[#e2e7f2] px-2 py-1 text-[#5f667b] disabled:opacity-50" disabled={page === totalPages} onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))} type="button">Next</button>
+                    <button className="rounded-md border border-[#e2e7f2] px-2 py-1 text-[#5f667b] disabled:opacity-50" disabled={currentPage === 1} onClick={() => setPage((prev) => Math.max(1, prev - 1))} type="button">Previous</button>
+                    <button className="rounded-md border border-[#e2e7f2] px-2 py-1 text-[#5f667b] disabled:opacity-50" disabled={currentPage === totalPages} onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))} type="button">Next</button>
                   </div>
-                  <span>Page {page} of {totalPages}</span>
+                  <span>Page {currentPage} of {totalPages}</span>
                 </div>
               </div>
 
-              <div className="mt-4 min-h-0 flex-1 space-y-2 overflow-y-auto md:hidden">
-                {visibleRows.map((row, index) => (
-                  <article className="rounded-lg border border-[#e6eaf3] bg-white px-3 py-2.5" key={`${row.title}-mobile-${index}`}>
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="text-[0.84em] font-semibold text-[#2f3547]">{row.title}</p>
-                        <p className="mt-0.5 text-[0.7em] text-[#7a8299]">{row.type} - {row.subject}</p>
+              <div className="mt-3 space-y-1.5 pb-4 md:hidden">
+                {mobileVisibleRows.map((row, index) => (
+                  <article className="rounded-lg border border-[#e6eaf3] bg-white px-2.5 py-2" key={`${row.title}-mobile-${index}`}>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="truncate text-[0.78em] font-semibold text-[#2f3547]">{row.title}</p>
+                        <p className="mt-0.5 truncate text-[0.64em] text-[#7a8299]">{row.type} - {row.subject}</p>
                       </div>
-                      <EllipsisVertical className="h-3.5 w-3.5 text-[#7b8296]" />
+                      <EllipsisVertical className="h-3.5 w-3.5 shrink-0 text-[#7b8296]" />
                     </div>
-                    <div className="mt-2 flex items-center justify-between text-[0.72em] text-[#596177]">
+                    <div className="mt-1.5 flex items-center justify-between text-[0.66em] text-[#596177]">
                       <span>{row.date}</span>
                       <span className="inline-flex items-center gap-1">
                         <span className={`h-1.5 w-1.5 rounded-full ${activeTab === "manage" ? statusColor[row.status] : statusColor[row.archivedBy]}`} />
@@ -181,6 +194,11 @@ export default function TutorResourcesPage() {
                     </div>
                   </article>
                 ))}
+                <div className="flex items-center justify-between border-t border-[#edf0f6] pt-2 text-[0.72em] text-[#6f768c]">
+                  <button className="rounded-md border border-[#e2e7f2] px-2 py-1 text-[#5f667b] disabled:opacity-50" disabled={mobileCurrentPage === 1} onClick={() => setPage((prev) => Math.max(1, prev - 1))} type="button">Previous</button>
+                  <span>Page {mobileCurrentPage} of {mobileTotalPages}</span>
+                  <button className="rounded-md border border-[#e2e7f2] px-2 py-1 text-[#5f667b] disabled:opacity-50" disabled={mobileCurrentPage === mobileTotalPages} onClick={() => setPage((prev) => Math.min(mobileTotalPages, prev + 1))} type="button">Next</button>
+                </div>
               </div>
             </section>
           </div>
@@ -304,7 +322,7 @@ function SelectLike({ value }: { value: string }) {
   return (
     <button className="flex h-10 w-full items-center justify-between rounded-md border border-[#d7deeb] px-3 text-left text-[0.82rem] text-[#1f2537]" type="button">
       {value}
-      <span className="text-[#8f97aa]">⌄</span>
+      <span className="text-[#8f97aa]">v</span>
     </button>
   );
 }

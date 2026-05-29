@@ -40,6 +40,8 @@ const statusColor: Record<BookingStatus, string> = {
   Rejected: "bg-[#e04f4f]",
 };
 
+const mobileRowsPerPage = 5;
+
 export default function TutorBookingsPage() {
   const router = useRouter();
   const [selectedStatus, setSelectedStatus] = useState<BookingStatus | "All">("All");
@@ -58,6 +60,7 @@ export default function TutorBookingsPage() {
       const viewport = desktopTableViewportRef.current;
       const table = desktopTableRef.current;
       if (!viewport || !table) return;
+      if (viewport.clientHeight <= 0 || table.offsetParent === null) return;
 
       const headHeight = table.tHead?.getBoundingClientRect().height ?? 40;
       const firstRow = table.tBodies[0]?.rows[0];
@@ -98,6 +101,12 @@ export default function TutorBookingsPage() {
     const start = (currentPage - 1) * rowsPerPage;
     return filteredRows.slice(start, start + rowsPerPage);
   }, [currentPage, filteredRows, rowsPerPage]);
+  const mobileTotalPages = Math.max(1, Math.ceil(filteredRows.length / mobileRowsPerPage));
+  const mobileCurrentPage = Math.min(page, mobileTotalPages);
+  const mobilePaginatedRows = useMemo(() => {
+    const start = (mobileCurrentPage - 1) * mobileRowsPerPage;
+    return filteredRows.slice(start, start + mobileRowsPerPage);
+  }, [filteredRows, mobileCurrentPage]);
 
   const openDetails = (bookingIndex: number) => {
     router.push(`/tutor/bookings/manage/${bookingIndex + 1}`);
@@ -112,9 +121,9 @@ export default function TutorBookingsPage() {
     <main className="dashboard-screen bg-white text-[#2b3245]">
       <div className="dashboard-shell">
         <TutorNavbar active="Bookings" />
-        <section className="dashboard-main min-h-0 overflow-hidden">
+        <section className="dashboard-main min-h-0 overflow-y-auto overflow-x-hidden md:overflow-hidden">
           <div className="dashboard-content-frame px-[var(--dashboard-gutter)]">
-            <section className="flex h-full min-h-0 w-full flex-col py-[1.1em]">
+            <section className="flex min-h-full w-full flex-col py-[1.1em] md:h-full md:min-h-0">
               <h1 className="text-[1.35em] font-semibold text-[#1f2550]">Booking requests</h1>
 
               <div className="mt-6 flex items-center justify-between gap-2">
@@ -277,21 +286,22 @@ export default function TutorBookingsPage() {
                 </div>
               </div>
 
-              <div className="mt-3 min-h-0 flex-1 space-y-1.5 overflow-y-auto md:hidden">
-                {paginatedRows.map((row, index) => {
-                  const rowIndex = (currentPage - 1) * rowsPerPage + index;
+              <div className="mt-3 space-y-1.5 pb-6 md:hidden">
+                {mobilePaginatedRows.map((row, index) => {
+                  const originalIndex = bookingRequests.indexOf(row);
+                  const rowIndex = originalIndex >= 0 ? originalIndex : index;
                   return (
                   <button className="w-full rounded-lg border border-[#e6eaf3] bg-white px-2.5 py-2 text-left" key={`${row.student}-mobile-${index}`} onClick={() => openDetails(rowIndex)} type="button">
                     <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <p className="text-[0.84em] font-semibold text-[#2f3547]">{row.student}</p>
-                        <p className="mt-0.5 text-[0.7em] text-[#7a8299]">{row.subject} - {row.time}</p>
+                      <div className="min-w-0">
+                        <p className="truncate text-[0.78em] font-semibold text-[#2f3547]">{row.student}</p>
+                        <p className="mt-0.5 truncate text-[0.64em] text-[#7a8299]">{row.subject} - {row.time}</p>
                       </div>
-                      <EllipsisVertical className="h-3.5 w-3.5 text-[#7b8296]" />
+                      <EllipsisVertical className="h-3.5 w-3.5 shrink-0 text-[#7b8296]" />
                     </div>
                     <div className="mt-1.5 flex items-center justify-between">
-                      <span className="text-[0.72em] text-[#596177]">{row.date}</span>
-                      <span className="inline-flex items-center gap-1 text-[0.72em] text-[#596177]">
+                      <span className="text-[0.66em] text-[#596177]">{row.date}</span>
+                      <span className="inline-flex items-center gap-1 text-[0.66em] text-[#596177]">
                         <span className={`h-1.5 w-1.5 rounded-full ${statusColor[row.status]}`} />
                         {row.status}
                       </span>
@@ -299,6 +309,11 @@ export default function TutorBookingsPage() {
                   </button>
                   );
                 })}
+                <div className="flex items-center justify-between border-t border-[#edf0f6] pt-2 text-[0.72em] text-[#6f768c]">
+                  <button className="rounded-md border border-[#e2e7f2] px-2 py-1 text-[#5f667b] disabled:opacity-50" disabled={mobileCurrentPage === 1} onClick={() => setPage((prev) => Math.max(1, prev - 1))} type="button">Previous</button>
+                  <span>Page {mobileCurrentPage} of {mobileTotalPages}</span>
+                  <button className="rounded-md border border-[#e2e7f2] px-2 py-1 text-[#5f667b] disabled:opacity-50" disabled={mobileCurrentPage >= mobileTotalPages} onClick={() => setPage((prev) => Math.min(mobileTotalPages, prev + 1))} type="button">Next</button>
+                </div>
               </div>
             </section>
           </div>

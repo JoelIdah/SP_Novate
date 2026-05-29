@@ -135,6 +135,29 @@ input:focus-visible {
   overflow: hidden;
 }
 
+/* Dashboard home should always allow vertical access to lower sections when content grows */
+.dashboard-screen.dashboard-home-fit {
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.dashboard-screen.dashboard-home-fit .dashboard-shell {
+  min-height: max-content;
+}
+
+/* Ensure the same scroll fallback on ultra-wide screens */
+@media (min-width: 1600px) {
+  .dashboard-screen.dashboard-home-fit {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+  }
+
+  .dashboard-screen.dashboard-home-fit .dashboard-main {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+  }
+}
+
 .dashboard-shell {
   height: 100%;
   min-height: 100dvh;
@@ -180,8 +203,9 @@ input:focus-visible {
 }
 
 .dashboard-home-fit .dashboard-main {
-  overflow: hidden;
-  padding-block: clamp(0.12rem, 0.32vh, 0.4rem);
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-block: clamp(0.85rem, 1.35vh, 1.35rem);
 }
 
 .dashboard-home-fit .dashboard-content-frame {
@@ -191,14 +215,99 @@ input:focus-visible {
 
 .dashboard-home-fit .dashboard-stack {
   flex: 1 1 auto;
-  gap: clamp(0.42rem, 0.72vh, 0.72rem);
-  min-height: 0;
-  overflow: hidden;
-  padding-bottom: 0;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  gap: clamp(0.95rem, 1.6vh, 1.45rem);
+  min-height: 100%;
+  overflow: visible;
+  padding-bottom: clamp(0.4rem, 0.8vh, 0.9rem);
 }
 
 .dashboard-home-fit .dashboard-stack > section:last-child {
   margin-top: 0;
+}
+
+.dashboard-home-fit .dashboard-stack > section:nth-child(3) {
+  display: flex;
+  min-height: 0;
+}
+
+.dashboard-home-fit .dashboard-stack > section:nth-child(3) > * {
+  flex: 1;
+  min-height: 0;
+}
+
+.dashboard-home-fit .dashboard-fit-compact {
+  gap: 0.75rem !important;
+}
+
+.dashboard-home-fit .dashboard-fit-compact .dashboard-ultra-compact-title {
+  margin-bottom: 0.32rem !important;
+}
+
+.dashboard-home-fit .dashboard-fit-compact .dashboard-ultra-compact-action {
+  min-height: 3.95rem !important;
+  padding-block: 0.45rem !important;
+}
+
+.dashboard-home-fit .dashboard-fit-compact .dashboard-ultra-compact-metric {
+  min-height: 3rem !important;
+  padding-block: 0.38rem !important;
+}
+
+.dashboard-home-fit .dashboard-fit-compact .dashboard-ultra-compact-panel {
+  min-height: 8.1rem !important;
+}
+
+.dashboard-home-fit .dashboard-fit-compact .dashboard-ultra-compact-resource {
+  min-height: 5.3rem !important;
+  padding-block: 0.5rem !important;
+}
+
+.dashboard-home-fit .dashboard-fit-compact .dashboard-ultra-compact-row {
+  padding-top: 0.34rem !important;
+  padding-bottom: 0.34rem !important;
+}
+
+.dashboard-home-fit .dashboard-fit-compact .dashboard-ultra-compact-hide {
+  display: none !important;
+}
+
+.dashboard-home-fit .dashboard-fit-tight {
+  gap: 0.65rem !important;
+}
+
+.dashboard-home-fit .dashboard-fit-tight .dashboard-ultra-compact-title {
+  margin-bottom: 0.24rem !important;
+}
+
+.dashboard-home-fit .dashboard-fit-tight .dashboard-ultra-compact-action {
+  min-height: 3.65rem !important;
+  padding-block: 0.34rem !important;
+}
+
+.dashboard-home-fit .dashboard-fit-tight .dashboard-ultra-compact-metric {
+  min-height: 2.7rem !important;
+  padding-block: 0.3rem !important;
+}
+
+.dashboard-home-fit .dashboard-fit-tight .dashboard-ultra-compact-panel {
+  min-height: 7.25rem !important;
+}
+
+.dashboard-home-fit .dashboard-fit-tight .dashboard-ultra-compact-resource {
+  min-height: 4.8rem !important;
+  padding-block: 0.38rem !important;
+}
+
+.dashboard-home-fit .dashboard-fit-tight .dashboard-ultra-compact-row {
+  padding-top: 0.24rem !important;
+  padding-bottom: 0.24rem !important;
+}
+
+.dashboard-home-fit .dashboard-fit-tight .dashboard-ultra-compact-hide,
+.dashboard-home-fit .dashboard-fit-tight .dashboard-ultra-tight-hide {
+  display: none !important;
 }
 
 .dashboard-home-action-card {
@@ -239,6 +348,16 @@ input:focus-visible {
     overflow: visible;
     min-height: max-content;
     padding-bottom: clamp(0.8rem, 1.4vh, 1.8rem);
+  }
+
+  .dashboard-home-fit .dashboard-stack {
+    display: flex;
+    gap: clamp(0.95rem, 2.2vw, 1.4rem);
+    min-height: max-content;
+  }
+
+  .dashboard-home-fit .dashboard-stack > section:nth-child(3) {
+    display: block;
   }
 
   .dashboard-section-fill {

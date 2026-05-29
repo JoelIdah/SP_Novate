@@ -222,7 +222,7 @@ export function LoginPageContent() {
         redirectToComingSoon();
         return;
       }
-      router.push("/dashboard");
+      router.push("/students/dashboard");
     } catch {
       setSocialError("Could not reach social auth service. Please try again.");
     } finally {
@@ -343,7 +343,7 @@ export function LoginPageContent() {
         return;
       }
 
-      router.push("/dashboard");
+      router.push("/students/dashboard");
     } catch {
       setPasswordError("Could not reach login service. Please try again.");
     } finally {

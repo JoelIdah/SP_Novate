@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { CalendarDays, ChevronDown, ChevronRight, ClipboardList, Compass, EllipsisVertical, MapPin, Search, Star } from "lucide-react";
 
-import { DashboardNavbar } from "../dashboard/DashboardNavbar";
+import { StudentDashboardNavbar } from "../dashboard/StudentDashboardNavbar";
 import { Avatar } from "../ui/Avatar";
 import { Button } from "../ui/Button";
 import { Card } from "../ui/Card";
@@ -186,11 +186,7 @@ export default function BookingsPage() {
   const paginatedManagedRows = useMemo(() => {
     const start = (currentManagePage - 1) * rowsPerPage;
     return filteredManagedRows.slice(start, start + rowsPerPage);
-  }, [currentManagePage, filteredManagedRows]);
-
-  useEffect(() => {
-    setManagePage(1);
-  }, [dateFrom, dateTo, selectedStatus]);
+  }, [currentManagePage, filteredManagedRows, rowsPerPage]);
 
   const formatRangeLabel = dateFrom || dateTo
     ? `${dateFrom ? dateFrom.replaceAll("-", "/") : "..."} - ${dateTo ? dateTo.replaceAll("-", "/") : "..."}`
@@ -208,7 +204,7 @@ export default function BookingsPage() {
   return (
     <main className="dashboard-screen bg-white text-[#2b3245]">
       <div className="dashboard-shell">
-        <DashboardNavbar active="Bookings" />
+        <StudentDashboardNavbar active="Bookings" />
         <section
           className={`dashboard-main min-h-0 overflow-x-hidden ${
             view === "explore" ? "scrollbar-hover overflow-y-auto" : "overflow-y-hidden"
@@ -299,7 +295,7 @@ export default function BookingsPage() {
           {tutors.map((tutor, index) => (
             <Link
               key={`${tutor.name}-${index}`}
-              href="/bookings/tutor-profile"
+              href="/students/bookings/tutor-profile"
               className="min-h-[10.5em] rounded-2xl border border-[#e8ecf3] bg-[#f6f8fc] p-[1em]"
             >
               <Card className="px-[0.9em] py-[0.9em]">
@@ -415,11 +411,27 @@ export default function BookingsPage() {
                     <p className="mb-2 text-[0.78rem] font-semibold text-[#55607a] 2xl:mb-2.5 2xl:text-[0.92rem]">Pick date range</p>
                     <label className="mb-2 block text-[0.72rem] font-semibold text-[#7a8299] 2xl:mb-2.5 2xl:text-[0.84rem]">
                       From
-                      <input className="mt-1 h-9 w-full rounded-md border border-[#d8deea] px-2 text-[0.78rem] 2xl:mt-1.5 2xl:h-10 2xl:text-[0.9rem]" onChange={(e) => setDateFrom(e.target.value)} type="date" value={dateFrom} />
+                      <input
+                        className="mt-1 h-9 w-full rounded-md border border-[#d8deea] px-2 text-[0.78rem] 2xl:mt-1.5 2xl:h-10 2xl:text-[0.9rem]"
+                        onChange={(e) => {
+                          setDateFrom(e.target.value);
+                          setManagePage(1);
+                        }}
+                        type="date"
+                        value={dateFrom}
+                      />
                     </label>
                     <label className="block text-[0.72rem] font-semibold text-[#7a8299] 2xl:text-[0.84rem]">
                       To
-                      <input className="mt-1 h-9 w-full rounded-md border border-[#d8deea] px-2 text-[0.78rem] 2xl:mt-1.5 2xl:h-10 2xl:text-[0.9rem]" onChange={(e) => setDateTo(e.target.value)} type="date" value={dateTo} />
+                      <input
+                        className="mt-1 h-9 w-full rounded-md border border-[#d8deea] px-2 text-[0.78rem] 2xl:mt-1.5 2xl:h-10 2xl:text-[0.9rem]"
+                        onChange={(e) => {
+                          setDateTo(e.target.value);
+                          setManagePage(1);
+                        }}
+                        type="date"
+                        value={dateTo}
+                      />
                     </label>
                   </div>
                 ) : null}
@@ -447,6 +459,7 @@ export default function BookingsPage() {
                         }`}
                         onClick={() => {
                           setSelectedStatus(status);
+                          setManagePage(1);
                           setIsStatusMenuOpen(false);
                         }}
                         type="button"
@@ -482,7 +495,7 @@ export default function BookingsPage() {
                         key={`${row.date}-${rowIndex}`}
                         className="cursor-pointer border-t border-[#edf0f6] hover:bg-[#fafbff]"
                         onClick={() => {
-                          router.push(`/bookings/manage/${rowIndex + 1}`);
+                          router.push(`/students/bookings/manage/${rowIndex + 1}`);
                         }}
                       >
                         <td className="px-3 py-2.5">{row.date}</td>
@@ -543,7 +556,7 @@ export default function BookingsPage() {
                 <Link
                   key={`${row.date}-${rowIndex}`}
                   className="block rounded-none border-b border-[#edf0f6] bg-white px-2 py-3"
-                  href={`/bookings/manage/${rowIndex + 1}`}
+                  href={`/students/bookings/manage/${rowIndex + 1}`}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div>

@@ -17,10 +17,10 @@ import {
   PlayCircle,
   Star,
 } from "lucide-react";
-import { Avatar } from "../../../components/ui/Avatar";
-import { Button } from "../../../components/ui/Button";
-import { Card } from "../../../components/ui/Card";
-import ResponsiveSheet from "../../../components/ui/ResponsiveSheet";
+import { Avatar } from "../../../../components/ui/Avatar";
+import { Button } from "../../../../components/ui/Button";
+import { Card } from "../../../../components/ui/Card";
+import ResponsiveSheet from "../../../../components/ui/ResponsiveSheet";
 
 const guidelineItems = [
   "Communication outside the platform is at your own risk.",
@@ -129,7 +129,7 @@ export default function TutorProfilePage() {
         <div className="flex h-14 items-center justify-between px-4">
           <Link
             className="inline-flex items-center gap-2 text-[0.75rem] font-medium text-[#6f7891]"
-            href="/bookings"
+            href="/students/bookings"
           >
             <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#efeffa]">
               <ChevronLeft className="h-3.5 w-3.5 text-[#6d6bd6]" />
@@ -304,7 +304,7 @@ export default function TutorProfilePage() {
               <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
                 {testimonials.map((item, index) => (
                   <Card key={index} className="min-h-[230px] p-4">
-                    <p className="text-[0.74rem] leading-5 text-[#5d667c]">"{item}"</p>
+                    <p className="text-[0.74rem] leading-5 text-[#5d667c]">&quot;{item}&quot;</p>
                     <div className="mt-4 flex items-center gap-2">
                       <span className="h-7 w-7 rounded-full bg-[#c8ccd6]" />
                       <div>

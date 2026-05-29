@@ -140,7 +140,7 @@ export function AccountStep({
         router.push("/coming-soon");
         return;
       }
-      router.push("/dashboard");
+      router.push("/students/dashboard");
     } catch {
       setSocialError("Could not reach social auth service. Please try again.");
     } finally {

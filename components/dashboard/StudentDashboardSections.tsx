@@ -33,12 +33,12 @@ function StatusDot({ status }: { status: BookingRow["status"] }) {
   return <span className={`inline-block h-2 w-2 rounded-full ${color}`} />;
 }
 
-export function DashboardActionsSection() {
+export function StudentDashboardActionsSection() {
   return (
     <div>
-      <h2 className="mb-2 text-[0.875rem] font-semibold text-[#616a82]">Actions</h2>
+      <h2 className="dashboard-ultra-compact-title mb-2 text-[0.875rem] font-semibold text-[#616a82]">Actions</h2>
       <div className="grid gap-3 md:grid-cols-3">
-        <article className="flex min-h-[clamp(4.75rem,11vh,5.75rem)] items-center rounded-xl border border-[#b9dcf8] bg-[#f3f9ff] px-3.5 py-2.5">
+        <article className="dashboard-ultra-compact-action flex min-h-[clamp(4.75rem,11vh,5.75rem)] items-center rounded-xl border border-[#b9dcf8] bg-[#f3f9ff] px-3.5 py-2.5">
           <div className="flex items-center gap-2">
             <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#d8ebfa] text-[#2f8fd6]">
               <BookOpenCheck className="h-[1.125rem] w-[1.125rem]" />
@@ -49,7 +49,7 @@ export function DashboardActionsSection() {
             </div>
           </div>
         </article>
-        <article className="flex min-h-[clamp(4.75rem,11vh,5.75rem)] items-center rounded-xl border border-[#b4e5e4] bg-[#f4fcfc] px-3.5 py-2.5">
+        <article className="dashboard-ultra-compact-action flex min-h-[clamp(4.75rem,11vh,5.75rem)] items-center rounded-xl border border-[#b4e5e4] bg-[#f4fcfc] px-3.5 py-2.5">
           <div className="flex items-center gap-2">
             <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#daf3f1] text-[#43b8b2]">
               <MessageCircleMore className="h-[1.125rem] w-[1.125rem]" />
@@ -60,7 +60,7 @@ export function DashboardActionsSection() {
             </div>
           </div>
         </article>
-        <article className="flex min-h-[clamp(4.75rem,11vh,5.75rem)] items-center rounded-xl border border-[#ecd8b2] bg-[#fcf8ef] px-3.5 py-2.5">
+        <article className="dashboard-ultra-compact-action flex min-h-[clamp(4.75rem,11vh,5.75rem)] items-center rounded-xl border border-[#ecd8b2] bg-[#fcf8ef] px-3.5 py-2.5">
           <div className="flex items-center gap-2">
             <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#f6ead0] text-[#d8aa2c]">
               <ReceiptText className="h-[1.125rem] w-[1.125rem]" />
@@ -76,10 +76,10 @@ export function DashboardActionsSection() {
   );
 }
 
-export function DashboardLearningOverviewSection() {
+export function StudentDashboardLearningOverviewSection() {
   return (
     <div>
-      <h2 className="mb-2 text-[0.875rem] font-semibold text-[#616a82]">Learning Overview</h2>
+      <h2 className="dashboard-ultra-compact-title mb-2 text-[0.875rem] font-semibold text-[#616a82]">Learning Overview</h2>
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {[
           { label: "Sessions booked", value: 8 },
@@ -87,7 +87,7 @@ export function DashboardLearningOverviewSection() {
           { label: "Sessions ongoing", value: 4 },
           { label: "Sessions pending", value: 2 },
         ].map((item) => (
-          <article key={item.label} className="flex min-h-[clamp(3.5rem,8.5vh,4.2rem)] flex-col justify-center rounded-[0.65rem] border border-[#e4e8f1] bg-white px-3.5 py-2.5">
+          <article key={item.label} className="dashboard-ultra-compact-metric flex min-h-[clamp(3.5rem,8.5vh,4.2rem)] flex-col justify-center rounded-[0.65rem] border border-[#e4e8f1] bg-white px-3.5 py-2.5">
             <p className="text-[0.75rem] text-[#747d94]">{item.label}</p>
             <p className="mt-1 text-[1.75rem] font-bold leading-none text-[#1f2537]">{item.value}</p>
           </article>
@@ -97,14 +97,14 @@ export function DashboardLearningOverviewSection() {
   );
 }
 
-export function DashboardBookingsSection() {
+export function StudentDashboardBookingsSection() {
   return (
     <section className="flex h-full min-h-0 flex-col">
-      <div className="mb-2 flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5">
+      <div className="dashboard-ultra-compact-title mb-2 flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5">
         <h2 className="text-[0.9rem] font-semibold text-[#616a82]">Managed Bookings</h2>
         <button className="text-[0.75rem] font-semibold text-[#6f74a7] hover:text-[#5954c9]" type="button">Go to managed bookings &gt;</button>
       </div>
-      <div className="flex min-h-[clamp(9.6rem,26vh,12.8rem)] flex-col overflow-hidden rounded-xl border border-[#e4e8f1] bg-white xl:h-full xl:min-h-0">
+      <div className="dashboard-ultra-compact-panel flex min-h-[clamp(9.6rem,26vh,12.8rem)] flex-col overflow-hidden rounded-xl border border-[#e4e8f1] bg-white xl:h-full xl:min-h-0">
         <div className="md:hidden">
           {bookingRows.map((row, idx) => (
             <article
@@ -136,20 +136,23 @@ export function DashboardBookingsSection() {
               </thead>
               <tbody>
                 {bookingRows.map((row, idx) => (
-                  <tr key={`${row.tutor}-${idx}`} className="border-t border-[#edf0f6] text-[0.78rem] text-[#4f576f]">
-                    <td className="px-4 py-3">
+                  <tr
+                    key={`${row.tutor}-${idx}`}
+                    className={`border-t border-[#edf0f6] text-[0.78rem] text-[#4f576f] ${idx >= 4 ? "dashboard-ultra-compact-hide" : ""} ${idx >= 3 ? "dashboard-ultra-tight-hide" : ""}`}
+                  >
+                    <td className="dashboard-ultra-compact-row px-4 py-3">
                       <span className="block max-w-[14rem] truncate">{row.tutor}</span>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="dashboard-ultra-compact-row px-4 py-3">
                       <span className="block max-w-[12rem] truncate">{row.subject}</span>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="dashboard-ultra-compact-row px-4 py-3">
                       <span className="inline-flex items-center gap-2">
                         <StatusDot status={row.status} />
                         {row.status}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="dashboard-ultra-compact-row px-4 py-3 text-right">
                       <button
                         aria-label={`More actions for ${row.tutor}`}
                         className="text-[1.1em] leading-none text-[#8088a0]"
@@ -169,18 +172,21 @@ export function DashboardBookingsSection() {
   );
 }
 
-export function DashboardMessagesSection() {
+export function StudentDashboardMessagesSection() {
   return (
     <section className="flex h-full min-h-0 flex-col">
-      <div className="mb-2 flex items-center justify-between">
+      <div className="dashboard-ultra-compact-title mb-2 flex items-center justify-between">
         <h2 className="text-[0.9rem] font-semibold text-[#616a82]">Messages</h2>
         <button className="text-[0.75rem] font-semibold text-[#6f74a7] hover:text-[#5954c9]" type="button">Go to chat &gt;</button>
       </div>
-      <div className="flex min-h-[clamp(9.6rem,26vh,12.8rem)] flex-col overflow-hidden rounded-xl border border-[#e4e8f1] bg-white xl:h-full xl:min-h-0">
+      <div className="dashboard-ultra-compact-panel flex min-h-[clamp(9.6rem,26vh,12.8rem)] flex-col overflow-hidden rounded-xl border border-[#e4e8f1] bg-white xl:h-full xl:min-h-0">
         <p className="border-b border-[#edf0f6] px-4 py-2 text-[1rem] font-medium text-[#9aa3b8]">Chat</p>
         <div className="min-h-0 flex-1 overflow-y-auto scrollbar-hover">
           {messages.map((message, idx) => (
-            <article key={`${message.name}-${message.time}-${idx}`} className="flex items-center gap-2 border-t border-[#edf0f6] px-4 py-3">
+            <article
+              key={`${message.name}-${message.time}-${idx}`}
+              className={`dashboard-ultra-compact-row flex items-center gap-2 border-t border-[#edf0f6] px-4 py-3 ${idx >= 2 ? "dashboard-ultra-compact-hide" : ""}`}
+            >
               <span className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-[#276a63] text-[0.75rem] font-semibold text-white">
                 {message.initials}
               </span>
@@ -200,12 +206,12 @@ export function DashboardMessagesSection() {
   );
 }
 
-export function DashboardResourcesSection() {
+export function StudentDashboardResourcesSection() {
   return (
     <div>
-      <h2 className="mb-2 text-[0.875rem] font-semibold text-[#616a82]">Resource &amp; Support</h2>
+      <h2 className="dashboard-ultra-compact-title mb-2 text-[0.875rem] font-semibold text-[#616a82]">Resource &amp; Support</h2>
       <div className="grid gap-3 xl:grid-cols-[2fr_1fr_1fr]">
-        <article className="relative min-h-[clamp(6.8rem,18vh,9.2rem)] overflow-hidden rounded-xl border border-[#c5dbed] bg-[#e5f2ff] p-3.5">
+        <article className="dashboard-ultra-compact-resource relative min-h-[clamp(6.8rem,18vh,9.2rem)] overflow-hidden rounded-xl border border-[#c5dbed] bg-[#e5f2ff] p-3.5">
           <span className="inline-block h-3 w-3 rounded-full bg-[#f3c53d]" />
           <p className="mt-2 text-[1rem] font-semibold text-[#2d3448]">Watch our demo video</p>
           <p className="mt-1 max-w-[18rem] text-[0.8rem] text-[#5c6884]">Watch this intro video to learn how SP novate works.</p>
@@ -214,7 +220,7 @@ export function DashboardResourcesSection() {
           </button>
         </article>
 
-        <article className="min-h-[clamp(6.8rem,18vh,9.2rem)] rounded-xl border border-[#e6decf] bg-[#f7f2e8] p-3.5">
+        <article className="dashboard-ultra-compact-resource min-h-[clamp(6.8rem,18vh,9.2rem)] rounded-xl border border-[#e6decf] bg-[#f7f2e8] p-3.5">
           <span className="inline-block h-3 w-3 rounded-full bg-[#caa33a]" />
           <p className="mt-2 text-[1rem] font-semibold text-[#2d3448]">Learn about our tutors</p>
           <p className="mt-1 text-[0.8rem] text-[#5c6884]">Watch this intro video to learn more about our tutors</p>
@@ -223,7 +229,7 @@ export function DashboardResourcesSection() {
           </button>
         </article>
 
-        <article className="min-h-[clamp(6.8rem,18vh,9.2rem)] rounded-xl border border-[#dfe4ed] bg-[#eef2f7] p-3.5">
+        <article className="dashboard-ultra-compact-resource min-h-[clamp(6.8rem,18vh,9.2rem)] rounded-xl border border-[#dfe4ed] bg-[#eef2f7] p-3.5">
           <span className="inline-block h-3 w-3 rounded-full bg-[#9aa3b6]" />
           <p className="mt-2 text-[1rem] font-semibold text-[#2d3448]">What is a finder&apos;s fee</p>
           <p className="mt-1 text-[0.8rem] text-[#5c6884]">Watch this intro video to learn about our finder&apos;s fee</p>

@@ -27,7 +27,7 @@ export default function BookingDetailsPage() {
     <main className="min-h-dvh bg-white text-[#2f3547]">
       <header className="border-b border-[#e6e9f2] bg-white">
         <div className="flex h-14 items-center justify-between px-4">
-          <Link className="inline-flex items-center gap-2 text-[0.75rem] font-medium text-[#6f7891]" href="/bookings">
+          <Link className="inline-flex items-center gap-2 text-[0.75rem] font-medium text-[#6f7891]" href="/students/bookings">
             <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#efeffa]">
               <ChevronLeft className="h-3.5 w-3.5 text-[#6d6bd6]" />
             </span>
@@ -193,7 +193,7 @@ export default function BookingDetailsPage() {
             </div>
             <h3 className="mt-5 text-[2rem] font-semibold leading-none text-[#2f3547]">You&apos;re good to go.</h3>
             <p className="mt-2 text-[0.95rem] text-[#6d758a]">Thank you for your feedback!</p>
-            <Link className="mt-6 inline-flex rounded-full border border-[#d9dfeb] bg-white px-4 py-2 text-[0.82rem] font-semibold text-[#3e4a66]" href="/bookings">
+            <Link className="mt-6 inline-flex rounded-full border border-[#d9dfeb] bg-white px-4 py-2 text-[0.82rem] font-semibold text-[#3e4a66]" href="/students/bookings">
               back to dashboard
             </Link>
           </div>

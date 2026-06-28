@@ -192,7 +192,7 @@ export function LoginPageContent() {
       }
 
       if (result.profileSetupRequired) {
-        if (result.token && redirectToReturnTarget(result.token)) {
+        if (result.token && redirectToReturnTarget(result.token, result.user)) {
           return;
         }
 
@@ -210,7 +210,7 @@ export function LoginPageContent() {
 
       if (result.token) {
         localStorage.setItem("sp_access_token", result.token);
-        if (redirectToReturnTarget(result.token)) {
+        if (redirectToReturnTarget(result.token, result.user)) {
           return;
         }
 

@@ -62,8 +62,12 @@ export function LoginPageContent() {
   const isDirectOnboardingDisabled = !DIRECT_ONBOARDING_ENABLED;
   const signupHref = searchParams.toString() ? `/signup?${searchParams.toString()}` : "/signup";
   const notice = searchParams.get("notice");
-  const accountExistsNotice =
-    notice === "account_exists" ? "This account already exists. Sign in with your password to continue." : "";
+  const statusNotice =
+    notice === "account_exists"
+      ? "This account already exists. Sign in with your password to continue."
+      : notice === "email_verified"
+        ? "Email verified. Sign in with your password to continue."
+        : "";
   const redirectToComingSoon = () => {
     router.push("/coming-soon");
   };
@@ -362,9 +366,9 @@ export function LoginPageContent() {
 
         <form className="mx-auto mt-[1.1em] w-full max-w-[22.5em]" onSubmit={handleSubmit}>
           <p className="text-center text-[0.78em] font-medium text-[#8d95a8]">Welcome back! Please enter your details.</p>
-          {accountExistsNotice ? (
+          {statusNotice ? (
             <p className="mt-[0.75em] rounded-[0.65em] border border-[#b9d8c8] bg-[#f1fbf6] px-[0.9em] py-[0.7em] text-center text-[0.72em] font-medium text-[#247f57]">
-              {accountExistsNotice}
+              {statusNotice}
             </p>
           ) : null}
 

@@ -9,7 +9,6 @@ import { AuthShell } from "./AuthShell";
 import { OtpStep } from "./OtpStep";
 import { StudentFlow } from "./student/StudentFlow";
 import type { SetupMode, SetupStepId, SignUpFlowStage, SignUpView } from "./types";
-import { DIRECT_ONBOARDING_ENABLED } from "../../config/featureFlags";
 
 type SignUpUrlState = {
   mode: SetupMode;
@@ -77,7 +76,6 @@ export function SignUpFlow() {
 
   const urlState = useMemo(() => readUrlState(new URLSearchParams(searchParams.toString())), [searchParams]);
   const [accountProfile, setAccountProfile] = useState<AccountProfile>({});
-  const isDirectOnboardingDisabled = !DIRECT_ONBOARDING_ENABLED;
 
   const getAllowedReturnOrigins = (): string[] =>
     (process.env.NEXT_PUBLIC_SPMEET_ALLOWED_CALLBACK_ORIGINS ?? "")
@@ -153,6 +151,18 @@ export function SignUpFlow() {
 
     window.location.href = target.toString();
     return true;
+  };
+
+  const redirectToLoginAfterVerification = (email: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("email", email.trim());
+    params.set("notice", "email_verified");
+    params.delete("view");
+    params.delete("stage");
+    params.delete("step");
+    params.delete("mode");
+    params.delete("role");
+    router.push(`/login?${params.toString()}`);
   };
 
   const writeUrlState = (nextState: Partial<SignUpUrlState>) => {
@@ -244,12 +254,12 @@ export function SignUpFlow() {
                 return;
               }
 
-              if (isDirectOnboardingDisabled) {
+              if (!resolveSafeReturnTo() || !resolveState()) {
                 router.push("/coming-soon");
                 return;
               }
 
-              writeUrlState({ mode: "form", stage: "overview", step: "personal", view: "flow" });
+              redirectToLoginAfterVerification(payload.email);
             }}
           />
         )}

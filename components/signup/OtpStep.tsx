@@ -6,11 +6,14 @@ import Image from "next/image";
 type VerifyOtpResponse = {
   message?: string;
   data?: {
+    token?: string;
     user?: {
+      public_id?: string;
       email?: string;
       first_name?: string;
       last_name?: string;
       role?: "student" | "tutor";
+      profile_photo?: string;
     };
   };
 };
@@ -25,7 +28,15 @@ export function OtpStep({
   onVerified,
 }: {
   email: string;
-  onVerified: (payload: { email: string; firstName: string; lastName: string; role?: "student" | "tutor" }) => void;
+  onVerified: (payload: {
+    token?: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    role?: "student" | "tutor";
+    profilePhoto?: string;
+    publicId?: string;
+  }) => void;
 }) {
   const [digits, setDigits] = useState(["", "", "", "", "", ""]);
   const [isVerifying, setIsVerifying] = useState(false);
@@ -73,10 +84,13 @@ export function OtpStep({
 
       const user = data?.data?.user;
       onVerified({
+        token: data?.data?.token,
         email: user?.email ?? email.trim(),
         firstName: user?.first_name ?? "",
         lastName: user?.last_name ?? "",
         role: user?.role,
+        profilePhoto: user?.profile_photo,
+        publicId: user?.public_id,
       });
     } catch {
       setErrorMessage("Could not verify OTP. Please try again.");

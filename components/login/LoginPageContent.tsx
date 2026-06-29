@@ -50,7 +50,7 @@ function EyeIcon({ open }: { open: boolean }) {
 export function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState((searchParams.get("email") ?? "").trim());
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -60,6 +60,10 @@ export function LoginPageContent() {
   const [passwordError, setPasswordError] = useState("");
   const [redirectError, setRedirectError] = useState("");
   const isDirectOnboardingDisabled = !DIRECT_ONBOARDING_ENABLED;
+  const signupHref = searchParams.toString() ? `/signup?${searchParams.toString()}` : "/signup";
+  const notice = searchParams.get("notice");
+  const accountExistsNotice =
+    notice === "account_exists" ? "This account already exists. Sign in with your password to continue." : "";
   const redirectToComingSoon = () => {
     router.push("/coming-soon");
   };
@@ -358,6 +362,11 @@ export function LoginPageContent() {
 
         <form className="mx-auto mt-[1.1em] w-full max-w-[22.5em]" onSubmit={handleSubmit}>
           <p className="text-center text-[0.78em] font-medium text-[#8d95a8]">Welcome back! Please enter your details.</p>
+          {accountExistsNotice ? (
+            <p className="mt-[0.75em] rounded-[0.65em] border border-[#b9d8c8] bg-[#f1fbf6] px-[0.9em] py-[0.7em] text-center text-[0.72em] font-medium text-[#247f57]">
+              {accountExistsNotice}
+            </p>
+          ) : null}
 
           <div className="mt-[1.1em] space-y-[0.6em]">
             <label className="block text-[0.78em] font-semibold text-[#6f778c]">
@@ -474,7 +483,7 @@ export function LoginPageContent() {
 
           <p className="mt-[0.95em] text-center text-[0.78em] font-medium text-[#8d95a8]">
             Don&apos;t have an account?{" "}
-            <Link href="/signup" className="font-semibold text-[#2187d3] transition-colors hover:text-[#17679f]">
+            <Link href={signupHref} className="font-semibold text-[#2187d3] transition-colors hover:text-[#17679f]">
               Sign up
             </Link>
           </p>

@@ -1,2 +1,2 @@
-export const DIRECT_ONBOARDING_ENABLED = true;
+export const DIRECT_ONBOARDING_ENABLED = false;
 

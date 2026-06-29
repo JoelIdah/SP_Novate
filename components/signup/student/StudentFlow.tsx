@@ -36,3 +36,4 @@ export function StudentFlow({
 
   return <StudentOnboardingOverview onCancel={onBackToAccount} onContinue={() => onStageChange("setup")} />;
 }
+

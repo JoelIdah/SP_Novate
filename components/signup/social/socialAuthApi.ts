@@ -10,6 +10,14 @@ type SocialAuthResponseBody = {
   data?: {
     profile_setup_required?: boolean;
     token?: string;
+    user?: {
+      role?: "student" | "tutor";
+      email?: string;
+      first_name?: string;
+      last_name?: string;
+      profile_photo?: string;
+      public_id?: string;
+    };
   };
 };
 
@@ -48,6 +56,7 @@ export async function socialAuthApi({ provider, token }: SocialAuthPayload): Pro
       kind: "success",
       message: data?.message ?? "Profile setup is required.",
       token: data?.data?.token,
+      user: data?.data?.user,
       profileSetupRequired: true,
     };
   }
@@ -64,6 +73,8 @@ export async function socialAuthApi({ provider, token }: SocialAuthPayload): Pro
     kind: "success",
     message: data?.message ?? "Authentication successful.",
     token: data?.data?.token,
+    user: data?.data?.user,
     profileSetupRequired: false,
   };
 }
+

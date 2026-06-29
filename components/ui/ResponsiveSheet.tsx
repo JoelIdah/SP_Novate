@@ -32,16 +32,20 @@ export default function ResponsiveSheet({
         clearTimeout(closeTimerRef.current);
         closeTimerRef.current = null;
       }
-      setMounted(true);
       if (openRafRef.current) cancelAnimationFrame(openRafRef.current);
       openRafRef.current = requestAnimationFrame(() => {
-        setIsActive(true);
+        setMounted(true);
+        requestAnimationFrame(() => setIsActive(true));
         openRafRef.current = null;
       });
       return;
     }
 
-    setIsActive(false);
+    if (openRafRef.current) {
+      cancelAnimationFrame(openRafRef.current);
+      openRafRef.current = null;
+    }
+    requestAnimationFrame(() => setIsActive(false));
     closeTimerRef.current = setTimeout(() => {
       setMounted(false);
       closeTimerRef.current = null;
@@ -102,7 +106,7 @@ export default function ResponsiveSheet({
       />
       <div
         ref={panelRef}
-        className={`absolute bottom-0 left-0 right-0 z-10 flex max-h-[86svh] flex-col overflow-hidden rounded-t-2xl border-t border-[#d6dce8] bg-white px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+10px)] shadow-2xl transition-transform duration-300 ease-out will-change-transform lg:bottom-0 lg:left-auto lg:right-0 lg:top-0 lg:max-h-none lg:h-full lg:w-full lg:max-w-[558px] lg:rounded-l-xl lg:rounded-tr-none lg:border-l lg:border-t-0 lg:px-5 lg:pb-0 ${isActive ? "translate-y-0 lg:translate-x-0" : "translate-y-full lg:translate-y-0 lg:translate-x-full"} ${panelClassName}`}
+        className={`absolute bottom-0 left-0 right-0 z-10 flex h-auto max-h-[92dvh] w-full min-w-0 flex-col overflow-hidden rounded-t-2xl border-t border-[#d6dce8] bg-white px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+10px)] shadow-2xl transition-transform duration-300 ease-out will-change-transform xl:bottom-0 xl:left-auto xl:right-0 xl:top-0 xl:max-h-none xl:h-full xl:w-full xl:max-w-[558px] xl:rounded-l-xl xl:rounded-tr-none xl:border-l xl:border-t-0 xl:px-5 xl:pb-0 ${isActive ? "translate-y-0 xl:translate-x-0" : "translate-y-full xl:translate-y-0 xl:translate-x-full"} ${panelClassName}`}
         onClick={(event) => event.stopPropagation()}
       >
         {children}
@@ -110,3 +114,4 @@ export default function ResponsiveSheet({
     </div>
   );
 }
+

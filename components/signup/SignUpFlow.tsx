@@ -9,7 +9,6 @@ import { AuthShell } from "./AuthShell";
 import { OtpStep } from "./OtpStep";
 import { StudentFlow } from "./student/StudentFlow";
 import type { SetupMode, SetupStepId, SignUpFlowStage, SignUpView } from "./types";
-import { DIRECT_ONBOARDING_ENABLED } from "../../config/featureFlags";
 
 type SignUpUrlState = {
   mode: SetupMode;
@@ -19,6 +18,14 @@ type SignUpUrlState = {
 };
 
 type AccountProfile = { email?: string; firstName?: string; lastName?: string };
+type SsoUser = {
+  role?: "student" | "tutor";
+  email?: string;
+  first_name?: string;
+  last_name?: string;
+  profile_photo?: string;
+  public_id?: string;
+};
 
 function parseView(value: string | null): SignUpView {
   return value === "account" || value === "otp" || value === "flow" ? value : "account";
@@ -69,7 +76,94 @@ export function SignUpFlow() {
 
   const urlState = useMemo(() => readUrlState(new URLSearchParams(searchParams.toString())), [searchParams]);
   const [accountProfile, setAccountProfile] = useState<AccountProfile>({});
-  const isDirectOnboardingDisabled = !DIRECT_ONBOARDING_ENABLED;
+
+  const getAllowedReturnOrigins = (): string[] =>
+    (process.env.NEXT_PUBLIC_SPMEET_ALLOWED_CALLBACK_ORIGINS ?? "")
+      .split(",")
+      .map((value) => value.trim())
+      .filter(Boolean);
+
+  const resolveSafeReturnTo = (): string | null => {
+    const candidate = searchParams.get("returnTo")?.trim();
+    if (!candidate) return null;
+
+    try {
+      const parsed = new URL(candidate);
+      if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return null;
+      const allowedOrigins = getAllowedReturnOrigins();
+      if (!allowedOrigins.includes(parsed.origin)) return null;
+      return parsed.toString();
+    } catch {
+      return null;
+    }
+  };
+
+  const resolveState = (): string | null => {
+    const candidate = searchParams.get("state");
+    if (!candidate) return null;
+    const trimmed = candidate.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  };
+
+  const resolveSafeNextPath = (): string => {
+    const candidate = searchParams.get("next");
+    if (!candidate) return "/";
+
+    const trimmed = candidate.trim();
+    if (!trimmed.startsWith("/") || trimmed.startsWith("//")) return "/";
+    if (trimmed.includes("://")) return "/";
+    return trimmed;
+  };
+
+  const encodeBase64Url = (value: string): string => {
+    const bytes = new TextEncoder().encode(value);
+    let binary = "";
+
+    for (let i = 0; i < bytes.length; i += 1) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+
+    return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+  };
+
+  const redirectToReturnTarget = (token: string, user?: SsoUser) => {
+    const returnTo = resolveSafeReturnTo();
+    const state = resolveState();
+
+    if (!returnTo || !state) return false;
+
+    const target = new URL(returnTo);
+    target.searchParams.set("token", token);
+    target.searchParams.set("next", resolveSafeNextPath());
+    target.searchParams.set("state", state);
+
+    if (user) {
+      const userPayload = {
+        role: user.role ?? "",
+        email: user.email ?? "",
+        first_name: user.first_name ?? "",
+        last_name: user.last_name ?? "",
+        profile_photo: user.profile_photo ?? "",
+        public_id: user.public_id ?? "",
+      };
+      target.searchParams.set("user", encodeBase64Url(JSON.stringify(userPayload)));
+    }
+
+    window.location.href = target.toString();
+    return true;
+  };
+
+  const redirectToLoginAfterVerification = (email: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("email", email.trim());
+    params.set("notice", "email_verified");
+    params.delete("view");
+    params.delete("stage");
+    params.delete("step");
+    params.delete("mode");
+    params.delete("role");
+    router.push(`/login?${params.toString()}`);
+  };
 
   const writeUrlState = (nextState: Partial<SignUpUrlState>) => {
     const view = nextState.view ?? urlState.view;
@@ -146,12 +240,26 @@ export function SignUpFlow() {
                 lastName: payload.lastName || prev.lastName,
               }));
 
-              if (isDirectOnboardingDisabled) {
+              if (
+                payload.token &&
+                redirectToReturnTarget(payload.token, {
+                  email: payload.email,
+                  first_name: payload.firstName,
+                  last_name: payload.lastName,
+                  role: payload.role,
+                  profile_photo: payload.profilePhoto,
+                  public_id: payload.publicId,
+                })
+              ) {
+                return;
+              }
+
+              if (!resolveSafeReturnTo() || !resolveState()) {
                 router.push("/coming-soon");
                 return;
               }
 
-              writeUrlState({ mode: "form", stage: "overview", step: "personal", view: "flow" });
+              redirectToLoginAfterVerification(payload.email);
             }}
           />
         )}
@@ -159,5 +267,6 @@ export function SignUpFlow() {
     </AuthShell>
   );
 }
+
 
 

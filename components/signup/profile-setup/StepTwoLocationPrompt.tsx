@@ -1,4 +1,4 @@
-﻿import { LocationTargetIcon } from "./icons";
+import { LocationTargetIcon } from "./icons";
 
 type StepTwoLocationPromptProps = {
   locationError: string;
@@ -33,3 +33,4 @@ export function StepTwoLocationPrompt({
     </>
   );
 }
+

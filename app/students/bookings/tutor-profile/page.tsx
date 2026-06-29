@@ -17,10 +17,10 @@ import {
   PlayCircle,
   Star,
 } from "lucide-react";
-import { Avatar } from "../../../components/ui/Avatar";
-import { Button } from "../../../components/ui/Button";
-import { Card } from "../../../components/ui/Card";
-import ResponsiveSheet from "../../../components/ui/ResponsiveSheet";
+import { Avatar } from "../../../../components/ui/Avatar";
+import { Button } from "../../../../components/ui/Button";
+import { Card } from "../../../../components/ui/Card";
+import ResponsiveSheet from "../../../../components/ui/ResponsiveSheet";
 
 const guidelineItems = [
   "Communication outside the platform is at your own risk.",
@@ -129,7 +129,7 @@ export default function TutorProfilePage() {
         <div className="flex h-14 items-center justify-between px-4">
           <Link
             className="inline-flex items-center gap-2 text-[0.75rem] font-medium text-[#6f7891]"
-            href="/bookings"
+            href="/students/bookings"
           >
             <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#efeffa]">
               <ChevronLeft className="h-3.5 w-3.5 text-[#6d6bd6]" />
@@ -150,7 +150,7 @@ export default function TutorProfilePage() {
       <section className="mx-auto w-full max-w-[1260px] px-5 py-3">
         <h1 className="text-[1.12rem] font-semibold text-[#2f3547]">Tutor Profile</h1>
 
-        <div className="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-[1fr_22rem]">
+        <div className="mt-4 grid grid-cols-1 gap-3 xl:grid-cols-[1fr_22rem]">
           <Card className="p-4">
             <div className="flex flex-col gap-4 sm:flex-row">
               <Avatar alt="Oluyinka Emmanuel" className="relative h-24 w-28 overflow-hidden rounded-xl" randomImage randomSeed="Oluyinka Emmanuel-profile">
@@ -219,7 +219,7 @@ export default function TutorProfilePage() {
           </Card>
         </div>
 
-        <div className="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-[18rem_1fr]">
+        <div className="mt-4 grid grid-cols-1 gap-3 xl:grid-cols-[18rem_1fr]">
           <article className="rounded-xl border border-[#e3e7ef] bg-[#f4f5f7] p-4">
             <h3 className="inline-flex items-center gap-1 text-[0.78rem] font-semibold text-[#7a8298]">
               <AlertCircle className="h-3.5 w-3.5 text-[#6366d7]" />
@@ -304,7 +304,7 @@ export default function TutorProfilePage() {
               <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
                 {testimonials.map((item, index) => (
                   <Card key={index} className="min-h-[230px] p-4">
-                    <p className="text-[0.74rem] leading-5 text-[#5d667c]">"{item}"</p>
+                    <p className="text-[0.74rem] leading-5 text-[#5d667c]">&quot;{item}&quot;</p>
                     <div className="mt-4 flex items-center gap-2">
                       <span className="h-7 w-7 rounded-full bg-[#c8ccd6]" />
                       <div>
@@ -321,8 +321,8 @@ export default function TutorProfilePage() {
       </section>
 
       <ResponsiveSheet open={isBookingOpen} onClose={closeBookingPanel}>
-            <div className="mx-auto mb-2 h-1.5 w-10 rounded-full bg-[#d8dde8] lg:hidden" />
-            <h2 className="text-[1.65rem] font-semibold leading-none text-[#2f3547] lg:text-[2.05rem]">Book a session</h2>
+            <div className="mx-auto mb-2 h-1.5 w-10 rounded-full bg-[#d8dde8] xl:hidden" />
+            <h2 className="text-[1.65rem] font-semibold leading-none text-[#2f3547] xl:text-[2.05rem]">Book a session</h2>
             <p className="mt-2 text-[0.71rem] text-[#8b93a8]">
               A finder&apos;s fee is applied to each booking to help match you with the right tutor and support the platform.
             </p>
@@ -428,7 +428,7 @@ export default function TutorProfilePage() {
               ) : null}
             </div>
 
-            <div className="mt-auto flex items-center gap-2 border-t border-[#eef1f6] bg-white py-3 lg:border-t-0 lg:py-4">
+            <div className="mt-auto flex items-center gap-2 border-t border-[#eef1f6] bg-white py-3 xl:border-t-0 xl:py-4">
               <button
                 className="h-11 flex-1 rounded-full bg-[#ececef] text-[0.82rem] font-semibold text-[#4e576d]"
                 onClick={closeBookingPanel}
@@ -496,3 +496,4 @@ function BookingField({
     </label>
   );
 }
+

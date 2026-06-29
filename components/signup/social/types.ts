@@ -5,6 +5,14 @@ export type SocialAuthResult =
       kind: "success";
       message: string;
       token?: string;
+      user?: {
+        role?: "student" | "tutor";
+        email?: string;
+        first_name?: string;
+        last_name?: string;
+        profile_photo?: string;
+        public_id?: string;
+      };
       profileSetupRequired: boolean;
     }
   | {
@@ -12,3 +20,4 @@ export type SocialAuthResult =
       message: string;
       status: number;
     };
+

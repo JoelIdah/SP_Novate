@@ -1,4 +1,4 @@
-﻿export type StepIconKind = "personal" | "identification" | "compensation" | "location" | "default";
+export type StepIconKind = "personal" | "identification" | "compensation" | "location" | "default";
 
 function PersonalInfoIcon() {
   return (
@@ -64,3 +64,4 @@ export function StepItemIcon({ kind }: { kind: StepIconKind }) {
     </svg>
   );
 }
+

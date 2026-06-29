@@ -2,10 +2,14 @@
 
 :root {
   --app-max-width:        100%;
-  --app-gutter:           clamp(1rem, 2vw, 3rem);
+  --app-gutter:           clamp(2rem, 4vw, 6.4rem);
   --dashboard-max-width:  100%;
   --dashboard-gutter:     var(--app-gutter);
-  --topbar-h:             clamp(3rem, 2.4rem + 1vw, 5.5rem);
+  --scale-base-font:      16px;
+  --scale-start-width:    1728px;
+  --scale-growth-per-px:  0.008;
+  --scale-max-font:       52px;
+  --topbar-h:             clamp(3.5rem, 3.1rem + 0.35vw, 5rem);
   --panel-gap:            clamp(0.6rem, 0.5rem + 0.5vw, 1.8rem);
   --sidebar-w:            clamp(14rem, 12rem + 4vw, 22rem);
   --controls-h:           clamp(3rem, 2.5rem + 0.8vw, 4.5rem);
@@ -44,15 +48,42 @@
 html,
 body {
   min-height: 100dvh;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 html {
-  font-size: 14px;
+  font-size: clamp(
+    var(--scale-base-font),
+    calc(
+      var(--scale-base-font) +
+      (100vw - var(--scale-start-width)) * var(--scale-growth-per-px)
+    ),
+    var(--scale-max-font)
+  );
 }
 
 body {
   margin: 0;
   font-family: var(--font-open-sauce);
+}
+
+/* Global subtle scrollbar styling */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #c7cfdd transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: #c7cfdd;
+  border-radius: 999px;
 }
 
 a,
@@ -90,7 +121,7 @@ input:focus-visible {
   align-items: center;
   overflow: hidden;
   padding-block: clamp(0.5rem, 1.6vh, 1.6rem);
-  font-size: clamp(0.875rem, 0.8vw, 4.5rem);
+  font-size: 1rem;
 }
 
 .auth-panel {
@@ -100,23 +131,50 @@ input:focus-visible {
 
 .dashboard-screen {
   height: 100dvh;
+  min-height: 100dvh;
   overflow: hidden;
+}
+
+/* Dashboard home should always allow vertical access to lower sections when content grows */
+.dashboard-screen.dashboard-home-fit {
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.dashboard-screen.dashboard-home-fit .dashboard-shell {
+  min-height: max-content;
+}
+
+/* Ensure the same scroll fallback on ultra-wide screens */
+@media (min-width: 1600px) {
+  .dashboard-screen.dashboard-home-fit {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+  }
+
+  .dashboard-screen.dashboard-home-fit .dashboard-main {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+  }
 }
 
 .dashboard-shell {
   height: 100%;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
 }
 
 .dashboard-header {
   flex-shrink: 0;
+  font-size: 1rem;
 }
 
 .dashboard-main {
   flex: 1;
+  min-height: 0;
   overflow: hidden;
-  padding-block: clamp(0.4rem, 0.8vh, 1.2rem);
+  padding-block: clamp(0.28rem, 0.58vh, 0.85rem);
   display: flex;
 }
 
@@ -125,16 +183,139 @@ input:focus-visible {
   max-width: var(--dashboard-max-width);
   margin-inline: auto;
   display: flex;
-  font-size: clamp(0.8rem, 1.2vw, 2.6rem);
+  min-height: 0;
+  min-width: 0;
+  font-size: 1rem;
 }
 
 .dashboard-stack {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: clamp(0.6rem, 1vh, 1.6rem);
+  gap: clamp(0.35rem, 0.55vh, 0.85rem);
   min-height: 0;
+  min-width: 0;
   overflow: hidden;
+}
+
+.dashboard-stack > section {
+  min-width: 0;
+}
+
+.dashboard-home-fit .dashboard-main {
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-block: clamp(0.85rem, 1.35vh, 1.35rem);
+}
+
+.dashboard-home-fit .dashboard-content-frame {
+  display: flex;
+  min-height: 100%;
+}
+
+.dashboard-home-fit .dashboard-stack {
+  flex: 1 1 auto;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  gap: clamp(0.95rem, 1.6vh, 1.45rem);
+  min-height: 100%;
+  overflow: visible;
+  padding-bottom: clamp(0.4rem, 0.8vh, 0.9rem);
+}
+
+.dashboard-home-fit .dashboard-stack > section:last-child {
+  margin-top: 0;
+}
+
+.dashboard-home-fit .dashboard-stack > section:nth-child(3) {
+  display: flex;
+  min-height: 0;
+}
+
+.dashboard-home-fit .dashboard-stack > section:nth-child(3) > * {
+  flex: 1;
+  min-height: 0;
+}
+
+.dashboard-home-fit .dashboard-fit-compact {
+  gap: 0.75rem !important;
+}
+
+.dashboard-home-fit .dashboard-fit-compact .dashboard-ultra-compact-title {
+  margin-bottom: 0.32rem !important;
+}
+
+.dashboard-home-fit .dashboard-fit-compact .dashboard-ultra-compact-action {
+  min-height: 3.95rem !important;
+  padding-block: 0.45rem !important;
+}
+
+.dashboard-home-fit .dashboard-fit-compact .dashboard-ultra-compact-metric {
+  min-height: 3rem !important;
+  padding-block: 0.38rem !important;
+}
+
+.dashboard-home-fit .dashboard-fit-compact .dashboard-ultra-compact-panel {
+  min-height: 8.1rem !important;
+}
+
+.dashboard-home-fit .dashboard-fit-compact .dashboard-ultra-compact-resource {
+  min-height: 5.3rem !important;
+  padding-block: 0.5rem !important;
+}
+
+.dashboard-home-fit .dashboard-fit-compact .dashboard-ultra-compact-row {
+  padding-top: 0.34rem !important;
+  padding-bottom: 0.34rem !important;
+}
+
+.dashboard-home-fit .dashboard-fit-compact .dashboard-ultra-compact-hide {
+  display: none !important;
+}
+
+.dashboard-home-fit .dashboard-fit-tight {
+  gap: 0.65rem !important;
+}
+
+.dashboard-home-fit .dashboard-fit-tight .dashboard-ultra-compact-title {
+  margin-bottom: 0.24rem !important;
+}
+
+.dashboard-home-fit .dashboard-fit-tight .dashboard-ultra-compact-action {
+  min-height: 3.65rem !important;
+  padding-block: 0.34rem !important;
+}
+
+.dashboard-home-fit .dashboard-fit-tight .dashboard-ultra-compact-metric {
+  min-height: 2.7rem !important;
+  padding-block: 0.3rem !important;
+}
+
+.dashboard-home-fit .dashboard-fit-tight .dashboard-ultra-compact-panel {
+  min-height: 7.25rem !important;
+}
+
+.dashboard-home-fit .dashboard-fit-tight .dashboard-ultra-compact-resource {
+  min-height: 4.8rem !important;
+  padding-block: 0.38rem !important;
+}
+
+.dashboard-home-fit .dashboard-fit-tight .dashboard-ultra-compact-row {
+  padding-top: 0.24rem !important;
+  padding-bottom: 0.24rem !important;
+}
+
+.dashboard-home-fit .dashboard-fit-tight .dashboard-ultra-compact-hide,
+.dashboard-home-fit .dashboard-fit-tight .dashboard-ultra-tight-hide {
+  display: none !important;
+}
+
+.dashboard-home-action-card {
+  min-height: clamp(5.95em, 12dvh, 8.4em);
+}
+
+.dashboard-home-metric-card {
+  min-height: clamp(4em, 8.5dvh, 5.8em);
 }
 
 .dashboard-section-fill {
@@ -162,22 +343,21 @@ input:focus-visible {
   min-height: 0;
 }
 
-@media (min-width: 1024px) {
-  .dashboard-content-frame {
-    font-size: clamp(0.68rem, 0.72vw, 1.35rem);
-  }
-}
-
-@media (max-width: 1023px) {
-  .dashboard-main {
-    overflow-y: auto;
-    overflow-x: hidden;
-  }
-
+@media (max-width: 1279px) {
   .dashboard-stack {
     overflow: visible;
     min-height: max-content;
     padding-bottom: clamp(0.8rem, 1.4vh, 1.8rem);
+  }
+
+  .dashboard-home-fit .dashboard-stack {
+    display: flex;
+    gap: clamp(0.95rem, 2.2vw, 1.4rem);
+    min-height: max-content;
+  }
+
+  .dashboard-home-fit .dashboard-stack > section:nth-child(3) {
+    display: block;
   }
 
   .dashboard-section-fill {
@@ -211,21 +391,47 @@ input:focus-visible {
 
 .navbar-scroll {
   scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 .navbar-scroll::-webkit-scrollbar {
   width: 0;
   height: 0;
+  display: none;
+}
+
+.scrollbar-hidden {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+.scrollbar-hidden::-webkit-scrollbar {
+  width: 0 !important;
+  height: 0 !important;
+  display: none !important;
+  background: transparent !important;
+}
+.scrollbar-hidden::-webkit-scrollbar-thumb {
+  background: transparent !important;
+}
+.scrollbar-hidden::-webkit-scrollbar-track {
+  background: transparent !important;
 }
 
 .scrollbar-hover {
-  scrollbar-width: none;
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
 }
 .scrollbar-hover::-webkit-scrollbar {
-  width: 0;
-  height: 0;
+  width: 8px;
+  height: 8px;
+}
+.scrollbar-hover::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-hover::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 999px;
 }
 .scrollbar-hover:hover {
-  scrollbar-width: thin;
   scrollbar-color: #c7cfdd transparent;
 }
 .scrollbar-hover:hover::-webkit-scrollbar {
@@ -239,3 +445,4 @@ input:focus-visible {
   background: #c7cfdd;
   border-radius: 999px;
 }
+

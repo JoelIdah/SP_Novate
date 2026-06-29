@@ -8,3 +8,4 @@ export default function ResetPasswordPage({ searchParams }: ResetPasswordPagePro
   const token = searchParams?.token ? `?token=${encodeURIComponent(searchParams.token)}` : "";
   redirect(`/forgot-password${token}`);
 }
+

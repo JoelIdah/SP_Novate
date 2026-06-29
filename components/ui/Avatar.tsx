@@ -60,3 +60,4 @@ export function Avatar({ initials, src, alt, className = "", style, children, ra
     </div>
   );
 }
+

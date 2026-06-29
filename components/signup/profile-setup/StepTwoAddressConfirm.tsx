@@ -1,4 +1,4 @@
-﻿import { FieldLabel } from "./FieldLabel";
+import { FieldLabel } from "./FieldLabel";
 import { LocationTargetIcon } from "./icons";
 import type { AddressState } from "../utils";
 
@@ -59,3 +59,4 @@ export function StepTwoAddressConfirm({
     </>
   );
 }
+

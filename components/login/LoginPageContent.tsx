@@ -364,7 +364,7 @@ export function LoginPageContent() {
       <div className="auth-card relative rounded-[1.35em] border-[0.08em] border-[#d9dde8] bg-gradient-to-b from-white to-[#fcfdff] px-[1.5em] pb-[1.35em] pt-[1.3em] shadow-[0_14px_34px_rgba(23,30,63,0.11)]">
         <AuthCardHeader showPrompt={false} title="Log in to your account" />
 
-        <form className="mx-auto mt-[1.1em] w-full max-w-[22.5em]" onSubmit={handleSubmit}>
+        <form className="auth-form login-auth-form mx-auto mt-[1.1em] w-full max-w-[22.5em]" onSubmit={handleSubmit}>
           <p className="text-center text-[0.78em] font-medium text-[#8d95a8]">Welcome back! Please enter your details.</p>
           {statusNotice ? (
             <p className="mt-[0.75em] rounded-[0.65em] border border-[#b9d8c8] bg-[#f1fbf6] px-[0.9em] py-[0.7em] text-center text-[0.72em] font-medium text-[#247f57]">
@@ -372,81 +372,7 @@ export function LoginPageContent() {
             </p>
           ) : null}
 
-          <div className="mt-[1.1em] space-y-[0.6em]">
-            <label className="block text-[0.78em] font-semibold text-[#6f778c]">
-              Email
-              <input
-                className={`mt-[0.4em] h-[2.9em] w-full rounded-[0.5em] border px-[1em] text-[0.82em] font-semibold text-[#4f5980] outline-none ${
-                  emailError ? "border-[#d04b4b]" : "border-[#d8dde8] focus:border-[#b6c0d8]"
-                }`}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Enter your email"
-                type="email"
-                value={email}
-              />
-              <div
-                className={`overflow-hidden transition-all duration-200 ease-out ${
-                  emailError ? "mt-[0.25em] max-h-[1.6em] opacity-100" : "max-h-0 opacity-0"
-                }`}
-              >
-                <span className="block text-[0.64em] font-medium leading-tight text-[#d04b4b]">{emailError}</span>
-              </div>
-            </label>
-
-            <label className="block text-[0.78em] font-semibold text-[#6f778c]">
-              Password
-              <div
-                className={`mt-[0.4em] flex h-[2.9em] items-center rounded-[0.5em] border px-[1em] focus-within:outline-2 focus-within:outline-[#6b68e8] focus-within:outline-offset-2 ${
-                  passwordError ? "border-[#d04b4b]" : "border-[#d8dde8] focus-within:border-[#b6c0d8]"
-                }`}
-              >
-                <input
-                  className="min-w-0 flex-1 bg-transparent text-[0.82em] font-semibold text-[#4f5980] outline-none focus:outline-none focus-visible:!outline-none focus-visible:!outline-offset-0 [&::-ms-clear]:hidden [&::-ms-reveal]:hidden"
-                  onChange={(e) => setPassword(e.target.value)}
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                />
-                <button
-                  aria-label={showPassword ? "Hide password" : "Show password"}
-                  className="text-[#7b84a0] hover:text-[#2187d3]"
-                  onClick={() => setShowPassword((v) => !v)}
-                  type="button"
-                >
-                  <EyeIcon open={showPassword} />
-                </button>
-              </div>
-              <div
-                className={`overflow-hidden transition-all duration-200 ease-out ${
-                  passwordError ? "mt-[0.25em] max-h-[1.6em] opacity-100" : "max-h-0 opacity-0"
-                }`}
-              >
-                <span className="block text-[0.64em] font-medium leading-tight text-[#d04b4b]">{passwordError}</span>
-              </div>
-            </label>
-
-            <Link
-              className="inline-block text-[0.72em] font-semibold text-[#6f8fb5] hover:text-[#17679f]"
-              href={email.trim() ? `/forgot-password?email=${encodeURIComponent(email.trim())}` : "/forgot-password"}
-            >
-              Forgot your password?
-            </Link>
-          </div>
-
-          <button
-            className="mt-[0.95em] h-[3em] w-full rounded-full bg-[#231d71] text-[0.84em] font-semibold text-white hover:bg-[#1c175f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8b88f5] focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:cursor-not-allowed disabled:opacity-70"
-            disabled={isSubmitting}
-            type="submit"
-          >
-            {isSubmitting ? "Continuing..." : "Continue with email"}
-          </button>
-
-          <div className="my-[0.8em] flex items-center gap-[0.9em]">
-            <span className="h-px flex-1 bg-[#d9deea]" />
-            <span className="text-[0.68em] font-semibold uppercase text-[#9ba2b4]">or</span>
-            <span className="h-px flex-1 bg-[#d9deea]" />
-          </div>
-
-          <div className="space-y-[0.55em]">
+          <div className="mt-[0.9em]">
             <SocialAuthButtons
               activeSocialProvider={activeSocialProvider}
               enableApple={false}
@@ -484,6 +410,80 @@ export function LoginPageContent() {
               <p className="text-[0.7em] font-medium text-[#d04b4b]">{redirectError}</p>
             </div>
           </div>
+
+          <div className="auth-divider my-[0.8em] flex items-center gap-[0.9em]">
+            <span className="h-px flex-1 bg-[#d9deea]" />
+            <span className="text-[0.68em] font-semibold uppercase text-[#9ba2b4]">or</span>
+            <span className="h-px flex-1 bg-[#d9deea]" />
+          </div>
+
+          <div className="auth-field-stack space-y-[0.6em]">
+            <label className="block text-[0.78em] font-semibold text-[#6f778c]">
+              Email
+              <input
+                className={`mt-[0.4em] h-[2.9em] w-full rounded-[0.5em] border px-[1em] text-[0.82em] font-semibold text-[#4f5980] outline-none ${
+                  emailError ? "border-[#d04b4b]" : "border-[#d8dde8] focus:border-[#b6c0d8]"
+                }`}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter your email"
+                type="email"
+                value={email}
+              />
+              <div
+                className={`overflow-hidden transition-all duration-200 ease-out ${
+                  emailError ? "mt-[0.25em] max-h-[1.6em] opacity-100" : "max-h-0 opacity-0"
+                }`}
+              >
+                <span className="block text-[0.64em] font-medium leading-tight text-[#d04b4b]">{emailError}</span>
+              </div>
+            </label>
+
+            <label className="block text-[0.78em] font-semibold text-[#6f778c]">
+              Password
+              <div
+                className={`auth-input-shell mt-[0.4em] flex h-[2.9em] items-center rounded-[0.5em] border px-[1em] focus-within:outline-2 focus-within:outline-[#6b68e8] focus-within:outline-offset-2 ${
+                  passwordError ? "border-[#d04b4b]" : "border-[#d8dde8] focus-within:border-[#b6c0d8]"
+                }`}
+              >
+                <input
+                  className="min-w-0 flex-1 bg-transparent text-[0.82em] font-semibold text-[#4f5980] outline-none focus:outline-none focus-visible:!outline-none focus-visible:!outline-offset-0 [&::-ms-clear]:hidden [&::-ms-reveal]:hidden"
+                  onChange={(e) => setPassword(e.target.value)}
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                />
+                <button
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  className="text-[#7b84a0] hover:text-[#2187d3]"
+                  onClick={() => setShowPassword((v) => !v)}
+                  type="button"
+                >
+                  <EyeIcon open={showPassword} />
+                </button>
+              </div>
+              <div
+                className={`overflow-hidden transition-all duration-200 ease-out ${
+                  passwordError ? "mt-[0.25em] max-h-[1.6em] opacity-100" : "max-h-0 opacity-0"
+                }`}
+              >
+                <span className="block text-[0.64em] font-medium leading-tight text-[#d04b4b]">{passwordError}</span>
+              </div>
+            </label>
+
+            <Link
+              className="inline-block text-[0.72em] font-semibold text-[#6f8fb5] hover:text-[#17679f]"
+              href={email.trim() ? `/forgot-password?email=${encodeURIComponent(email.trim())}` : "/forgot-password"}
+            >
+              Forgot your password?
+            </Link>
+          </div>
+
+          <button
+            className="auth-primary-action mt-[0.95em] h-[3em] w-full rounded-full bg-[#231d71] text-[0.84em] font-semibold text-white hover:bg-[#1c175f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8b88f5] focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:cursor-not-allowed disabled:opacity-70"
+            disabled={isSubmitting}
+            type="submit"
+          >
+            {isSubmitting ? "Continuing..." : "Continue with email"}
+          </button>
 
           <p className="mt-[0.95em] text-center text-[0.78em] font-medium text-[#8d95a8]">
             Don&apos;t have an account?{" "}

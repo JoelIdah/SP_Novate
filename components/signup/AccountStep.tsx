@@ -412,8 +412,28 @@ export function AccountStep({
   };
 
   return (
-    <form className="mx-auto mt-[1.1em] w-full max-w-[22.5em]" onSubmit={handleSubmit}>
-      <div className="space-y-[0.3em]">
+    <form className="auth-form signup-auth-form mx-auto mt-[1.1em] w-full max-w-[22.5em]" onSubmit={handleSubmit}>
+      <SocialAuthButtons
+        activeSocialProvider={activeSocialProvider}
+        enableApple={false}
+        onFacebookClick={handleFacebookClick}
+        onGoogleClick={handleGoogleClick}
+      />
+      <div
+        className={`overflow-hidden transition-all duration-200 ease-out ${
+          socialError ? "mt-[0.35em] max-h-[1.6em] opacity-100" : "max-h-0 opacity-0"
+        }`}
+      >
+        <p className="text-[0.7em] font-medium text-[#d04b4b]">{socialError}</p>
+      </div>
+
+      <div className="auth-divider my-[0.8em] flex items-center gap-[0.9em]">
+        <span className="h-px flex-1 bg-[#d9deea]" />
+        <span className="text-[0.68em] font-semibold uppercase text-[#9ba2b4]">or</span>
+        <span className="h-px flex-1 bg-[#d9deea]" />
+      </div>
+
+      <div className="auth-field-stack space-y-[0.3em]">
         <label className="block text-[0.78em] font-semibold text-[#6f778c]">
           Email
           <input
@@ -489,7 +509,7 @@ export function AccountStep({
         <label className="block text-[0.78em] font-semibold text-[#6f778c]">
           Password
           <div
-            className={`mt-[0.4em] flex h-[2.9em] items-center rounded-[0.5em] border px-[1em] focus-within:outline-2 focus-within:outline-[#6b68e8] focus-within:outline-offset-2 ${
+            className={`auth-input-shell mt-[0.4em] flex h-[2.9em] items-center rounded-[0.5em] border px-[1em] focus-within:outline-2 focus-within:outline-[#6b68e8] focus-within:outline-offset-2 ${
               passwordError ? "border-[#d04b4b]" : "border-[#d8dde8] focus-within:border-[#b6c0d8]"
             }`}
           >
@@ -528,7 +548,7 @@ export function AccountStep({
         <label className="block text-[0.78em] font-semibold text-[#6f778c]">
           Confirm password
           <div
-            className={`mt-[0.4em] flex h-[2.9em] items-center rounded-[0.5em] border px-[1em] focus-within:outline-2 focus-within:outline-[#6b68e8] focus-within:outline-offset-2 ${
+            className={`auth-input-shell mt-[0.4em] flex h-[2.9em] items-center rounded-[0.5em] border px-[1em] focus-within:outline-2 focus-within:outline-[#6b68e8] focus-within:outline-offset-2 ${
               confirmPasswordError ? "border-[#d04b4b]" : "border-[#d8dde8] focus-within:border-[#b6c0d8]"
             }`}
           >
@@ -569,34 +589,14 @@ export function AccountStep({
       {successMessage ? <p className="mt-[0.6em] text-[0.72em] font-medium text-[#247f57]">{successMessage}</p> : null}
 
       <button
-        className="mt-[0.9em] h-[3em] w-full rounded-full bg-[#231d71] text-[0.84em] font-semibold text-white hover:bg-[#1c175f] disabled:cursor-not-allowed disabled:opacity-70"
+        className="auth-primary-action mt-[0.9em] h-[3em] w-full rounded-full bg-[#231d71] text-[0.84em] font-semibold text-white hover:bg-[#1c175f] disabled:cursor-not-allowed disabled:opacity-70"
         disabled={isSubmitting}
         type="submit"
       >
         {isSubmitting ? "Creating account..." : "Create an account"}
       </button>
 
-      <div className="my-[0.8em] flex items-center gap-[0.9em]">
-        <span className="h-px flex-1 bg-[#d9deea]" />
-        <span className="text-[0.68em] font-semibold uppercase text-[#9ba2b4]">or</span>
-        <span className="h-px flex-1 bg-[#d9deea]" />
-      </div>
-
-      <SocialAuthButtons
-        activeSocialProvider={activeSocialProvider}
-        enableApple={false}
-        onFacebookClick={handleFacebookClick}
-        onGoogleClick={handleGoogleClick}
-      />
-      <div
-        className={`overflow-hidden transition-all duration-200 ease-out ${
-          socialError ? "mt-[0.35em] max-h-[1.6em] opacity-100" : "max-h-0 opacity-0"
-        }`}
-      >
-        <p className="text-[0.7em] font-medium text-[#d04b4b]">{socialError}</p>
-      </div>
-
-      <p className="mx-auto mt-[0.8em] w-full max-w-full text-center text-[0.72em] font-medium leading-[1.35] text-[#8e95a8] sm:whitespace-nowrap">
+      <p className="auth-legal mx-auto mt-[0.8em] w-full max-w-full text-center text-[0.72em] font-medium leading-[1.35] text-[#8e95a8] sm:whitespace-nowrap">
         By continuing you accept the{" "}
         <Link href="#" className="text-[#1d2230] underline decoration-[#aeb6c8] underline-offset-2">
           Term of Use

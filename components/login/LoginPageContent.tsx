@@ -421,9 +421,10 @@ export function LoginPageContent() {
             <label className="block text-[0.78em] font-semibold text-[#6f778c]">
               Email
               <input
-                className={`mt-[0.4em] h-[2.9em] w-full rounded-[0.5em] border px-[1em] text-[0.82em] font-semibold text-[#4f5980] outline-none ${
-                  emailError ? "border-[#d04b4b]" : "border-[#d8dde8] focus:border-[#b6c0d8]"
+                className={`auth-text-input mt-[0.4em] h-[2.9em] w-full rounded-[0.5em] border px-[1em] text-[0.82em] font-semibold text-[#4f5980] outline-none ${
+                  emailError ? "border-[#d04b4b]" : "border-[#d8dde8]"
                 }`}
+                data-invalid={Boolean(emailError)}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Enter your email"
                 type="email"
@@ -441,9 +442,10 @@ export function LoginPageContent() {
             <label className="block text-[0.78em] font-semibold text-[#6f778c]">
               Password
               <div
-                className={`auth-input-shell mt-[0.4em] flex h-[2.9em] items-center rounded-[0.5em] border px-[1em] focus-within:outline-2 focus-within:outline-[#6b68e8] focus-within:outline-offset-2 ${
-                  passwordError ? "border-[#d04b4b]" : "border-[#d8dde8] focus-within:border-[#b6c0d8]"
+                className={`auth-input-shell mt-[0.4em] flex h-[2.9em] items-center rounded-[0.5em] border px-[1em] ${
+                  passwordError ? "border-[#d04b4b]" : "border-[#d8dde8]"
                 }`}
+                data-invalid={Boolean(passwordError)}
               >
                 <input
                   className="min-w-0 flex-1 bg-transparent text-[0.82em] font-semibold text-[#4f5980] outline-none focus:outline-none focus-visible:!outline-none focus-visible:!outline-offset-0 [&::-ms-clear]:hidden [&::-ms-reveal]:hidden"

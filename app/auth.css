@@ -21,6 +21,31 @@
   margin-inline: auto;
 }
 
+.auth-form input:focus,
+.auth-form input:focus-visible,
+.auth-code-input:focus,
+.auth-code-input:focus-visible {
+  outline: none !important;
+  outline-offset: 0 !important;
+}
+
+.auth-text-input:focus,
+.auth-input-shell:focus-within,
+.auth-code-input:focus {
+  border-color: #6b68e8 !important;
+  outline: none !important;
+  outline-offset: 0 !important;
+}
+
+.auth-text-input[data-invalid="true"],
+.auth-text-input[data-invalid="true"]:focus,
+.auth-input-shell[data-invalid="true"],
+.auth-input-shell[data-invalid="true"]:focus-within,
+.auth-code-input[data-invalid="true"],
+.auth-code-input[data-invalid="true"]:focus {
+  border-color: #d04b4b !important;
+}
+
 .auth-logo {
   position: absolute;
   left: 50%;

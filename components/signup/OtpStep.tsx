@@ -159,7 +159,8 @@ export function OtpStep({
           <input
             key={idx}
             autoFocus={idx === 0}
-            className="h-[3.1em] w-full rounded-[0.55em] border border-[#d8dde8] text-center text-[1.02em] font-semibold text-[#4f5980] outline-none focus:border-[#b6c0d8]"
+            className="auth-code-input h-[3.1em] w-full rounded-[0.55em] border border-[#d8dde8] text-center text-[1.02em] font-semibold text-[#4f5980] outline-none"
+            data-invalid={Boolean(errorMessage)}
             inputMode="numeric"
             maxLength={1}
             onKeyDown={(e) => {

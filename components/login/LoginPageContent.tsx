@@ -448,6 +448,7 @@ export function LoginPageContent() {
                 <input
                   className="min-w-0 flex-1 bg-transparent text-[0.82em] font-semibold text-[#4f5980] outline-none focus:outline-none focus-visible:!outline-none focus-visible:!outline-offset-0 [&::-ms-clear]:hidden [&::-ms-reveal]:hidden"
                   onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter your password"
                   type={showPassword ? "text" : "password"}
                   value={password}
                 />

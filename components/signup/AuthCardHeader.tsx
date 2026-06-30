@@ -18,7 +18,7 @@ export function AuthCardHeader({
 }: AuthCardHeaderProps) {
   return (
     <>
-      <div className="auth-logo absolute left-1/2 -top-[1.25em] -translate-x-1/2 sm:-top-[1.45em]">
+      <div className="auth-logo">
         <div className="overflow-hidden rounded-[0.7em] shadow-[0_9px_20px_rgba(53,49,177,0.25)]">
           <Image
             alt="SP Novate"

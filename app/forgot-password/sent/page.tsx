@@ -1,10 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 
 import { AuthCardHeader } from "../../../components/signup/AuthCardHeader";
+import { AuthCard, AuthPrimaryLink } from "../../../components/signup/AuthPrimitives";
 import { AuthShell } from "../../../components/signup/AuthShell";
 
 function ForgotPasswordSentContent() {
@@ -13,7 +13,7 @@ function ForgotPasswordSentContent() {
 
   return (
     <AuthShell>
-      <div className="auth-card relative rounded-[1.35em] border-[0.08em] border-[#d9dde8] bg-white/95 px-[1.5em] pb-[1.35em] pt-[1.3em] shadow-[0_9px_26px_rgba(23,30,63,0.09)]">
+      <AuthCard>
         <AuthCardHeader
           promptLinkHref="/login"
           promptLinkLabel="Log In"
@@ -26,14 +26,11 @@ function ForgotPasswordSentContent() {
             We sent a reset link to {email || "your email"}. Open it to set a new password.
           </p>
 
-          <Link
-            className="mt-[1.2em] inline-flex h-[3em] w-full items-center justify-center rounded-full bg-[#231d71] text-[0.84em] font-semibold text-white"
-            href="/login"
-          >
+          <AuthPrimaryLink className="mt-[1.2em]" href="/login">
             Go back to login
-          </Link>
+          </AuthPrimaryLink>
         </div>
-      </div>
+      </AuthCard>
     </AuthShell>
   );
 }

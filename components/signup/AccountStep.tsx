@@ -4,6 +4,16 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useRef, useState } from "react";
 
+import {
+  AuthDivider,
+  AuthFieldError,
+  AuthForm,
+  AuthPasswordInput,
+  AuthPasswordShell,
+  AuthPrimaryButton,
+  AuthTextInput,
+  EyeIcon,
+} from "./AuthPrimitives";
 import { startFacebookAuth } from "./social/facebook";
 import { startGoogleAuth } from "./social/google";
 import { SocialAuthButtons } from "./social/SocialAuthButtons";
@@ -20,39 +30,6 @@ type SsoUser = {
   profile_photo?: string;
   public_id?: string;
 };
-
-function EyeIcon({ open }: { open: boolean }) {
-  if (open) {
-    return (
-      <svg aria-hidden className="h-4 w-4" fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-        <path d="M3 3L21 21" stroke="currentColor" strokeLinecap="round" strokeWidth="1.7" />
-        <path
-          d="M10.58 10.58C10.21 10.95 10 11.46 10 12C10 13.1 10.9 14 12 14C12.54 14 13.05 13.79 13.42 13.42"
-          stroke="currentColor"
-          strokeLinecap="round"
-          strokeWidth="1.7"
-        />
-        <path
-          d="M9.88 5.09C10.56 4.94 11.27 4.86 12 4.86C16.14 4.86 19.63 7.35 21 11.99C20.57 13.44 19.87 14.68 18.96 15.69M14.12 18.91C13.44 19.06 12.73 19.14 12 19.14C7.86 19.14 4.37 16.65 3 12.01C3.58 10.07 4.67 8.5 6.04 7.31"
-          stroke="currentColor"
-          strokeLinecap="round"
-          strokeWidth="1.7"
-        />
-      </svg>
-    );
-  }
-
-  return (
-    <svg aria-hidden className="h-4 w-4" fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-      <path
-        d="M3 12.01C4.37 7.35 7.86 4.86 12 4.86C16.14 4.86 19.63 7.35 21 12.01C19.63 16.65 16.14 19.14 12 19.14C7.86 19.14 4.37 16.65 3 12.01Z"
-        stroke="currentColor"
-        strokeWidth="1.7"
-      />
-      <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.7" />
-    </svg>
-  );
-}
 
 export function AccountStep({
   onContinue,
@@ -412,14 +389,28 @@ export function AccountStep({
   };
 
   return (
-    <form className="mx-auto mt-[1.1em] w-full max-w-[22.5em]" onSubmit={handleSubmit}>
-      <div className="space-y-[0.3em]">
+    <AuthForm className="signup-auth-form" onSubmit={handleSubmit}>
+      <SocialAuthButtons
+        activeSocialProvider={activeSocialProvider}
+        enableApple={false}
+        onFacebookClick={handleFacebookClick}
+        onGoogleClick={handleGoogleClick}
+      />
+      <div
+        className={`overflow-hidden transition-all duration-200 ease-out ${
+          socialError ? "mt-[0.35em] max-h-[1.6em] opacity-100" : "max-h-0 opacity-0"
+        }`}
+      >
+        <p className="text-[0.7em] font-medium text-[#d04b4b]">{socialError}</p>
+      </div>
+
+      <AuthDivider />
+
+      <div className="auth-field-stack space-y-[0.3em]">
         <label className="block text-[0.78em] font-semibold text-[#6f778c]">
           Email
-          <input
-            className={`mt-[0.4em] h-[2.9em] w-full rounded-[0.5em] border px-[1em] text-[0.82em] font-semibold text-[#4f5980] outline-none ${
-              emailError ? "border-[#d04b4b]" : "border-[#d8dde8] focus:border-[#b6c0d8]"
-            }`}
+          <AuthTextInput
+            invalid={Boolean(emailError)}
             onChange={(e) => {
               setEmail(e.target.value);
               if (emailError) setEmailError("");
@@ -429,22 +420,14 @@ export function AccountStep({
             type="email"
             value={email}
           />
-          <div
-            className={`overflow-hidden transition-all duration-200 ease-out ${
-              emailError ? "mt-[0.25em] max-h-[1.6em] opacity-100" : "max-h-0 opacity-0"
-            }`}
-          >
-            <span className="block text-[0.64em] font-medium leading-tight text-[#d04b4b]">{emailError}</span>
-          </div>
+          <AuthFieldError message={emailError} />
         </label>
 
         <div className="grid grid-cols-1 gap-[0.8em] sm:grid-cols-2">
           <label className="block text-[0.78em] font-semibold text-[#6f778c]">
             First name
-            <input
-              className={`mt-[0.4em] h-[2.9em] w-full rounded-[0.5em] border px-[1em] text-[0.82em] font-semibold text-[#4f5980] outline-none ${
-                firstNameError ? "border-[#d04b4b]" : "border-[#d8dde8] focus:border-[#b6c0d8]"
-              }`}
+            <AuthTextInput
+              invalid={Boolean(firstNameError)}
               onChange={(e) => {
                 setFirstName(e.target.value);
                 if (firstNameError) setFirstNameError("");
@@ -453,21 +436,13 @@ export function AccountStep({
               type="text"
               value={firstName}
             />
-            <div
-              className={`overflow-hidden transition-all duration-200 ease-out ${
-                firstNameError ? "mt-[0.25em] max-h-[1.6em] opacity-100" : "max-h-0 opacity-0"
-              }`}
-            >
-              <span className="block text-[0.64em] font-medium leading-tight text-[#d04b4b]">{firstNameError}</span>
-            </div>
+            <AuthFieldError message={firstNameError} />
           </label>
 
           <label className="block text-[0.78em] font-semibold text-[#6f778c]">
             Last name
-            <input
-              className={`mt-[0.4em] h-[2.9em] w-full rounded-[0.5em] border px-[1em] text-[0.82em] font-semibold text-[#4f5980] outline-none ${
-                lastNameError ? "border-[#d04b4b]" : "border-[#d8dde8] focus:border-[#b6c0d8]"
-              }`}
+            <AuthTextInput
+              invalid={Boolean(lastNameError)}
               onChange={(e) => {
                 setLastName(e.target.value);
                 if (lastNameError) setLastNameError("");
@@ -476,25 +451,14 @@ export function AccountStep({
               type="text"
               value={lastName}
             />
-            <div
-              className={`overflow-hidden transition-all duration-200 ease-out ${
-                lastNameError ? "mt-[0.25em] max-h-[1.6em] opacity-100" : "max-h-0 opacity-0"
-              }`}
-            >
-              <span className="block text-[0.64em] font-medium leading-tight text-[#d04b4b]">{lastNameError}</span>
-            </div>
+            <AuthFieldError message={lastNameError} />
           </label>
         </div>
 
         <label className="block text-[0.78em] font-semibold text-[#6f778c]">
           Password
-          <div
-            className={`mt-[0.4em] flex h-[2.9em] items-center rounded-[0.5em] border px-[1em] focus-within:outline-2 focus-within:outline-[#6b68e8] focus-within:outline-offset-2 ${
-              passwordError ? "border-[#d04b4b]" : "border-[#d8dde8] focus-within:border-[#b6c0d8]"
-            }`}
-          >
-            <input
-              className="min-w-0 flex-1 bg-transparent text-[0.82em] font-semibold text-[#4f5980] outline-none focus:outline-none focus-visible:!outline-none focus-visible:!outline-offset-0 [&::-ms-clear]:hidden [&::-ms-reveal]:hidden"
+          <AuthPasswordShell invalid={Boolean(passwordError)}>
+            <AuthPasswordInput
               onChange={(e) => {
                 const nextPassword = e.target.value;
                 setPassword(nextPassword);
@@ -519,21 +483,14 @@ export function AccountStep({
             >
               <EyeIcon open={showPassword} />
             </button>
-          </div>
-          <div className={`overflow-hidden transition-all duration-200 ease-out ${passwordError ? "mt-[0.25em] max-h-[1.6em] opacity-100" : "max-h-0 opacity-0"}`}>
-            <span className="block text-[0.64em] font-medium leading-tight text-[#d04b4b]">{passwordError}</span>
-          </div>
+          </AuthPasswordShell>
+          <AuthFieldError message={passwordError} />
         </label>
 
         <label className="block text-[0.78em] font-semibold text-[#6f778c]">
           Confirm password
-          <div
-            className={`mt-[0.4em] flex h-[2.9em] items-center rounded-[0.5em] border px-[1em] focus-within:outline-2 focus-within:outline-[#6b68e8] focus-within:outline-offset-2 ${
-              confirmPasswordError ? "border-[#d04b4b]" : "border-[#d8dde8] focus-within:border-[#b6c0d8]"
-            }`}
-          >
-            <input
-              className="min-w-0 flex-1 bg-transparent text-[0.82em] font-semibold text-[#4f5980] outline-none focus:outline-none focus-visible:!outline-none focus-visible:!outline-offset-0 [&::-ms-clear]:hidden [&::-ms-reveal]:hidden"
+          <AuthPasswordShell invalid={Boolean(confirmPasswordError)}>
+            <AuthPasswordInput
               onChange={(e) => {
                 const nextConfirmPassword = e.target.value;
                 setConfirmPassword(nextConfirmPassword);
@@ -559,44 +516,18 @@ export function AccountStep({
             >
               <EyeIcon open={showConfirmPassword} />
             </button>
-          </div>
-          <div className={`overflow-hidden transition-all duration-200 ease-out ${confirmPasswordError ? "mt-[0.25em] max-h-[1.6em] opacity-100" : "max-h-0 opacity-0"}`}>
-            <span className="block text-[0.64em] font-medium leading-tight text-[#d04b4b]">{confirmPasswordError}</span>
-          </div>
+          </AuthPasswordShell>
+          <AuthFieldError message={confirmPasswordError} />
         </label>
       </div>
 
       {successMessage ? <p className="mt-[0.6em] text-[0.72em] font-medium text-[#247f57]">{successMessage}</p> : null}
 
-      <button
-        className="mt-[0.9em] h-[3em] w-full rounded-full bg-[#231d71] text-[0.84em] font-semibold text-white hover:bg-[#1c175f] disabled:cursor-not-allowed disabled:opacity-70"
-        disabled={isSubmitting}
-        type="submit"
-      >
+      <AuthPrimaryButton className="mt-[0.9em]" disabled={isSubmitting} type="submit">
         {isSubmitting ? "Creating account..." : "Create an account"}
-      </button>
+      </AuthPrimaryButton>
 
-      <div className="my-[0.8em] flex items-center gap-[0.9em]">
-        <span className="h-px flex-1 bg-[#d9deea]" />
-        <span className="text-[0.68em] font-semibold uppercase text-[#9ba2b4]">or</span>
-        <span className="h-px flex-1 bg-[#d9deea]" />
-      </div>
-
-      <SocialAuthButtons
-        activeSocialProvider={activeSocialProvider}
-        enableApple={false}
-        onFacebookClick={handleFacebookClick}
-        onGoogleClick={handleGoogleClick}
-      />
-      <div
-        className={`overflow-hidden transition-all duration-200 ease-out ${
-          socialError ? "mt-[0.35em] max-h-[1.6em] opacity-100" : "max-h-0 opacity-0"
-        }`}
-      >
-        <p className="text-[0.7em] font-medium text-[#d04b4b]">{socialError}</p>
-      </div>
-
-      <p className="mx-auto mt-[0.8em] w-full max-w-full text-center text-[0.72em] font-medium leading-[1.35] text-[#8e95a8] sm:whitespace-nowrap">
+      <p className="auth-legal mx-auto mt-[0.8em] w-full max-w-full text-center text-[0.72em] font-medium leading-[1.35] text-[#8e95a8] sm:whitespace-nowrap">
         By continuing you accept the{" "}
         <Link href="#" className="text-[#1d2230] underline decoration-[#aeb6c8] underline-offset-2">
           Term of Use
@@ -606,7 +537,7 @@ export function AccountStep({
           Privacy Policy
         </Link>
       </p>
-    </form>
+    </AuthForm>
   );
 }
 

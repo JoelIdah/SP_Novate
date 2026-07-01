@@ -18,7 +18,7 @@ export function AuthCardHeader({
 }: AuthCardHeaderProps) {
   return (
     <>
-      <div className="absolute left-1/2 -top-[1.25em] -translate-x-1/2 sm:-top-[1.45em]">
+      <div className="auth-logo">
         <div className="overflow-hidden rounded-[0.7em] shadow-[0_9px_20px_rgba(53,49,177,0.25)]">
           <Image
             alt="SP Novate"
@@ -31,10 +31,10 @@ export function AuthCardHeader({
         </div>
       </div>
 
-      <div className="text-center">
-        <h1 className="text-[1.45em] font-bold tracking-[-0.02em] text-[#1d2230]">{title}</h1>
+      <div className="auth-card-heading text-center">
+        <h1 className="auth-card-title text-[1.45em] font-bold tracking-[-0.02em] text-[#1d2230]">{title}</h1>
         {showPrompt ? (
-          <p className="mt-[0.6em] text-[0.82em] font-medium text-[#98a0b2]">
+          <p className="auth-card-prompt mt-[0.6em] text-[0.82em] font-medium text-[#98a0b2]">
             {promptText}{" "}
             <Link
               href={promptLinkHref}

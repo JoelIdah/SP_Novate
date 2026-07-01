@@ -37,9 +37,9 @@ export function SocialAuthButtons({
           }}
         />
       ) : null}
-      <div className="space-y-[0.55em]">
+      <div className="auth-social-buttons space-y-[0.55em]">
         <button
-          className="flex h-[3em] w-full items-center justify-center gap-[0.7em] rounded-[0.5em] border border-[#d5dae7] bg-white text-[0.84em] font-semibold text-[#596379] disabled:cursor-not-allowed disabled:opacity-70"
+          className="auth-social-button flex h-[3em] w-full items-center justify-center gap-[0.7em] rounded-[0.5em] border border-[#d5dae7] bg-white text-[0.84em] font-semibold text-[#596379] disabled:cursor-not-allowed disabled:opacity-70"
           disabled={Boolean(activeSocialProvider)}
           onClick={onGoogleClick}
           type="button"
@@ -48,7 +48,7 @@ export function SocialAuthButtons({
           {activeSocialProvider === "google" ? "Connecting Google..." : "Continue with Google"}
         </button>
         <button
-          className="flex h-[3em] w-full items-center justify-center gap-[0.7em] rounded-[0.5em] border border-[#d5dae7] bg-white text-[0.84em] font-semibold text-[#596379] disabled:cursor-not-allowed disabled:opacity-70"
+          className="auth-social-button flex h-[3em] w-full items-center justify-center gap-[0.7em] rounded-[0.5em] border border-[#d5dae7] bg-white text-[0.84em] font-semibold text-[#596379] disabled:cursor-not-allowed disabled:opacity-70"
           disabled={Boolean(activeSocialProvider)}
           onClick={onFacebookClick}
           type="button"
@@ -58,7 +58,7 @@ export function SocialAuthButtons({
         </button>
         {enableApple ? (
           <button
-            className="flex h-[3em] w-full items-center justify-center gap-[0.7em] rounded-[0.5em] border border-[#d5dae7] bg-white text-[0.84em] font-semibold text-[#596379] disabled:cursor-not-allowed disabled:opacity-70"
+            className="auth-social-button flex h-[3em] w-full items-center justify-center gap-[0.7em] rounded-[0.5em] border border-[#d5dae7] bg-white text-[0.84em] font-semibold text-[#596379] disabled:cursor-not-allowed disabled:opacity-70"
             disabled={Boolean(activeSocialProvider)}
             onClick={onAppleClick}
             type="button"

@@ -3,6 +3,8 @@
 import { useMemo, useRef, useState } from "react";
 import Image from "next/image";
 
+import { AuthPrimaryButton } from "./AuthPrimitives";
+
 type VerifyOtpResponse = {
   message?: string;
   data?: {
@@ -159,7 +161,8 @@ export function OtpStep({
           <input
             key={idx}
             autoFocus={idx === 0}
-            className="h-[3.1em] w-full rounded-[0.55em] border border-[#d8dde8] text-center text-[1.02em] font-semibold text-[#4f5980] outline-none focus:border-[#b6c0d8]"
+            className="auth-code-input h-[3.1em] w-full rounded-[0.55em] border border-[#d8dde8] text-center text-[1.02em] font-semibold text-[#4f5980] outline-none"
+            data-invalid={Boolean(errorMessage)}
             inputMode="numeric"
             maxLength={1}
             onKeyDown={(e) => {
@@ -199,14 +202,14 @@ export function OtpStep({
         ))}
       </div>
 
-      <button
-        className="mt-[1.35em] h-[3.1em] w-full rounded-full bg-[#231d71] text-[0.88em] font-semibold text-white disabled:cursor-not-allowed disabled:opacity-70"
+      <AuthPrimaryButton
+        className="mt-[1.35em] h-[3.1em] text-[0.88em]"
         disabled={code.length !== 6 || isVerifying}
         onClick={handleVerify}
         type="button"
       >
         {isVerifying ? "Verifying..." : "Verify code"}
-      </button>
+      </AuthPrimaryButton>
 
       <p className="mt-[0.8em] text-center text-[0.8em] text-[#8d95a8]">
         Didn&apos;t get a code?{" "}

@@ -32,13 +32,23 @@ export async function socialAuthApi({ provider, token }: SocialAuthPayload): Pro
     };
   }
 
-  const response = await fetch(`${API_BASE_URL}/v1/auth/social`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ provider, token }),
-  });
+  let response: Response;
+
+  try {
+    response = await fetch(`${API_BASE_URL}/v1/auth/social`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ provider, token }),
+    });
+  } catch {
+    return {
+      kind: "error",
+      message: "Could not reach social auth service. Please try again.",
+      status: 0,
+    };
+  }
 
   const raw = await response.text();
   let data: SocialAuthResponseBody | null = null;

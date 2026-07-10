@@ -25,6 +25,23 @@ import type { SocialProvider } from "../signup/social/types";
 import { AuthShell } from "../signup/AuthShell";
 import { DIRECT_ONBOARDING_ENABLED } from "../../config/featureFlags";
 
+type LoginUser = {
+  role?: "student" | "tutor";
+  email?: string;
+  first_name?: string;
+  last_name?: string;
+  profile_photo?: string;
+  public_id?: string;
+};
+
+type LoginResponse = {
+  message?: string;
+  data?: {
+    token?: string;
+    user?: LoginUser;
+  };
+};
+
 export function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -101,7 +118,7 @@ export function LoginPageContent() {
 
   const redirectToReturnTarget = (
     token: string,
-    user?: { role?: "student" | "tutor"; email?: string; first_name?: string; last_name?: string; profile_photo?: string; public_id?: string }
+    user?: LoginUser
   ) => {
     const requestedReturnTo = searchParams.get("returnTo");
     const allowedOrigins = getAllowedReturnOrigins();
@@ -209,8 +226,6 @@ export function LoginPageContent() {
         return;
       }
       router.push("/students/dashboard");
-    } catch {
-      setSocialError("Could not reach social auth service. Please try again.");
     } finally {
       setActiveSocialProvider(null);
     }
@@ -240,38 +255,30 @@ export function LoginPageContent() {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/v1/auth/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: email.trim(),
-          password,
-        }),
-      });
+      let response: Response;
+
+      try {
+        response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/v1/auth/login`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: email.trim(),
+            password,
+          }),
+        });
+      } catch {
+        setPasswordError("Could not reach login service. Please try again.");
+        return;
+      }
 
       const raw = await response.text();
-      let data:
-        | {
-            message?: string;
-            data?: {
-              token?: string;
-              user?: {
-                role?: "student" | "tutor";
-                email?: string;
-                first_name?: string;
-                last_name?: string;
-                profile_photo?: string;
-                public_id?: string;
-              };
-            };
-          }
-        | null = null;
+      let data: LoginResponse | null = null;
 
       if (raw) {
         try {
-          data = JSON.parse(raw) as { message?: string; token?: string };
+          data = JSON.parse(raw) as LoginResponse;
         } catch {
           data = null;
         }
@@ -330,8 +337,6 @@ export function LoginPageContent() {
       }
 
       router.push("/students/dashboard");
-    } catch {
-      setPasswordError("Could not reach login service. Please try again.");
     } finally {
       setIsSubmitting(false);
     }

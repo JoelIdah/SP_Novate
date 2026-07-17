@@ -32,11 +32,13 @@ type LoginUser = {
   last_name?: string;
   profile_photo?: string;
   public_id?: string;
+  is_profile_setup?: boolean;
 };
 
 type LoginResponse = {
   message?: string;
   data?: {
+    profile_setup_required?: boolean;
     token?: string;
     user?: LoginUser;
   };
@@ -164,15 +166,15 @@ export function LoginPageContent() {
     return true;
   };
 
-  const getJwtPurpose = (token: string): string | null => {
-    try {
-      const parts = token.split(".");
-      if (parts.length < 2) return null;
-      const payload = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/"))) as { purpose?: string };
-      return payload.purpose ?? null;
-    } catch {
-      return null;
-    }
+  const buildProfileSetupHref = (): string => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("view", "flow");
+    params.set("stage", "setup");
+    params.set("step", "personal");
+    params.set("mode", "form");
+    params.delete("notice");
+    params.delete("email");
+    return `/signup?${params.toString()}`;
   };
 
   const handleSocialAuth = async (provider: SocialProvider, token: string) => {
@@ -195,19 +197,11 @@ export function LoginPageContent() {
       }
 
       if (result.profileSetupRequired) {
-        if (result.token && redirectToReturnTarget(result.token, result.user)) {
-          return;
-        }
-
-        if (isDirectOnboardingDisabled) {
-          redirectToComingSoon();
-          return;
-        }
-
         if (result.token) {
           localStorage.setItem("sp_profile_setup_token", result.token);
+          localStorage.removeItem("sp_access_token");
         }
-        router.push("/signup?view=flow&stage=setup&step=personal&mode=form");
+        router.push(buildProfileSetupHref());
         return;
       }
 
@@ -300,28 +294,18 @@ export function LoginPageContent() {
       const token = data?.data?.token;
       const user = data?.data?.user;
       if (token) {
-        localStorage.setItem("sp_access_token", token);
-        const purpose = getJwtPurpose(token);
+        const profileSetupRequired =
+          data?.data?.profile_setup_required === true ||
+          user?.is_profile_setup === false;
 
-        if (purpose === "profile_setup") {
-          if (redirectToReturnTarget(token, user)) {
-            return;
-          }
-
-          if (isDirectOnboardingDisabled) {
-            redirectToComingSoon();
-            return;
-          }
-
-          const params = new URLSearchParams({
-            view: "flow",
-            stage: "setup",
-            step: "personal",
-            mode: "form",
-          });
-          router.push(`/signup?${params.toString()}`);
+        if (profileSetupRequired) {
+          localStorage.setItem("sp_profile_setup_token", token);
+          localStorage.removeItem("sp_access_token");
+          router.push(buildProfileSetupHref());
           return;
         }
+
+        localStorage.setItem("sp_access_token", token);
 
         if (redirectToReturnTarget(token, user)) {
           return;

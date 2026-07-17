@@ -201,17 +201,9 @@ export function AccountStep({
       }
 
       if (result.profileSetupRequired) {
-        if (result.token && redirectToReturnTarget(result.token, result.user)) {
-          return;
-        }
-
-        if (isDirectOnboardingDisabled) {
-          router.push("/coming-soon");
-          return;
-        }
-
         if (result.token) {
           localStorage.setItem("sp_profile_setup_token", result.token);
+          localStorage.removeItem("sp_access_token");
         }
         const params = new URLSearchParams(searchParams.toString());
         params.set("view", "flow");

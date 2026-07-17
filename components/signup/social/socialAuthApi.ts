@@ -17,6 +17,7 @@ type SocialAuthResponseBody = {
       last_name?: string;
       profile_photo?: string;
       public_id?: string;
+      is_profile_setup?: boolean;
     };
   };
 };
@@ -76,6 +77,16 @@ export async function socialAuthApi({ provider, token }: SocialAuthPayload): Pro
       kind: "error",
       message: data?.message ?? "Social authentication failed. Please try again.",
       status: response.status,
+    };
+  }
+
+  if (data?.data?.profile_setup_required === true || data?.data?.user?.is_profile_setup === false) {
+    return {
+      kind: "success",
+      message: data?.message ?? "Profile setup is required.",
+      token: data?.data?.token,
+      user: data?.data?.user,
+      profileSetupRequired: true,
     };
   }
 

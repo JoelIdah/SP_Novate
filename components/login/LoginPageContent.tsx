@@ -24,6 +24,7 @@ import { socialAuthApi } from "../signup/social/socialAuthApi";
 import type { SocialProvider } from "../signup/social/types";
 import { AuthShell } from "../signup/AuthShell";
 import { DIRECT_ONBOARDING_ENABLED } from "../../config/featureFlags";
+import { saveProfileSetupUser } from "../signup/profileSetupSession";
 
 type LoginUser = {
   role?: "student" | "tutor";
@@ -168,13 +169,31 @@ export function LoginPageContent() {
 
   const buildProfileSetupHref = (): string => {
     const params = new URLSearchParams(searchParams.toString());
-    params.set("view", "flow");
-    params.set("stage", "setup");
-    params.set("step", "personal");
-    params.set("mode", "form");
+    params.delete("view");
+    params.delete("stage");
+    params.delete("step");
+    params.delete("mode");
     params.delete("notice");
     params.delete("email");
-    return `/signup?${params.toString()}`;
+    params.delete("firstName");
+    params.delete("lastName");
+    const query = params.toString();
+    return query ? `/profile-setup?${query}` : "/profile-setup";
+  };
+
+  const storeProfileSetupSession = (token?: string, user?: LoginUser) => {
+    if (token) {
+      localStorage.setItem("sp_profile_setup_token", token);
+      localStorage.removeItem("sp_access_token");
+    }
+
+    if (user) {
+      saveProfileSetupUser({
+        email: user.email,
+        firstName: user.first_name,
+        lastName: user.last_name,
+      });
+    }
   };
 
   const handleSocialAuth = async (provider: SocialProvider, token: string) => {
@@ -197,10 +216,7 @@ export function LoginPageContent() {
       }
 
       if (result.profileSetupRequired) {
-        if (result.token) {
-          localStorage.setItem("sp_profile_setup_token", result.token);
-          localStorage.removeItem("sp_access_token");
-        }
+        storeProfileSetupSession(result.token, result.user);
         router.push(buildProfileSetupHref());
         return;
       }
@@ -299,8 +315,7 @@ export function LoginPageContent() {
           user?.is_profile_setup === false;
 
         if (profileSetupRequired) {
-          localStorage.setItem("sp_profile_setup_token", token);
-          localStorage.removeItem("sp_access_token");
+          storeProfileSetupSession(token, user);
           router.push(buildProfileSetupHref());
           return;
         }

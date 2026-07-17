@@ -46,6 +46,24 @@
   border-color: #d04b4b !important;
 }
 
+.profile-setup-field:focus,
+.profile-setup-field:focus-visible,
+.profile-setup-phone-shell:focus-within {
+  border-color: #6b68e8 !important;
+  outline: none !important;
+  outline-offset: 0 !important;
+  box-shadow: none !important;
+}
+
+.profile-setup-phone-shell input:focus,
+.profile-setup-phone-shell input:focus-visible,
+.profile-setup-phone-shell button:focus,
+.profile-setup-phone-shell button:focus-visible {
+  outline: none !important;
+  outline-offset: 0 !important;
+  box-shadow: none !important;
+}
+
 .auth-logo {
   position: absolute;
   left: 50%;

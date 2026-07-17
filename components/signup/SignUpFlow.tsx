@@ -1,12 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { AccountStep } from "./AccountStep";
 import { AuthCardHeader } from "./AuthCardHeader";
 import { AuthShell } from "./AuthShell";
 import { OtpStep } from "./OtpStep";
+import { isProfileSetupActive, subscribeProfileSetupSession, useProfileSetupUser } from "./profileSetupSession";
 import { StudentFlow } from "./student/StudentFlow";
 import type { SetupMode, SetupStepId, SignUpFlowStage, SignUpView } from "./types";
 
@@ -69,13 +70,28 @@ function readUrlState(searchParams: URLSearchParams): SignUpUrlState {
   };
 }
 
-export function SignUpFlow() {
+function useProfileSetupActive(): boolean {
+  return useSyncExternalStore(
+    subscribeProfileSetupSession,
+    isProfileSetupActive,
+    () => false,
+  );
+}
+
+export function SignUpFlow({ forceProfileSetup = false }: { forceProfileSetup?: boolean }) {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
 
   const urlState = useMemo(() => readUrlState(new URLSearchParams(searchParams.toString())), [searchParams]);
+  const profileSetupActive = useProfileSetupActive();
+  const profileSetupUser = useProfileSetupUser();
   const [accountProfile, setAccountProfile] = useState<AccountProfile>({});
+  const setupProfile = {
+    email: accountProfile.email ?? profileSetupUser.email,
+    firstName: accountProfile.firstName ?? profileSetupUser.firstName,
+    lastName: accountProfile.lastName ?? profileSetupUser.lastName,
+  };
 
   const getAllowedReturnOrigins = (): string[] =>
     (process.env.NEXT_PUBLIC_SPMEET_ALLOWED_CALLBACK_ORIGINS ?? "")
@@ -199,22 +215,28 @@ export function SignUpFlow() {
     router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
   };
 
-  if (urlState.view === "flow") {
+  const showProfileSetup = forceProfileSetup || profileSetupActive || urlState.view === "flow";
+
+  if (showProfileSetup) {
     return (
       <StudentFlow
-        accountProfile={accountProfile}
+        accountProfile={setupProfile}
         onBackToAccount={() => {
           writeUrlState({ mode: "form", stage: "overview", step: "personal", view: "account" });
         }}
         onSetupStateChange={({ mode, stepId }) => {
-          writeUrlState({ mode, stage: "setup", step: stepId, view: "flow" });
+          if (!forceProfileSetup && !profileSetupActive) {
+            writeUrlState({ mode, stage: "setup", step: stepId, view: "flow" });
+          }
         }}
         onStageChange={(stage) => {
-          writeUrlState({ mode: "form", stage, view: "flow" });
+          if (!forceProfileSetup && !profileSetupActive) {
+            writeUrlState({ mode: "form", stage, view: "flow" });
+          }
         }}
         setupMode={urlState.mode}
         setupStepId={urlState.step}
-        stage={urlState.stage}
+        stage={forceProfileSetup || profileSetupActive ? "setup" : urlState.stage}
       />
     );
   }

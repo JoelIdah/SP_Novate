@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useRef, useState } from "react";
 
 import {
@@ -21,6 +21,7 @@ import { SocialAuthButtons } from "./social/SocialAuthButtons";
 import { socialAuthApi } from "./social/socialAuthApi";
 import type { SocialProvider } from "./social/types";
 import { DIRECT_ONBOARDING_ENABLED } from "../../config/featureFlags";
+import { saveProfileSetupUser } from "./profileSetupSession";
 import { PRIVACY_POLICY_HREF, TERMS_OF_USE_HREF } from "../../config/legalLinks";
 
 type SsoUser = {
@@ -55,7 +56,6 @@ export function AccountStep({
   const [successMessage, setSuccessMessage] = useState("");
 
   const emailInputRef = useRef<HTMLInputElement | null>(null);
-  const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
   const isDirectOnboardingDisabled = !DIRECT_ONBOARDING_ENABLED;
@@ -174,6 +174,21 @@ export function AccountStep({
     setSuccessMessage(message);
   };
 
+  const storeProfileSetupSession = (token?: string, user?: SsoUser) => {
+    if (token) {
+      localStorage.setItem("sp_profile_setup_token", token);
+      localStorage.removeItem("sp_access_token");
+    }
+
+    if (user) {
+      saveProfileSetupUser({
+        email: user.email,
+        firstName: user.first_name,
+        lastName: user.last_name,
+      });
+    }
+  };
+
   const handleSocialAuth = async (provider: SocialProvider, token: string) => {
     const cleanToken = token.trim();
     if (!cleanToken) {
@@ -201,16 +216,17 @@ export function AccountStep({
       }
 
       if (result.profileSetupRequired) {
-        if (result.token) {
-          localStorage.setItem("sp_profile_setup_token", result.token);
-          localStorage.removeItem("sp_access_token");
-        }
+        storeProfileSetupSession(result.token, result.user);
         const params = new URLSearchParams(searchParams.toString());
-        params.set("view", "flow");
-        params.set("stage", "setup");
-        params.set("step", "personal");
-        params.set("mode", "form");
-        router.push(`${pathname}?${params.toString()}`);
+        params.delete("view");
+        params.delete("stage");
+        params.delete("step");
+        params.delete("mode");
+        params.delete("email");
+        params.delete("firstName");
+        params.delete("lastName");
+        const query = params.toString();
+        router.push(query ? `/profile-setup?${query}` : "/profile-setup");
         return;
       }
 

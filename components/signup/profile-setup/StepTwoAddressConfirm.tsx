@@ -2,6 +2,9 @@ import { FieldLabel } from "./FieldLabel";
 import { LocationTargetIcon } from "./icons";
 import type { AddressState } from "../utils";
 
+const fieldClassName =
+  "profile-setup-field mt-[0.4em] h-10 w-full rounded-[0.5em] border border-[#d8dde8] bg-white px-[1em] text-sm font-semibold text-[#4f5980] outline-none";
+
 type StepTwoAddressConfirmProps = {
   addressConfirmed: boolean;
   addressForm: AddressState;
@@ -30,11 +33,11 @@ export function StepTwoAddressConfirm({
       </p>
 
       <div className="mx-auto mt-6 grid max-w-[620px] grid-cols-1 gap-3 text-left sm:grid-cols-2">
-        <label className="sm:col-span-2"><FieldLabel>Address</FieldLabel><input className="mt-1.5 h-10 w-full rounded-lg border border-[#d8dde8] bg-white px-3 text-sm text-[#37405a] outline-none focus:border-[#b7bfd3]" onChange={(e) => onAddressFieldChange("address", e.target.value)} type="text" value={addressForm.address} /></label>
-        <label><FieldLabel>Country</FieldLabel><input className="mt-1.5 h-10 w-full rounded-lg border border-[#d8dde8] bg-white px-3 text-sm text-[#37405a] outline-none focus:border-[#b7bfd3]" onChange={(e) => onAddressFieldChange("country", e.target.value)} type="text" value={addressForm.country} /></label>
-        <label><FieldLabel>Postcode</FieldLabel><input className="mt-1.5 h-10 w-full rounded-lg border border-[#d8dde8] bg-white px-3 text-sm text-[#37405a] outline-none focus:border-[#b7bfd3]" onChange={(e) => onAddressFieldChange("postcode", e.target.value)} type="text" value={addressForm.postcode} /></label>
-        <label><FieldLabel>State</FieldLabel><input className="mt-1.5 h-10 w-full rounded-lg border border-[#d8dde8] bg-white px-3 text-sm text-[#37405a] outline-none focus:border-[#b7bfd3]" onChange={(e) => onAddressFieldChange("state", e.target.value)} type="text" value={addressForm.state} /></label>
-        <label><FieldLabel>City</FieldLabel><input className="mt-1.5 h-10 w-full rounded-lg border border-[#d8dde8] bg-white px-3 text-sm text-[#37405a] outline-none focus:border-[#b7bfd3]" onChange={(e) => onAddressFieldChange("city", e.target.value)} type="text" value={addressForm.city} /></label>
+        <label className="sm:col-span-2"><FieldLabel>Address</FieldLabel><input className={fieldClassName} onChange={(e) => onAddressFieldChange("address", e.target.value)} type="text" value={addressForm.address} /></label>
+        <label><FieldLabel>Country</FieldLabel><input className={fieldClassName} onChange={(e) => onAddressFieldChange("country", e.target.value)} type="text" value={addressForm.country} /></label>
+        <label><FieldLabel>Postcode</FieldLabel><input className={fieldClassName} onChange={(e) => onAddressFieldChange("postcode", e.target.value)} type="text" value={addressForm.postcode} /></label>
+        <label><FieldLabel>State</FieldLabel><input className={fieldClassName} onChange={(e) => onAddressFieldChange("state", e.target.value)} type="text" value={addressForm.state} /></label>
+        <label><FieldLabel>City</FieldLabel><input className={fieldClassName} onChange={(e) => onAddressFieldChange("city", e.target.value)} type="text" value={addressForm.city} /></label>
       </div>
 
       <div className="mx-auto mt-6 flex max-w-[620px] flex-wrap items-center justify-end gap-3">

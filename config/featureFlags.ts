@@ -1,3 +1,3 @@
-export const DIRECT_ONBOARDING_ENABLED = false;
+export const DIRECT_ONBOARDING_ENABLED = true;
 
  

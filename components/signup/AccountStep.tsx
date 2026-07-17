@@ -21,6 +21,7 @@ import { SocialAuthButtons } from "./social/SocialAuthButtons";
 import { socialAuthApi } from "./social/socialAuthApi";
 import type { SocialProvider } from "./social/types";
 import { DIRECT_ONBOARDING_ENABLED } from "../../config/featureFlags";
+import { PRIVACY_POLICY_HREF, TERMS_OF_USE_HREF } from "../../config/legalLinks";
 
 type SsoUser = {
   role?: "student" | "tutor";
@@ -232,8 +233,6 @@ export function AccountStep({
         return;
       }
       router.push("/students/dashboard");
-    } catch {
-      setSocialError("Could not reach social auth service. Please try again.");
     } finally {
       setActiveSocialProvider(null);
     }
@@ -327,19 +326,26 @@ export function AccountStep({
     setIsSubmitting(true);
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/v1/auth/signup`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: email.trim(),
-          first_name: firstName.trim(),
-          last_name: lastName.trim(),
-          password,
-          confirm_password: confirmPassword,
-        }),
-      });
+      let response: Response;
+
+      try {
+        response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/v1/auth/signup`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: email.trim(),
+            first_name: firstName.trim(),
+            last_name: lastName.trim(),
+            password,
+            confirm_password: confirmPassword,
+          }),
+        });
+      } catch {
+        setFirstNameError("Could not reach signup service. Please try again.");
+        return;
+      }
 
       const raw = await response.text();
       let data: { message?: string } | null = null;
@@ -381,8 +387,6 @@ export function AccountStep({
 
       handleAuthSuccess(data?.message ?? "Verification email sent.");
       onContinue({ email: email.trim(), firstName: firstName.trim(), lastName: lastName.trim() });
-    } catch {
-      setFirstNameError("Could not reach signup service. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -529,11 +533,21 @@ export function AccountStep({
 
       <p className="auth-legal mx-auto mt-[0.8em] w-full max-w-full text-center text-[0.72em] font-medium leading-[1.35] text-[#8e95a8] sm:whitespace-nowrap">
         By continuing you accept the{" "}
-        <Link href="#" className="text-[#1d2230] underline decoration-[#aeb6c8] underline-offset-2">
-          Term of Use
+        <Link
+          href={TERMS_OF_USE_HREF}
+          className="text-[#1d2230] underline decoration-[#aeb6c8] underline-offset-2"
+          rel="noreferrer"
+          target="_blank"
+        >
+          Terms of Use
         </Link>{" "}
         and{" "}
-        <Link href="#" className="text-[#1d2230] underline decoration-[#aeb6c8] underline-offset-2">
+        <Link
+          href={PRIVACY_POLICY_HREF}
+          className="text-[#1d2230] underline decoration-[#aeb6c8] underline-offset-2"
+          rel="noreferrer"
+          target="_blank"
+        >
           Privacy Policy
         </Link>
       </p>

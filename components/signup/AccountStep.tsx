@@ -216,6 +216,10 @@ export function AccountStep({
       }
 
       if (result.profileSetupRequired) {
+        if (result.token && redirectToReturnTarget(result.token, result.user)) {
+          return;
+        }
+
         storeProfileSetupSession(result.token, result.user);
         const params = new URLSearchParams(searchParams.toString());
         params.delete("view");

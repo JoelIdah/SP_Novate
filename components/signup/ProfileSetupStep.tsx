@@ -1,25 +1,48 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { SetupSuccessView } from "./profile-setup/SetupSuccessView";
+import { StepTwoAddressConfirm, type LocationAddressForm } from "./profile-setup/StepTwoAddressConfirm";
 import { StepOneProfileForm } from "./profile-setup/StepOneProfileForm";
-import { StepTwoAddressConfirm } from "./profile-setup/StepTwoAddressConfirm";
 import { StepTwoLocationPrompt } from "./profile-setup/StepTwoLocationPrompt";
 import type { SetupMode, SetupStepId, SignUpRole } from "./types";
 import {
-  initialAddress,
   initialProfileForm,
-  isAddressFilled,
-  parseReverseGeocodeResult,
-  type AddressState,
   type ProfileFormState,
 } from "./utils";
 
 type SetupStep = "personal" | "location";
 type LocationView = "prompt" | "confirm";
+const REQUIRED_GPS_ACCURACY_METERS = 50;
+const LOCATION_ACQUISITION_TIMEOUT_MS = 30000;
 
+type PlacePrediction = {
+  description: string;
+  placeId: string;
+};
+type LocationUpdateResponse = {
+  message?: string;
+  data?: {
+    address?: string;
+    country?: string;
+    postcode?: string;
+    postal_code?: string;
+    state?: string;
+    city?: string;
+    latitude?: number;
+    longitude?: number;
+  } | null;
+};
+
+const emptyAddressForm: LocationAddressForm = {
+  address: "",
+  country: "",
+  postcode: "",
+  state: "",
+  city: "",
+};
 const steps: Array<{ id: SetupStep; label: string }> = [
   { id: "personal", label: "Profile set up" },
   { id: "location", label: "Location access" },
@@ -62,16 +85,21 @@ export function ProfileSetupStep({
       lastName: initialProfile?.lastName ?? initialProfileForm.lastName,
     };
   });
-  const [addressForm, setAddressForm] = useState<AddressState>(initialAddress);
-  const [locationView, setLocationView] = useState<LocationView>(initialMode === "review" ? "confirm" : "prompt");
-  const [coords, setCoords] = useState<{ lat: number; lon: number } | null>(null);
   const [requestingLocation, setRequestingLocation] = useState(false);
+  const [requestingPlaceSearch, setRequestingPlaceSearch] = useState(false);
+  const [locationView, setLocationView] = useState<LocationView>("prompt");
   const [locationError, setLocationError] = useState("");
+  const [locationStatus, setLocationStatus] = useState("");
   const [addressConfirmed, setAddressConfirmed] = useState(false);
+  const [searchingAddress, setSearchingAddress] = useState(false);
+  const [addressForm, setAddressForm] = useState<LocationAddressForm>(emptyAddressForm);
+  const [placeQuery, setPlaceQuery] = useState("");
+  const [placePredictions, setPlacePredictions] = useState<PlacePrediction[]>([]);
+  const locationWatchIdRef = useRef<number | null>(null);
+  const locationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const activeStepIndex = activeStep === "location" ? 1 : 0;
   const profileValid = true;
-  const addressFilled = useMemo(() => isAddressFilled(addressForm), [addressForm]);
   const greetingName = profileForm.firstName.trim() || initialProfile?.firstName?.trim() || "there";
   const userEmail = profileForm.email.trim() || "Complete your profile";
 
@@ -83,13 +111,67 @@ export function ProfileSetupStep({
     });
   }, [activeStep, onStateChange, setupComplete]);
 
+  useEffect(() => {
+    return () => {
+      if (locationWatchIdRef.current !== null && navigator.geolocation) {
+        navigator.geolocation.clearWatch(locationWatchIdRef.current);
+      }
+      if (locationTimeoutRef.current !== null) {
+        clearTimeout(locationTimeoutRef.current);
+      }
+    };
+  }, []);
+
   const updateProfileField = (field: keyof ProfileFormState, value: string) => {
     setProfileForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  const updateAddressField = (field: keyof AddressState, value: string) => {
-    setAddressConfirmed(false);
-    setAddressForm((prev) => ({ ...prev, [field]: value }));
+  const getLocationToken = () => {
+    if (typeof window === "undefined") return "";
+    return localStorage.getItem("sp_profile_setup_token") || localStorage.getItem("sp_access_token") || "";
+  };
+
+  const readAddressFromResponse = (
+    data: LocationUpdateResponse["data"],
+    fallback?: Partial<LocationAddressForm>,
+  ): LocationAddressForm => ({
+    address: data?.address ?? fallback?.address ?? "",
+    country: data?.country ?? fallback?.country ?? "",
+    postcode: data?.postcode ?? data?.postal_code ?? fallback?.postcode ?? "",
+    state: data?.state ?? fallback?.state ?? "",
+    city: data?.city ?? fallback?.city ?? "",
+  });
+
+  const submitLocationUpdate = async (payload: Record<string, string | number>) => {
+    const token = getLocationToken();
+    if (!token) {
+      throw new Error("Missing auth token. Please sign in again.");
+    }
+
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/v1/user/locations/update`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const raw = await response.text();
+    let data: LocationUpdateResponse | null = null;
+    if (raw) {
+      try {
+        data = JSON.parse(raw) as LocationUpdateResponse;
+      } catch {
+        data = null;
+      }
+    }
+
+    if (!response.ok) {
+      throw new Error(data?.message ?? "Could not save location.");
+    }
+
+    return data ?? { message: "Location saved.", data: null };
   };
 
   const handleAllowLocation = () => {
@@ -100,36 +182,81 @@ export function ProfileSetupStep({
 
     setRequestingLocation(true);
     setLocationError("");
+    setLocationStatus("");
 
-    navigator.geolocation.getCurrentPosition(
+    let submitting = false;
+
+    const stopWatching = () => {
+      if (locationWatchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(locationWatchIdRef.current);
+        locationWatchIdRef.current = null;
+      }
+      if (locationTimeoutRef.current !== null) {
+        clearTimeout(locationTimeoutRef.current);
+        locationTimeoutRef.current = null;
+      }
+    };
+
+    locationWatchIdRef.current = navigator.geolocation.watchPosition(
       async (position) => {
+        const accuracy = position.coords.accuracy;
+
+        if (accuracy > REQUIRED_GPS_ACCURACY_METERS || submitting) return;
+
+        submitting = true;
+        stopWatching();
+
         try {
           const lat = position.coords.latitude;
           const lon = position.coords.longitude;
 
-          const response = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&accept-language=en`,
-          );
-
-          if (!response.ok) throw new Error("Could not fetch address details.");
-
-          const data = await response.json();
-          setCoords({ lat, lon });
-          setAddressForm(parseReverseGeocodeResult(data, lat, lon));
+          const result = await submitLocationUpdate({
+            accuracy,
+            latitude: lat,
+            longitude: lon,
+            source: "gps",
+          });
           setAddressConfirmed(false);
+          setSearchingAddress(false);
           setLocationView("confirm");
+          setAddressForm(
+            readAddressFromResponse(result.data, {
+              address: `Lat ${lat.toFixed(5)}, Lng ${lon.toFixed(5)}`,
+            }),
+          );
+          setLocationStatus(result.message ?? "Location saved.");
+          setLocationError("");
         } catch (error) {
-          setLocationError(error instanceof Error ? error.message : "Could not fetch your address.");
+          setLocationStatus("");
+          setLocationError(error instanceof Error ? error.message : "Could not save your location.");
         } finally {
           setRequestingLocation(false);
         }
       },
-      () => {
-        setLocationError("Location permission was denied or unavailable.");
+      (error) => {
+        stopWatching();
+        const message = error.code === error.PERMISSION_DENIED
+          ? "Location permission was denied. Allow precise location and try again, or use the address search below."
+          : "We couldn't get a sufficiently precise location from this device. Use the address search below instead, or enable precise location and try again.";
+        setLocationError(message);
+        setSearchingAddress(true);
         setRequestingLocation(false);
       },
-      { enableHighAccuracy: true, maximumAge: 60000, timeout: 15000 },
+      {
+        enableHighAccuracy: true,
+        maximumAge: 0,
+        timeout: LOCATION_ACQUISITION_TIMEOUT_MS,
+      },
     );
+
+    locationTimeoutRef.current = setTimeout(() => {
+      stopWatching();
+      setLocationError(
+        "We couldn't get a sufficiently precise location from this device. Use the address search below instead, or enable precise location and try again.",
+      );
+      setSearchingAddress(true);
+      setRequestingLocation(false);
+    }, LOCATION_ACQUISITION_TIMEOUT_MS);
   };
 
   const handleContinue = () => {
@@ -145,6 +272,76 @@ export function ProfileSetupStep({
   const handleFinishSetup = () => {
     if (!addressConfirmed) return;
     setSetupComplete(true);
+  };
+
+  const handlePlaceQueryChange = async (value: string) => {
+    setPlaceQuery(value);
+    setLocationError("");
+    setPlacePredictions([]);
+
+    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY;
+    if (!value.trim()) return;
+    if (!apiKey) {
+      setLocationError("Google Places search is not configured.");
+      return;
+    }
+
+    setRequestingPlaceSearch(true);
+    try {
+      const response = await fetch(
+        `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(value.trim())}&key=${encodeURIComponent(apiKey)}`,
+      );
+      const data = (await response.json()) as {
+        predictions?: Array<{ description?: string; place_id?: string }>;
+        error_message?: string;
+        status?: string;
+      };
+
+      if (!response.ok || (data.status && data.status !== "OK" && data.status !== "ZERO_RESULTS")) {
+        throw new Error(data.error_message ?? "Could not search addresses.");
+      }
+
+      setPlacePredictions(
+        (data.predictions ?? [])
+          .filter((prediction) => prediction.description && prediction.place_id)
+          .map((prediction) => ({
+            description: prediction.description!,
+            placeId: prediction.place_id!,
+          })),
+      );
+    } catch (error) {
+      setLocationError(error instanceof Error ? error.message : "Could not search addresses.");
+    } finally {
+      setRequestingPlaceSearch(false);
+    }
+  };
+
+  const handleSelectPlace = async (placeId: string) => {
+    setRequestingPlaceSearch(true);
+    setLocationError("");
+    try {
+      const result = await submitLocationUpdate({
+        placeId,
+        source: "search",
+      });
+      const selectedPlace = placePredictions.find((prediction) => prediction.placeId === placeId);
+      setPlaceQuery(selectedPlace?.description ?? placeQuery);
+      setPlacePredictions([]);
+      setAddressConfirmed(false);
+      setSearchingAddress(false);
+      setLocationView("confirm");
+      setAddressForm(
+        readAddressFromResponse(result.data, {
+          address: selectedPlace?.description ?? placeQuery,
+        }),
+      );
+      setLocationStatus(result.message ?? "Location saved.");
+    } catch (error) {
+      setLocationStatus("");
+      setLocationError(error instanceof Error ? error.message : "Could not save selected address.");
+    } finally {
+      setRequestingPlaceSearch(false);
+    }
   };
 
   const currentStep = steps[activeStepIndex];
@@ -177,21 +374,40 @@ export function ProfileSetupStep({
         ) : (
           <div className="w-full text-center">
             {locationView === "prompt" ? (
-              <StepTwoLocationPrompt locationError={locationError} onAllowLocation={handleAllowLocation} requestingLocation={requestingLocation} />
+              <StepTwoLocationPrompt
+                locationError={locationError}
+                onAllowLocation={handleAllowLocation}
+                onPlaceQueryChange={handlePlaceQueryChange}
+                onSearchAddress={() => {
+                  setSearchingAddress(true);
+                  setLocationError("");
+                }}
+                onSelectPlace={handleSelectPlace}
+                placePredictions={placePredictions}
+                placeQuery={placeQuery}
+                requestingPlaceSearch={requestingPlaceSearch}
+                requestingLocation={requestingLocation}
+                searchingAddress={searchingAddress}
+              />
             ) : (
               <StepTwoAddressConfirm
-                addressConfirmed={addressConfirmed}
                 addressForm={addressForm}
-                isAddressFilled={addressFilled}
-                onAddressFieldChange={updateAddressField}
+                locationError={locationError}
+                locationStatus={locationStatus}
                 onConfirmAddress={() => setAddressConfirmed(true)}
+                onPlaceQueryChange={handlePlaceQueryChange}
                 onRejectAddress={() => {
+                  setSearchingAddress(true);
                   setAddressConfirmed(false);
-                  setLocationView("prompt");
+                  setLocationStatus("");
                 }}
+                onSelectPlace={handleSelectPlace}
+                placePredictions={placePredictions}
+                placeQuery={placeQuery}
+                requestingPlaceSearch={requestingPlaceSearch}
+                searchingAddress={searchingAddress}
               />
             )}
-            <div className="sr-only">Coordinates: {coords ? `${coords.lat},${coords.lon}` : "not set"}</div>
           </div>
         )}
         </div>

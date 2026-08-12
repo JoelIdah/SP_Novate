@@ -216,6 +216,10 @@ export function LoginPageContent() {
       }
 
       if (result.profileSetupRequired) {
+        if (result.token && redirectToReturnTarget(result.token, result.user)) {
+          return;
+        }
+
         storeProfileSetupSession(result.token, result.user);
         router.push(buildProfileSetupHref());
         return;
@@ -314,6 +318,10 @@ export function LoginPageContent() {
           data?.data?.profile_setup_required === true ||
           user?.is_profile_setup === false;
 
+        if (redirectToReturnTarget(token, user)) {
+          return;
+        }
+
         if (profileSetupRequired) {
           storeProfileSetupSession(token, user);
           router.push(buildProfileSetupHref());
@@ -321,10 +329,6 @@ export function LoginPageContent() {
         }
 
         localStorage.setItem("sp_access_token", token);
-
-        if (redirectToReturnTarget(token, user)) {
-          return;
-        }
 
         if (isDirectOnboardingDisabled) {
           redirectToComingSoon();

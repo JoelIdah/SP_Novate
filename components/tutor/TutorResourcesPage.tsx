@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import {
   Archive,
   BookOpen,
@@ -17,6 +17,7 @@ import ResponsiveSheet from "../ui/ResponsiveSheet";
 import { DashboardShell } from "../layout/DashboardShell";
 import { DataToolbar } from "../ui/DataToolbar";
 import { DataTableShell } from "../ui/DataTableShell";
+import { TableFilters } from "../ui/TableFilters";
 import { StatusIndicator, type StatusTone } from "../ui/StatusIndicator";
 import { TutorNavbar } from "./TutorNavbar";
 
@@ -60,6 +61,19 @@ export default function TutorResourcesPage() {
   const [activeTab, setActiveTab] = useState<ResourceTab>("manage");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [successOpen, setSuccessOpen] = useState(false);
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [selectedType, setSelectedType] = useState<ResourceType | "All">("All");
+  const filteredResources = useMemo(() => resources.filter((row) => {
+    const typePass = selectedType === "All" || row.type === selectedType;
+    const rowDate = new Date(row.date);
+    const from = dateFrom ? new Date(dateFrom) : null;
+    const to = dateTo ? new Date(dateTo) : null;
+    return typePass
+      && (!from || rowDate >= from)
+      && (!to || rowDate <= to)
+      && !Number.isNaN(rowDate.valueOf());
+  }), [dateFrom, dateTo, selectedType]);
   const tableHeads = activeTab === "manage"
     ? ["Title", "Type", "Department", "Subject", "Date", "Duration", "Status", ""]
     : ["Title", "Type", "Department", "Subject", "Date", "Duration", "Archived by", ""];
@@ -97,10 +111,14 @@ export default function TutorResourcesPage() {
 
               <div className="mt-4 md:mt-6"><DataToolbar placeholder="Search resource title or subject" /></div>
 
-              <div className="mt-2.5 flex items-center gap-2 border-b border-[#e7ebf4] pb-3">
-                <FilterChip label="Date" />
-                <FilterChip label="Type" />
-              </div>
+              <TableFilters
+                className="mt-2.5"
+                dateFrom={dateFrom}
+                dateTo={dateTo}
+                filters={[{ label: "Type", value: selectedType, options: ["All", "Videos", "Links", "Docs."], onChange: (value) => setSelectedType(value as ResourceType | "All") }]}
+                onDateFromChange={setDateFrom}
+                onDateToChange={setDateTo}
+              />
 
               <DataTableShell className="mt-4">
                   <table className="w-full min-w-[940px] border-collapse text-left text-[0.74em] text-[#5f667b]">
@@ -112,7 +130,7 @@ export default function TutorResourcesPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {resources.map((row, index) => (
+                      {filteredResources.map((row, index) => (
                         <tr className="border-t border-[#edf0f6] hover:bg-[#fafbff]" key={`${row.title}-${index}`}>
                           <td className="px-3 py-2.5">{row.title}</td>
                           <td className="px-3 py-2.5">{row.type}</td>
@@ -133,7 +151,7 @@ export default function TutorResourcesPage() {
               </DataTableShell>
 
               <div className="mt-3 space-y-1.5 pb-4 md:hidden">
-                {resources.map((row, index) => (
+                {filteredResources.map((row, index) => (
                   <article className="rounded-lg border border-[#e6eaf3] bg-white px-2.5 py-2" key={`${row.title}-mobile-${index}`}>
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
@@ -184,15 +202,6 @@ function FeatureCard({ icon, iconClassName, title, text }: { icon: ReactNode; ic
         </div>
       </div>
     </article>
-  );
-}
-
-function FilterChip({ label }: { label: string }) {
-  return (
-    <button className="inline-flex h-11 items-center gap-1 rounded-full bg-[#f4f5fb] px-3 text-[0.68em] font-semibold text-[#747e95] md:h-8" type="button">
-      {label}
-      <span className="text-[0.9em]">+</span>
-    </button>
   );
 }
 

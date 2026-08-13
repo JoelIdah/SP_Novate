@@ -1,6 +1,7 @@
 "use client";
 
 import { BookOpenCheck, Boxes, EllipsisVertical, PencilLine } from "lucide-react";
+import Link from "next/link";
 import { DashboardShell } from "../layout/DashboardShell";
 import { DashboardActionCard, DashboardResourceCard, DashboardSectionHeader } from "../dashboard/DashboardPatterns";
 import { StatusIndicator } from "../ui/StatusIndicator";
@@ -43,7 +44,7 @@ export default function TutorDashboardPage() {
                 <DashboardSectionHeader title="Actions" />
                 <div className="grid gap-3 md:grid-cols-3">
                   <DashboardActionCard description="Go to your subjects and active tutor profile." icon={<span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#e7d8fb] text-[#9a5cdf]"><BookOpenCheck className="h-[1.1rem] w-[1.1rem]" /></span>} title="Set up subjects" toneClassName="border-[#dcc7f7] bg-[#f7f0ff]" />
-                  <DashboardActionCard description="See requests from prospective students." icon={<span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#d7ecff] text-[#2586d8]"><Boxes className="h-[1.1rem] w-[1.1rem]" /></span>} title="Create a new resource" toneClassName="border-[#bcdaf2] bg-[#f0f8ff]" />
+                  <DashboardActionCard description="Create and manage your learning resources." href="/tutor/resources" icon={<span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#d7ecff] text-[#2586d8]"><Boxes className="h-[1.1rem] w-[1.1rem]" /></span>} title="Create a new resource" toneClassName="border-[#bcdaf2] bg-[#f0f8ff]" />
                   <DashboardActionCard description="Keep your tutor profile fresh and complete." icon={<span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#d7f1f2] text-[#19929a]"><PencilLine className="h-[1.1rem] w-[1.1rem]" /></span>} title="Update profile" toneClassName="border-[#bde9ea] bg-[#f1fcfd]" />
                 </div>
               </section>
@@ -72,14 +73,14 @@ export default function TutorDashboardPage() {
                   <section className="flex min-h-0 flex-col">
                     <div className="mb-2 flex items-center justify-between">
                       <h2 className="text-[0.9rem] font-semibold text-[#616a82]">Bookings Requests</h2>
-                      <button className="text-[0.75rem] font-semibold text-[#6f74a7] hover:text-[#5954c9]" type="button">Go to managed bookings &gt;</button>
+                      <Link className="rounded-md px-1 py-0.5 text-[0.75rem] font-semibold text-[#6f74a7] hover:text-[#5954c9]" href="/tutor/bookings">Go to managed bookings &gt;</Link>
                     </div>
                     <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-[#e4e8f1] bg-white">
                       <div className="min-h-0 flex-1 overflow-auto">
                         <table className="w-full min-w-[32rem] text-left">
                           <thead className="bg-[#f7f9fc] text-[0.74rem] text-[#6f7892]">
                             <tr>
-                              <th className="px-4 py-2.5 font-semibold">Tutor</th>
+                              <th className="px-4 py-2.5 font-semibold">Student</th>
                               <th className="px-4 py-2.5 font-semibold">Subject</th>
                               <th className="px-4 py-2.5 font-semibold">Status</th>
                               <th className="px-4 py-2.5 font-semibold" />
@@ -109,7 +110,7 @@ export default function TutorDashboardPage() {
                   <section className="flex min-h-0 flex-col">
                     <div className="mb-2 flex items-center justify-between">
                       <h2 className="text-[0.9rem] font-semibold text-[#616a82]">Messages</h2>
-                      <button className="text-[0.75rem] font-semibold text-[#6f74a7] hover:text-[#5954c9]" type="button">Go to chat &gt;</button>
+                      <Link className="rounded-md px-1 py-0.5 text-[0.75rem] font-semibold text-[#6f74a7] hover:text-[#5954c9]" href="/tutor/chat">Go to chat &gt;</Link>
                     </div>
                     <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-[#e4e8f1] bg-white">
                       <p className="border-b border-[#edf0f6] px-4 py-2 text-[1rem] font-medium text-[#9aa3b8]">Chat</p>

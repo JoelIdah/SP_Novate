@@ -140,7 +140,7 @@ export function AuthPrimaryButton({
   return (
     <button
       className={cx(
-        "auth-primary-action h-[3em] w-full rounded-full bg-brand-primary text-[0.84em] font-semibold text-white hover:bg-[#1c175f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8b88f5] focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:cursor-not-allowed disabled:opacity-70",
+        "auth-primary-action h-[3em] w-full rounded-full bg-brand-primary text-[0.84em] font-semibold text-white hover:bg-[#1c175f] disabled:cursor-not-allowed disabled:opacity-70",
         className
       )}
       {...props}
@@ -158,7 +158,7 @@ export function AuthPrimaryLink({
   return (
     <Link
       className={cx(
-        "auth-primary-action inline-flex h-[3em] w-full items-center justify-center rounded-full bg-brand-primary text-[0.84em] font-semibold text-white hover:bg-[#1c175f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8b88f5] focus-visible:ring-offset-2 focus-visible:ring-offset-white",
+        "auth-primary-action inline-flex h-[3em] w-full items-center justify-center rounded-full bg-brand-primary text-[0.84em] font-semibold text-white hover:bg-[#1c175f]",
         className
       )}
       {...props}

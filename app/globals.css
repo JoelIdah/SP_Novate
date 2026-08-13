@@ -136,12 +136,17 @@ button {
 }
 
 button:focus-visible,
-a:focus-visible,
+a:focus-visible {
+  outline: 2px solid #6b68e8;
+  outline-offset: -2px;
+}
+
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
-  outline: 2px solid #6b68e8;
-  outline-offset: 2px;
+  outline: none;
+  outline-offset: 0;
+  border-color: #6b68e8;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -162,14 +167,13 @@ textarea:focus-visible {
 }
 
 .dashboard-screen.dashboard-home-fit {
-  height: auto;
+  height: 100dvh;
   min-height: 100dvh;
-  overflow-y: visible;
-  overflow-x: hidden;
+  overflow: hidden;
 }
 
 .dashboard-screen.dashboard-home-fit .dashboard-shell {
-  height: auto;
+  height: 100%;
   min-height: 100dvh;
 }
 
@@ -188,7 +192,8 @@ textarea:focus-visible {
 .dashboard-main {
   flex: 1;
   min-height: 0;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
   padding-block: clamp(0.28rem, 0.58vh, 0.85rem);
   display: flex;
 }
@@ -218,7 +223,7 @@ textarea:focus-visible {
 }
 
 .dashboard-home-fit .dashboard-main {
-  overflow: visible;
+  overflow-y: auto;
   overflow-x: hidden;
   padding-block: clamp(0.9rem, 2vw, 1.5rem);
 }

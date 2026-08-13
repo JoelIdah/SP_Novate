@@ -7,11 +7,11 @@ import { useEffect, useState } from "react";
 import {
   BookOpen,
   CalendarDays,
-  ChevronDown,
   CreditCard,
   Home,
   Menu,
   MessageCircle,
+  Repeat2,
   X,
 } from "lucide-react";
 
@@ -27,8 +27,7 @@ const roleConfig = {
     switchTitle: "Switch to tutor dashboard?",
     switchText: "You are about to switch from student view to tutor view. Do you want to continue?",
     switchHref: "/tutor/dashboard",
-    profileName: "",
-    profileEmail: "",
+    profileName: "Oluyinka Alabi",
     items: [
       { label: "Home", href: "/students/dashboard", icon: Home },
       { label: "Bookings", href: "/students/bookings", icon: CalendarDays },
@@ -45,7 +44,6 @@ const roleConfig = {
     switchText: "You are about to switch from tutor view to student view. Do you want to continue?",
     switchHref: "/students/dashboard",
     profileName: "Oluyinka Alabi",
-    profileEmail: "Oluyinka@gmail.com",
     items: [
       { label: "Home", href: "/tutor/dashboard", icon: Home },
       { label: "Bookings", href: "/tutor/bookings", icon: CalendarDays },
@@ -63,7 +61,6 @@ const roleConfig = {
   switchText: string;
   switchHref: string;
   profileName: string;
-  profileEmail: string;
   items: Array<{ label: NavLabel; href: string; icon: typeof Home }>;
 }>;
 
@@ -100,13 +97,13 @@ export function DashboardNavbar({ role, active = "Home" }: { role: DashboardRole
   }, [isMenuMounted, isMenuOpen]);
 
   return (
-    <header className="dashboard-header z-50 border-b border-brand-line bg-white shadow-[0_1px_8px_rgba(31,40,74,0.05)]">
-      <div className="grid min-h-[var(--topbar-h)] w-full grid-cols-[auto_1fr_auto] items-center gap-3 px-[var(--app-gutter)] py-0 xl:gap-5">
-        <Link className="flex h-11 items-center" href={config.homeHref} aria-label="SP Novate dashboard">
+    <header className="dashboard-header sticky top-0 z-50 border-b border-[#dfe4ee] bg-white shadow-[0_2px_12px_rgba(31,40,74,0.06)]">
+      <div className="mx-auto grid min-h-[var(--topbar-h)] w-full max-w-[var(--dashboard-max-width)] grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 px-[var(--dashboard-gutter)] xl:gap-6">
+        <Link className="flex h-11 w-fit items-center rounded-lg" href={config.homeHref} aria-label="SP Novate dashboard">
           <Image alt="SP Novate" className="h-8 w-auto xl:h-10" height={40} priority src="/logo/logo.png" width={40} />
         </Link>
 
-        <nav aria-label={`${role} navigation`} className="navbar-scroll hidden self-stretch overflow-x-auto overflow-y-visible xl:flex xl:items-center xl:justify-center xl:gap-4 2xl:gap-5">
+        <nav aria-label={`${role} navigation`} className="navbar-scroll hidden self-stretch xl:flex xl:items-center xl:justify-center xl:gap-1.5 2xl:gap-2.5">
           {config.items.map((item) => {
             const Icon = item.icon;
             const isActive = item.label === active;
@@ -114,20 +111,22 @@ export function DashboardNavbar({ role, active = "Home" }: { role: DashboardRole
               <Link
                 key={item.label}
                 aria-current={isActive ? "page" : undefined}
-                className={`relative flex h-full min-w-24 flex-col items-center justify-center gap-1 px-3 pb-1 pt-1 text-[0.9375rem] leading-tight ${
-                  isActive ? "font-semibold text-brand-accent" : "font-medium text-[#5f6678] hover:text-[#434b5f]"
+                className={`group relative my-2 flex h-[calc(100%-1rem)] min-w-[5.75rem] flex-col items-center justify-center gap-1 rounded-lg px-3 text-[0.9rem] leading-tight transition-colors ${
+                  isActive ? "font-semibold text-brand-accent" : "font-medium text-[#555d70] hover:text-[#30384c]"
                 }`}
                 href={item.href}
               >
-                <Icon className={`h-4 w-4 ${isActive ? "text-[#7073ea]" : "text-[#aeb5c4]"}`} strokeWidth={1.75} />
-                <span>{item.label}</span>
-                {isActive ? <span className="absolute bottom-0 left-1/2 h-0.5 w-16 -translate-x-1/2 rounded-full bg-brand-accent" /> : null}
+                <Icon className={`h-[1.125rem] w-[1.125rem] transition-colors ${isActive ? "text-[#6265e5]" : "text-[#9ca6b8] group-hover:text-[#737d91]"}`} strokeWidth={1.8} />
+                <span className="relative">
+                  {item.label}
+                  {isActive ? <span className="absolute -bottom-[0.95rem] left-0 h-[3px] w-full rounded-full bg-brand-accent" /> : null}
+                </span>
               </Link>
             );
           })}
         </nav>
 
-        <div className="flex items-center justify-end gap-2">
+        <div className="flex min-w-0 items-center justify-end gap-2.5">
           <button
             aria-expanded={isMenuOpen}
             aria-label={isMenuOpen ? "Close navigation menu" : "Open navigation menu"}
@@ -139,23 +138,21 @@ export function DashboardNavbar({ role, active = "Home" }: { role: DashboardRole
           </button>
 
           <button
-            className="hidden rounded-full border border-ui-border bg-[#f2f3f7] px-4 py-2 text-sm font-medium text-[#454b5d] hover:bg-[#ebedf3] xl:inline-flex"
+            className="hidden min-h-10 items-center gap-2 rounded-lg border border-[#dde2ec] bg-white px-3.5 text-sm font-medium text-[#454d60] transition-colors hover:border-[#cfd5e1] hover:bg-[#f8f9fb] xl:inline-flex"
             onClick={() => setIsSwitchModalOpen(true)}
             type="button"
           >
+            <Repeat2 className="h-4 w-4 text-[#70798c]" strokeWidth={1.8} />
             {config.switchLabel}
           </button>
 
-          <button className="hidden items-center gap-2 rounded-full border border-ui-border bg-[#f2f3f7] p-1.5 xl:flex" type="button">
+          <div aria-label={`Signed in as ${config.profileName}`} className="hidden min-h-10 max-w-[12rem] items-center gap-2 border-l border-[#e1e5ed] pl-3 xl:flex">
             <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-primary text-sm font-semibold text-white">O</span>
-            {role === "tutor" ? (
-              <span className="pr-1 text-left leading-tight">
-                <span className="block text-xs font-semibold text-[#303755]">{config.profileName}</span>
-                <span className="block text-[0.65rem] text-[#7f879d]">{config.profileEmail}</span>
-              </span>
-            ) : null}
-            <ChevronDown className="h-3.5 w-3.5 text-[#8e93a1]" />
-          </button>
+            <span className="min-w-0 text-left leading-tight">
+              <span className="block truncate text-xs font-semibold text-[#303755]">{config.profileName}</span>
+              <span className="mt-0.5 block text-[0.65rem] font-medium text-[#8a91a1]">{role === "tutor" ? "Tutor account" : "Student account"}</span>
+            </span>
+          </div>
         </div>
       </div>
 

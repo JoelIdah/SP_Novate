@@ -11,6 +11,7 @@ import { Avatar } from "../ui/Avatar";
 import { Card } from "../ui/Card";
 import ResponsiveSheet from "../ui/ResponsiveSheet";
 import { DataTableShell } from "../ui/DataTableShell";
+import { TableFilters } from "../ui/TableFilters";
 
 type TutorCard = {
   name: string;
@@ -40,7 +41,7 @@ const tutors: TutorCard[] = [
     title: "Software engineer - B.Sc, M.Sc",
     rating: "4.5",
     location: "Omni, Victoria Island",
-    distance: "5km from you",
+    distance: "5km",
     subjects: ["Mathematics", "Physics", "Further mathematics"],
     avatarBg: "linear-gradient(135deg, #d7b58f 0%, #f1d8b7 100%)",
     avatarText: "#6a4a2e",
@@ -51,7 +52,7 @@ const tutors: TutorCard[] = [
     title: "Software engineer - B.Sc, M.Sc",
     rating: "4.5",
     location: "Omni, Victoria Island",
-    distance: "5km from you",
+    distance: "5km",
     subjects: ["Mathematics", "Physics", "Further mathematics"],
     avatarBg: "linear-gradient(135deg, #1f3a8a 0%, #2d62ff 100%)",
     avatarText: "#ffffff",
@@ -62,7 +63,7 @@ const tutors: TutorCard[] = [
     title: "Software engineer - B.Sc, M.Sc",
     rating: "4.5",
     location: "Omni, Victoria Island",
-    distance: "5km from you",
+    distance: "5km",
     subjects: ["Mathematics", "Physics", "Further mathematics"],
     avatarBg: "linear-gradient(135deg, #134e4a 0%, #2dd4bf 100%)",
     avatarText: "#ffffff",
@@ -73,7 +74,7 @@ const tutors: TutorCard[] = [
     title: "Software engineer - B.Sc, M.Sc",
     rating: "4.5",
     location: "Omni, Victoria Island",
-    distance: "5km from you",
+    distance: "5km",
     subjects: ["Mathematics", "Physics", "Further mathematics"],
     avatarBg: "linear-gradient(135deg, #6d28d9 0%, #a78bfa 100%)",
     avatarText: "#ffffff",
@@ -84,7 +85,7 @@ const tutors: TutorCard[] = [
     title: "Software engineer - B.Sc, M.Sc",
     rating: "4.5",
     location: "Omni, Victoria Island",
-    distance: "5km from you",
+    distance: "5km",
     subjects: ["Mathematics", "Physics", "Further mathematics"],
     avatarBg: "linear-gradient(135deg, #111827 0%, #4b5563 100%)",
     avatarText: "#ffffff",
@@ -95,7 +96,7 @@ const tutors: TutorCard[] = [
     title: "Software engineer - B.Sc, M.Sc",
     rating: "4.5",
     location: "Omni, Victoria Island",
-    distance: "5km from you",
+    distance: "5km",
     subjects: ["Mathematics", "Physics", "Further mathematics"],
     avatarBg: "linear-gradient(135deg, #0f172a 0%, #60a5fa 100%)",
     avatarText: "#ffffff",
@@ -133,8 +134,6 @@ export default function BookingsPage({ initialView = "explore", notice }: { init
   const [days, setDays] = useState("");
   const [time, setTime] = useState("");
   const [rating, setRating] = useState("");
-  const [isDateMenuOpen, setIsDateMenuOpen] = useState(false);
-  const [isStatusMenuOpen, setIsStatusMenuOpen] = useState(false);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [selectedStatus, setSelectedStatus] = useState<ManagedBookingRow["status"] | "All">("All");
@@ -167,10 +166,6 @@ export default function BookingsPage({ initialView = "explore", notice }: { init
     });
     return newestFirst ? [...rows].reverse() : rows;
   }, [dateFrom, dateTo, manageQuery, newestFirst, selectedStatus]);
-
-  const formatRangeLabel = dateFrom || dateTo
-    ? `${dateFrom ? dateFrom.replaceAll("-", "/") : "..."} - ${dateTo ? dateTo.replaceAll("-", "/") : "..."}`
-    : "All dates";
 
   const resetFilters = () => {
     setSubject("");
@@ -279,7 +274,7 @@ export default function BookingsPage({ initialView = "explore", notice }: { init
               key={`${tutor.name}-${index}`}
               className="min-h-[10.5em] rounded-2xl border border-[#e8ecf3] bg-[#f6f8fc] p-[1em]"
             >
-              <Link className="block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent" href="/students/bookings/tutor-profile">
+              <Link className="block rounded-xl" href="/students/bookings/tutor-profile">
               <Card className="px-[0.9em] py-[0.9em] transition hover:border-[#cfd5e7]">
                 <div className="flex flex-col gap-[0.8em] sm:flex-row sm:items-start">
                   <div className="relative h-[3.6em] w-[3.6em] shrink-0">
@@ -383,82 +378,13 @@ export default function BookingsPage({ initialView = "explore", notice }: { init
               </button>
             </div>
 
-            <div className="relative flex flex-wrap items-center gap-2 border-b border-[#e7ebf4] pb-3 md:gap-2.5">
-              <div className="relative">
-                <button
-                  className="inline-flex h-11 items-center gap-1 rounded-full border border-[#e2e7f2] bg-white px-3 text-[0.68em] font-semibold text-[#747e95] md:h-8"
-                  onClick={() => {
-                    setIsDateMenuOpen((prev) => !prev);
-                    setIsStatusMenuOpen(false);
-                  }}
-                  type="button"
-                >
-                  Date
-                  <ChevronDown className="h-3 w-3" />
-                </button>
-                {isDateMenuOpen ? (
-                  <div className="absolute left-0 top-[calc(100%+0.45rem)] z-30 w-[16.25rem] rounded-xl border border-[#dfe4ef] bg-white p-3 shadow-[0_10px_28px_rgba(32,41,78,0.18)] 2xl:w-[19rem] 2xl:p-4">
-                    <p className="mb-2 text-[0.78rem] font-semibold text-[#55607a] 2xl:mb-2.5 2xl:text-[0.92rem]">Pick date range</p>
-                    <label className="mb-2 block text-[0.72rem] font-semibold text-[#7a8299] 2xl:mb-2.5 2xl:text-[0.84rem]">
-                      From
-                      <input
-                        className="mt-1 h-9 w-full rounded-md border border-[#d8deea] px-2 text-[0.78rem] 2xl:mt-1.5 2xl:h-10 2xl:text-[0.9rem]"
-                        onChange={(e) => setDateFrom(e.target.value)}
-                        type="date"
-                        value={dateFrom}
-                      />
-                    </label>
-                    <label className="block text-[0.72rem] font-semibold text-[#7a8299] 2xl:text-[0.84rem]">
-                      To
-                      <input
-                        className="mt-1 h-9 w-full rounded-md border border-[#d8deea] px-2 text-[0.78rem] 2xl:mt-1.5 2xl:h-10 2xl:text-[0.9rem]"
-                        onChange={(e) => setDateTo(e.target.value)}
-                        type="date"
-                        value={dateTo}
-                      />
-                    </label>
-                  </div>
-                ) : null}
-              </div>
-              <span className="inline-flex h-7 items-center rounded-full bg-[#3236ad] px-3 text-[0.68em] font-semibold text-white">{formatRangeLabel}</span>
-              <div className="relative">
-                <button
-                  className="inline-flex h-11 items-center gap-1 rounded-full border border-[#e2e7f2] bg-white px-3 text-[0.68em] font-semibold text-[#747e95] md:h-8"
-                  onClick={() => {
-                    setIsStatusMenuOpen((prev) => !prev);
-                    setIsDateMenuOpen(false);
-                  }}
-                  type="button"
-                >
-                  Statuses
-                  <ChevronDown className="h-3 w-3" />
-                </button>
-                {isStatusMenuOpen ? (
-                  <div className="absolute left-0 top-[calc(100%+0.45rem)] z-30 w-[11.9rem] rounded-xl border border-[#dfe4ef] bg-white p-2 shadow-[0_10px_28px_rgba(32,41,78,0.18)] 2xl:w-[13.8rem] 2xl:p-2.5">
-                    {(["All", "On-going", "Pending"] as const).map((status) => (
-                      <button
-                        key={status}
-                        className={`flex w-full items-center justify-between rounded-md px-2 py-1.5 text-[0.78rem] 2xl:px-2.5 2xl:py-2 2xl:text-[0.92rem] ${
-                          selectedStatus === status ? "bg-[#eef0ff] text-[#2f34aa]" : "text-[#5f667b]"
-                        }`}
-                        onClick={() => {
-                          setSelectedStatus(status);
-                          setIsStatusMenuOpen(false);
-                        }}
-                        type="button"
-                      >
-                        {status}
-                        {selectedStatus === status ? <span>{"\u2713"}</span> : null}
-                      </button>
-                    ))}
-                  </div>
-                ) : null}
-              </div>
-              <span className="inline-flex h-7 items-center gap-1 rounded-full bg-[#3236ad] px-3 text-[0.68em] font-semibold text-white">
-                {selectedStatus}
-                <span className="h-1.5 w-1.5 rounded-full bg-white" />
-              </span>
-            </div>
+            <TableFilters
+              dateFrom={dateFrom}
+              dateTo={dateTo}
+              filters={[{ label: "Status", value: selectedStatus, options: ["All", "On-going", "Pending"], onChange: (value) => setSelectedStatus(value as ManagedBookingRow["status"] | "All") }]}
+              onDateFromChange={setDateFrom}
+              onDateToChange={setDateTo}
+            />
 
             <DataTableShell>
                 <table className="w-full min-w-[920px] border-collapse text-left text-[0.74em] text-[#5f667b]">

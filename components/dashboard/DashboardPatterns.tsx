@@ -21,7 +21,7 @@ export function DashboardActionCard({ icon, title, description, toneClassName, h
       </div>
   );
 
-  const className = `flex min-h-20 items-center rounded-xl border px-3.5 py-3 ${toneClassName}${href ? " transition hover:-translate-y-0.5 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent" : ""}`;
+  const className = `flex min-h-20 items-center rounded-xl border px-3.5 py-3 ${toneClassName}${href ? " transition hover:-translate-y-0.5 hover:shadow-sm" : ""}`;
 
   return href ? <Link className={className} href={href}>{content}</Link> : <article className={className}>{content}</article>;
 }

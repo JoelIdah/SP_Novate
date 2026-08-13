@@ -13,12 +13,7 @@ function cx(...classes: Array<string | false | undefined>) {
   return classes.filter(Boolean).join(" ");
 }
 
-/**
- * Shared frame for student and tutor dashboard routes.
- *
- * Page scrolling is the default. A bounded workspace can opt into different
- * overflow behavior through mainClassName without rebuilding the app frame.
- */
+
 export function DashboardShell({
   navbar,
   children,

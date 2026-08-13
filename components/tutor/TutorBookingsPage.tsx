@@ -2,11 +2,12 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, EllipsisVertical } from "lucide-react";
+import { EllipsisVertical } from "lucide-react";
 
 import { DashboardShell } from "../layout/DashboardShell";
 import { DataToolbar } from "../ui/DataToolbar";
 import { DataTableShell } from "../ui/DataTableShell";
+import { TableFilters } from "../ui/TableFilters";
 import { StatusIndicator, type StatusTone } from "../ui/StatusIndicator";
 import { TutorNavbar } from "./TutorNavbar";
 
@@ -47,8 +48,6 @@ const statusTone: Record<BookingStatus, StatusTone> = {
 export default function TutorBookingsPage() {
   const router = useRouter();
   const [selectedStatus, setSelectedStatus] = useState<BookingStatus | "All">("All");
-  const [isDateMenuOpen, setIsDateMenuOpen] = useState(false);
-  const [isStatusMenuOpen, setIsStatusMenuOpen] = useState(false);
   const [openActionIndex, setOpenActionIndex] = useState<number | null>(null);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
@@ -70,10 +69,6 @@ export default function TutorBookingsPage() {
     setOpenActionIndex(null);
   };
 
-  const formatRangeLabel = dateFrom || dateTo
-    ? `${dateFrom ? dateFrom.replaceAll("-", "/") : "..."} - ${dateTo ? dateTo.replaceAll("-", "/") : "..."}`
-    : "All dates";
-
   return (
     <DashboardShell navbar={<TutorNavbar active="Bookings" />}>
       <section className="w-full py-4 md:py-5">
@@ -81,86 +76,14 @@ export default function TutorBookingsPage() {
 
               <div className="mt-5 sm:mt-6"><DataToolbar placeholder="Search student name or booking ID" /></div>
 
-              <div className="mt-2.5 flex flex-wrap items-center gap-2 border-b border-[#e7ebf4] pb-3 md:gap-2.5">
-                <div className="relative">
-                  <button
-                    className="inline-flex h-11 items-center gap-1 rounded-full border border-[#e2e7f2] bg-white px-3 text-[0.68em] font-semibold text-[#747e95] md:h-8"
-                    onClick={() => {
-                      setIsDateMenuOpen((prev) => !prev);
-                      setIsStatusMenuOpen(false);
-                    }}
-                    type="button"
-                  >
-                    Date
-                    <ChevronDown className="h-3 w-3" />
-                  </button>
-                  {isDateMenuOpen ? (
-                    <div className="absolute left-0 top-[calc(100%+0.4rem)] z-30 w-[13.5rem] rounded-lg border border-[#dfe4ef] bg-white p-2.5 shadow-[0_10px_24px_rgba(32,41,78,0.14)]">
-                      <p className="mb-1.5 text-[0.72rem] font-semibold text-[#55607a]">Pick date range</p>
-                      <label className="mb-1.5 block text-[0.66rem] font-semibold text-[#7a8299]">
-                        From
-                        <input
-                          className="mt-1 h-11 w-full rounded-md border border-[#d8deea] px-2 text-[0.72rem] md:h-10"
-                          onChange={(event) => {
-                            setDateFrom(event.target.value);
-                          }}
-                          type="date"
-                          value={dateFrom}
-                        />
-                      </label>
-                      <label className="block text-[0.66rem] font-semibold text-[#7a8299]">
-                        To
-                        <input
-                          className="mt-1 h-11 w-full rounded-md border border-[#d8deea] px-2 text-[0.72rem] md:h-10"
-                          onChange={(event) => {
-                            setDateTo(event.target.value);
-                          }}
-                          type="date"
-                          value={dateTo}
-                        />
-                      </label>
-                    </div>
-                  ) : null}
-                </div>
-                <span className="inline-flex h-7 items-center rounded-full bg-[#3236ad] px-3 text-[0.68em] font-semibold text-white">{formatRangeLabel}</span>
-                <div className="relative">
-                  <button
-                    className="inline-flex h-11 items-center gap-1 rounded-full border border-[#e2e7f2] bg-white px-3 text-[0.68em] font-semibold text-[#747e95] md:h-8"
-                    onClick={() => {
-                      setIsStatusMenuOpen((prev) => !prev);
-                      setIsDateMenuOpen(false);
-                    }}
-                    type="button"
-                  >
-                    Statuses
-                    <ChevronDown className="h-3 w-3" />
-                  </button>
-                  {isStatusMenuOpen ? (
-                    <div className="absolute left-0 top-[calc(100%+0.45rem)] z-30 w-[13rem] rounded-xl border border-[#dfe4ef] bg-white p-2 shadow-[0_10px_28px_rgba(32,41,78,0.18)] 2xl:w-[15rem] 2xl:p-2.5">
-                      {(["All", "Completed", "Pending", "Awaiting approval", "Rejected"] as const).map((status) => (
-                        <button
-                          key={status}
-                          className={`flex min-h-11 w-full items-center justify-between rounded-md px-2 py-1.5 text-[0.78rem] md:min-h-9 2xl:px-2.5 2xl:py-2 2xl:text-[0.92rem] ${
-                            selectedStatus === status ? "bg-[#eef0ff] text-[#2f34aa]" : "text-[#5f667b]"
-                          }`}
-                          onClick={() => {
-                            setSelectedStatus(status);
-                            setIsStatusMenuOpen(false);
-                          }}
-                          type="button"
-                        >
-                          {status}
-                          {selectedStatus === status ? <span>{"\u2713"}</span> : null}
-                        </button>
-                      ))}
-                    </div>
-                  ) : null}
-                </div>
-                <span className="inline-flex h-7 items-center gap-1 rounded-full bg-[#3236ad] px-3 text-[0.68em] font-semibold text-white">
-                  {selectedStatus}
-                  <span className="h-1.5 w-1.5 rounded-full bg-white" />
-                </span>
-              </div>
+              <TableFilters
+                className="mt-2.5"
+                dateFrom={dateFrom}
+                dateTo={dateTo}
+                filters={[{ label: "Status", value: selectedStatus, options: ["All", "Completed", "Pending", "Awaiting approval", "Rejected"], onChange: (value) => setSelectedStatus(value as BookingStatus | "All") }]}
+                onDateFromChange={setDateFrom}
+                onDateToChange={setDateTo}
+              />
 
               <DataTableShell className="mt-3">
                   <table className="w-full min-w-[920px] border-collapse text-left text-[0.74em] text-[#5f667b]">

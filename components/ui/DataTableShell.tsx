@@ -12,7 +12,7 @@ type DataTableShellProps = {
  * Shared desktop frame for dashboard data tables.
  *
  * The table follows its content height until it reaches the visible viewport.
- * At that point only the table region scrolls, leaving pagination visible.
+ * At that point only the rows region scrolls beneath the sticky table header.
  */
 export function DataTableShell({
   children,

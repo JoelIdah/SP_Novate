@@ -1,13 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { ArrowLeft, ArrowUpDown, BanknoteArrowDown, CalendarDays, CheckCircle2, Copy, EllipsisVertical, Landmark, Wallet } from "lucide-react";
 
 import { StudentDashboardNavbar } from "../dashboard/StudentDashboardNavbar";
+import { TutorNavbar } from "../tutor/TutorNavbar";
 import { DashboardShell } from "../layout/DashboardShell";
 import { MetricCard } from "../ui/MetricCard";
 import { DataToolbar } from "../ui/DataToolbar";
-import { Pagination } from "../ui/Pagination";
+import { DataTableShell } from "../ui/DataTableShell";
 import { StatusIndicator, type StatusTone } from "../ui/StatusIndicator";
 import ResponsiveSheet from "../ui/ResponsiveSheet";
 
@@ -41,8 +42,6 @@ const statusTone: Record<TxStatus, StatusTone> = {
   Failed: "danger",
 };
 
-const mobileRowsPerPage = 5;
-
 async function writeClipboard(text: string) {
   if (navigator.clipboard?.writeText) {
     await navigator.clipboard.writeText(text);
@@ -58,7 +57,23 @@ async function writeClipboard(text: string) {
   textarea.remove();
 }
 
-export default function TransactionsPage() {
+type TransactionRole = "student" | "tutor";
+
+const transactionMetrics = {
+  student: [
+    { label: "Total Value", value: "₦147,846.50", icon: <Wallet className="h-4 w-4 text-[#dca95a]" /> },
+    { label: "Successful Transactions", value: "6", icon: <CheckCircle2 className="h-4 w-4 text-[#289c7f]" /> },
+    { label: "Session Fees", value: "₦4,000", icon: <BanknoteArrowDown className="h-4 w-4 text-[#9553da]" /> },
+    { label: "Finders Fees", value: "₦500", icon: <Landmark className="h-4 w-4 text-[#157ac8]" /> },
+  ],
+  tutor: [
+    { label: "Total Value", value: "₦147,846.50", icon: <Wallet className="h-4 w-4 text-[#dca95a]" /> },
+    { label: "Successful Transactions", value: "6", icon: <CheckCircle2 className="h-4 w-4 text-[#289c7f]" /> },
+    { label: "Session Fees", value: "₦4,000", icon: <BanknoteArrowDown className="h-4 w-4 text-[#9553da]" /> },
+  ],
+} satisfies Record<TransactionRole, Array<{ label: string; value: string; icon: ReactNode }>>;
+
+export default function TransactionsPage({ role = "student" }: { role?: TransactionRole }) {
   const [selectedStatus, setSelectedStatus] = useState<"All" | TxStatus>("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [newestFirst, setNewestFirst] = useState(true);
@@ -70,38 +85,6 @@ export default function TransactionsPage() {
   const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
   const [copiedId, setCopiedId] = useState("");
   const [shareFeedback, setShareFeedback] = useState("");
-  const [page, setPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
-  const desktopTableViewportRef = useRef<HTMLDivElement | null>(null);
-  const desktopTableRef = useRef<HTMLTableElement | null>(null);
-
-  useEffect(() => {
-    const computeRowsPerPage = () => {
-      const viewport = desktopTableViewportRef.current;
-      const table = desktopTableRef.current;
-      if (!viewport || !table) return;
-      if (viewport.clientHeight <= 0 || table.offsetParent === null) return;
-
-      const headHeight = table.tHead?.getBoundingClientRect().height ?? 40;
-      const firstRow = table.tBodies[0]?.rows[0];
-      const rowHeight = firstRow?.getBoundingClientRect().height ?? 40;
-      const availableHeight = viewport.clientHeight - headHeight;
-      const nextRowsPerPage = Math.max(1, Math.floor(availableHeight / Math.max(rowHeight, 1)));
-
-      setRowsPerPage((prev) => (prev === nextRowsPerPage ? prev : nextRowsPerPage));
-    };
-
-    computeRowsPerPage();
-    const resizeObserver = new ResizeObserver(computeRowsPerPage);
-    if (desktopTableViewportRef.current) resizeObserver.observe(desktopTableViewportRef.current);
-    if (desktopTableRef.current) resizeObserver.observe(desktopTableRef.current);
-    window.addEventListener("resize", computeRowsPerPage);
-    return () => {
-      resizeObserver.disconnect();
-      window.removeEventListener("resize", computeRowsPerPage);
-    };
-  }, [dateFrom, dateTo, searchQuery, selectedStatus]);
-
   const filteredRows = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
     const rows = transactions.filter((row) => {
@@ -120,19 +103,6 @@ export default function TransactionsPage() {
       return newestFirst ? difference : -difference;
     });
   }, [dateFrom, dateTo, newestFirst, searchQuery, selectedStatus]);
-
-  const totalPages = Math.max(1, Math.ceil(filteredRows.length / rowsPerPage));
-  const currentPage = Math.min(page, totalPages);
-  const paginatedRows = useMemo(() => {
-    const start = (currentPage - 1) * rowsPerPage;
-    return filteredRows.slice(start, start + rowsPerPage);
-  }, [currentPage, filteredRows, rowsPerPage]);
-  const mobileTotalPages = Math.max(1, Math.ceil(filteredRows.length / mobileRowsPerPage));
-  const mobileCurrentPage = Math.min(page, mobileTotalPages);
-  const mobilePaginatedRows = useMemo(() => {
-    const start = (mobileCurrentPage - 1) * mobileRowsPerPage;
-    return filteredRows.slice(start, start + mobileRowsPerPage);
-  }, [filteredRows, mobileCurrentPage]);
 
   const openDetails = (tx: Transaction) => {
     setSelectedTx(tx);
@@ -167,18 +137,18 @@ export default function TransactionsPage() {
   const formatRangeLabel = dateFrom || dateTo
     ? `${dateFrom ? dateFrom.replaceAll("-", "/") : "..."} - ${dateTo ? dateTo.replaceAll("-", "/") : "..."}`
     : "All dates";
+  const navbar = role === "tutor" ? <TutorNavbar active="Transactions" /> : <StudentDashboardNavbar active="Transactions" />;
+  const metrics = transactionMetrics[role];
 
   return (
     <>
-      <DashboardShell mainClassName="min-h-0 md:overflow-hidden" navbar={<StudentDashboardNavbar active="Transactions" />}>
-        <section className="flex min-h-full w-full flex-col py-4 md:h-full md:min-h-0 md:py-5">
-              <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
-                <MetricCard icon={<Wallet className="h-4 w-4 text-[#dca95a]" />} label="Total Value" value="₦147,846.50" />
-                <MetricCard icon={<CheckCircle2 className="h-4 w-4 text-[#289c7f]" />} label="Successful Transactions" value="6" />
-                <MetricCard icon={<BanknoteArrowDown className="h-4 w-4 text-[#9553da]" />} label="Session Fees" value="₦4,000" />
-                <MetricCard icon={<Landmark className="h-4 w-4 text-[#157ac8]" />} label="Finders Fees" value="₦500" />
+      <DashboardShell navbar={navbar}>
+        <section className="w-full py-4 md:py-5">
+              <div className={`grid gap-2.5 sm:grid-cols-2 ${metrics.length === 4 ? "xl:grid-cols-4" : "lg:grid-cols-3"}`}>
+                {metrics.map((metric) => <MetricCard icon={metric.icon} key={metric.label} label={metric.label} value={metric.value} />)}
               </div>
 
+              <div className="mt-5 sm:mt-6">
               <DataToolbar
                 actions={(
                   <button className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-lg border border-ui-border bg-white px-3 text-xs font-semibold text-ui-body hover:bg-[#f7f8fb] md:min-h-10" onClick={() => setNewestFirst((current) => !current)} type="button">
@@ -188,11 +158,11 @@ export default function TransactionsPage() {
                 )}
                 onChange={(value) => {
                   setSearchQuery(value);
-                  setPage(1);
                 }}
                 placeholder="Search transactions"
                 value={searchQuery}
               />
+              </div>
 
               <div className="mt-2.5 flex flex-wrap items-center gap-2 border-b border-[#e7ebf4] pb-3 md:gap-2.5">
                 <div className="relative">
@@ -212,11 +182,11 @@ export default function TransactionsPage() {
                       <p className="mb-2 text-[0.78rem] font-semibold text-[#55607a] 2xl:mb-2.5 2xl:text-[0.92rem]">Pick date range</p>
                       <label className="mb-2 block text-[0.72rem] font-semibold text-[#7a8299] 2xl:mb-2.5 2xl:text-[0.84rem]">
                         From
-                        <input className="mt-1 h-11 w-full rounded-md border border-[#d8deea] px-2 text-[0.78rem] md:h-10 2xl:mt-1.5 2xl:text-[0.9rem]" onChange={(e) => { setDateFrom(e.target.value); setPage(1); }} type="date" value={dateFrom} />
+                        <input className="mt-1 h-11 w-full rounded-md border border-[#d8deea] px-2 text-[0.78rem] md:h-10 2xl:mt-1.5 2xl:text-[0.9rem]" onChange={(e) => setDateFrom(e.target.value)} type="date" value={dateFrom} />
                       </label>
                       <label className="block text-[0.72rem] font-semibold text-[#7a8299] 2xl:text-[0.84rem]">
                         To
-                        <input className="mt-1 h-11 w-full rounded-md border border-[#d8deea] px-2 text-[0.78rem] md:h-10 2xl:mt-1.5 2xl:text-[0.9rem]" onChange={(e) => { setDateTo(e.target.value); setPage(1); }} type="date" value={dateTo} />
+                        <input className="mt-1 h-11 w-full rounded-md border border-[#d8deea] px-2 text-[0.78rem] md:h-10 2xl:mt-1.5 2xl:text-[0.9rem]" onChange={(e) => setDateTo(e.target.value)} type="date" value={dateTo} />
                       </label>
                     </div>
                   ) : null}
@@ -244,7 +214,6 @@ export default function TransactionsPage() {
                           }`}
                           onClick={() => {
                             setSelectedStatus(status);
-                            setPage(1);
                             setIsStatusMenuOpen(false);
                           }}
                           type="button"
@@ -262,9 +231,8 @@ export default function TransactionsPage() {
                 </span>
               </div>
 
-              <div className="mt-3 hidden min-h-0 flex-1 overflow-hidden rounded-xl border border-[#e3e8f2] bg-white md:flex md:flex-col">
-                <div className="min-h-0 flex-1 overflow-x-auto" ref={desktopTableViewportRef}>
-                  <table className="w-full min-w-[920px] border-collapse text-left text-[0.74em] text-[#5f667b]" ref={desktopTableRef}>
+              <DataTableShell className="mt-3">
+                  <table className="w-full min-w-[920px] border-collapse text-left text-[0.74em] text-[#5f667b]">
                     <thead className="bg-[#f2f5fa] text-[#676f85]">
                       <tr>
                         {["Status", "Reference", "Amount", "Method", "Type", "Date Created", ""].map((head) => (
@@ -273,7 +241,7 @@ export default function TransactionsPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {paginatedRows.map((row, idx) => (
+                      {filteredRows.map((row, idx) => (
                         <tr className="cursor-pointer border-t border-[#edf0f6] hover:bg-[#fafbff]" key={`${row.id}-${idx}`} onClick={() => openDetails(row)}>
                           <td className="px-3 py-2.5">
                             <StatusIndicator label={row.status} tone={statusTone[row.status]} />
@@ -293,17 +261,15 @@ export default function TransactionsPage() {
                           <td className="px-3 py-2.5 text-right"><EllipsisVertical className="ml-auto h-3.5 w-3.5 text-[#6f768c]" /></td>
                         </tr>
                       ))}
-                      {paginatedRows.length === 0 ? (
+                      {filteredRows.length === 0 ? (
                         <tr><td className="px-4 py-10 text-center text-sm text-[#7a8297]" colSpan={7}>No transactions match your search and filters.</td></tr>
                       ) : null}
                     </tbody>
                   </table>
-                </div>
-                <Pagination className="border-t border-ui-border px-3 py-2.5" onNext={() => setPage((prev) => Math.min(totalPages, prev + 1))} onPrevious={() => setPage((prev) => Math.max(1, prev - 1))} page={currentPage} totalPages={totalPages} />
-              </div>
+              </DataTableShell>
 
               <div className="mt-3 space-y-1.5 pb-6 md:hidden">
-                {mobilePaginatedRows.map((row, idx) => (
+                {filteredRows.map((row, idx) => (
                   <article className="rounded-lg border border-[#e6eaf3] bg-white px-3 py-2.5" key={`${row.id}-mobile-${idx}`}>
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
@@ -324,8 +290,7 @@ export default function TransactionsPage() {
                     <button className="mt-2 min-h-11 w-full rounded-lg border border-[#e0e5f0] bg-[#fafbfe] text-[0.72em] font-semibold text-[#4f576d]" onClick={() => openDetails(row)} type="button">View transaction details</button>
                   </article>
                 ))}
-                {mobilePaginatedRows.length === 0 ? <p className="rounded-lg border border-dashed border-[#dce1ec] px-4 py-10 text-center text-sm text-[#7a8297]">No transactions match your search and filters.</p> : null}
-                <Pagination className="border-t border-ui-border pt-2" onNext={() => setPage((prev) => Math.min(mobileTotalPages, prev + 1))} onPrevious={() => setPage((prev) => Math.max(1, prev - 1))} page={mobileCurrentPage} totalPages={mobileTotalPages} />
+                {filteredRows.length === 0 ? <p className="rounded-lg border border-dashed border-[#dce1ec] px-4 py-10 text-center text-sm text-[#7a8297]">No transactions match your search and filters.</p> : null}
               </div>
         </section>
       </DashboardShell>

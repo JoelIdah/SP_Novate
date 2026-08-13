@@ -1,6 +1,6 @@
  "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { CalendarDays, ChevronDown, ChevronRight, ClipboardList, Compass, EllipsisVertical, MapPin, Search, Star } from "lucide-react";
@@ -10,6 +10,7 @@ import { DashboardShell } from "../layout/DashboardShell";
 import { Avatar } from "../ui/Avatar";
 import { Card } from "../ui/Card";
 import ResponsiveSheet from "../ui/ResponsiveSheet";
+import { DataTableShell } from "../ui/DataTableShell";
 
 type TutorCard = {
   name: string;
@@ -117,8 +118,6 @@ const managedRows: ManagedBookingRow[] = [
   { date: "March 18, 2026", tutor: "Mr. Oluyinka Alabi", department: "Academics", subject: "Information Technology", time: "4:00 PM", duration: "1 Hour", status: "Pending" },
 ];
 
-const mobileRowsPerPage = 5;
-
 type BookingView = "explore" | "manage";
 
 export default function BookingsPage({ initialView = "explore", notice }: { initialView?: BookingView; notice?: string }) {
@@ -139,39 +138,6 @@ export default function BookingsPage({ initialView = "explore", notice }: { init
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [selectedStatus, setSelectedStatus] = useState<ManagedBookingRow["status"] | "All">("All");
-  const [managePage, setManagePage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(8);
-  const desktopTableViewportRef = useRef<HTMLDivElement | null>(null);
-  const desktopTableRef = useRef<HTMLTableElement | null>(null);
-
-  useEffect(() => {
-    const computeRowsPerPage = () => {
-      if (view !== "manage") return;
-      const viewport = desktopTableViewportRef.current;
-      const table = desktopTableRef.current;
-      if (!viewport || !table) return;
-      if (viewport.clientHeight <= 0 || table.offsetParent === null) return;
-
-      const headHeight = table.tHead?.getBoundingClientRect().height ?? 40;
-      const firstRow = table.tBodies[0]?.rows[0];
-      const rowHeight = firstRow?.getBoundingClientRect().height ?? 40;
-      const availableHeight = viewport.clientHeight - headHeight;
-      const nextRowsPerPage = Math.max(1, Math.floor(availableHeight / Math.max(rowHeight, 1)));
-
-      setRowsPerPage((prev) => (prev === nextRowsPerPage ? prev : nextRowsPerPage));
-    };
-
-    computeRowsPerPage();
-    const resizeObserver = new ResizeObserver(computeRowsPerPage);
-    if (desktopTableViewportRef.current) resizeObserver.observe(desktopTableViewportRef.current);
-    if (desktopTableRef.current) resizeObserver.observe(desktopTableRef.current);
-    window.addEventListener("resize", computeRowsPerPage);
-    return () => {
-      resizeObserver.disconnect();
-      window.removeEventListener("resize", computeRowsPerPage);
-    };
-  }, [view, dateFrom, dateTo, selectedStatus]);
-
   const activeFilterCount = useMemo(
     () => [subject, category, location, days, time, rating].filter(Boolean).length,
     [subject, category, location, days, time, rating]
@@ -202,19 +168,6 @@ export default function BookingsPage({ initialView = "explore", notice }: { init
     return newestFirst ? [...rows].reverse() : rows;
   }, [dateFrom, dateTo, manageQuery, newestFirst, selectedStatus]);
 
-  const totalManagePages = Math.max(1, Math.ceil(filteredManagedRows.length / rowsPerPage));
-  const currentManagePage = Math.min(managePage, totalManagePages);
-  const paginatedManagedRows = useMemo(() => {
-    const start = (currentManagePage - 1) * rowsPerPage;
-    return filteredManagedRows.slice(start, start + rowsPerPage);
-  }, [currentManagePage, filteredManagedRows, rowsPerPage]);
-  const mobileTotalManagePages = Math.max(1, Math.ceil(filteredManagedRows.length / mobileRowsPerPage));
-  const mobileCurrentManagePage = Math.min(managePage, mobileTotalManagePages);
-  const mobilePaginatedManagedRows = useMemo(() => {
-    const start = (mobileCurrentManagePage - 1) * mobileRowsPerPage;
-    return filteredManagedRows.slice(start, start + mobileRowsPerPage);
-  }, [filteredManagedRows, mobileCurrentManagePage]);
-
   const formatRangeLabel = dateFrom || dateTo
     ? `${dateFrom ? dateFrom.replaceAll("-", "/") : "..."} - ${dateTo ? dateTo.replaceAll("-", "/") : "..."}`
     : "All dates";
@@ -230,17 +183,16 @@ export default function BookingsPage({ initialView = "explore", notice }: { init
 
   const changeView = (nextView: BookingView) => {
     setView(nextView);
-    setManagePage(1);
     router.replace(nextView === "manage" ? "/students/bookings?view=manage" : "/students/bookings", { scroll: false });
   };
 
   return (
     <>
       <DashboardShell
-        mainClassName={view === "explore" ? "scrollbar-hover" : "md:overflow-hidden"}
+        mainClassName="scrollbar-hover"
         navbar={<StudentDashboardNavbar active="Bookings" />}
       >
-        <section className={`w-full py-4 md:py-5 ${view === "manage" ? "flex min-h-full flex-col md:h-full md:min-h-0" : "space-y-5 2xl:space-y-6"}`}>
+        <section className={`w-full py-4 md:py-5 ${view === "manage" ? "flex min-h-full flex-col" : "space-y-5 2xl:space-y-6"}`}>
         <div className="flex flex-wrap gap-[0.55em]">
           <button
             className={`inline-flex min-h-11 items-center gap-[0.55em] rounded-full border px-[1em] py-[0.45em] text-[0.74em] font-semibold md:min-h-9 ${
@@ -397,7 +349,7 @@ export default function BookingsPage({ initialView = "explore", notice }: { init
           {filteredTutors.length === 0 ? <p className="col-span-full rounded-2xl border border-dashed border-[#d9deea] bg-[#fafbfe] px-4 py-10 text-center text-sm text-[#747d92]">No tutors match your search and filters.</p> : null}
           </div>
         ) : (
-          <section className="flex h-full min-h-0 flex-col space-y-4">
+          <section className="flex flex-col space-y-4">
             <div className="flex items-center justify-between gap-3">
               <h1 className="text-[2em] font-semibold leading-none text-[#2f3547]">Manage booking</h1>
               <button
@@ -421,10 +373,7 @@ export default function BookingsPage({ initialView = "explore", notice }: { init
                   className="h-11 w-full rounded-full border border-[#e0e5f0] bg-white pl-9 pr-3 text-[0.76em] text-[#4a5265] placeholder:text-[#b1b7c6] md:h-8"
                   placeholder="Search tutor name or booking ID"
                   type="search"
-                  onChange={(event) => {
-                    setManageQuery(event.target.value);
-                    setManagePage(1);
-                  }}
+                  onChange={(event) => setManageQuery(event.target.value)}
                   value={manageQuery}
                 />
               </div>
@@ -454,10 +403,7 @@ export default function BookingsPage({ initialView = "explore", notice }: { init
                       From
                       <input
                         className="mt-1 h-9 w-full rounded-md border border-[#d8deea] px-2 text-[0.78rem] 2xl:mt-1.5 2xl:h-10 2xl:text-[0.9rem]"
-                        onChange={(e) => {
-                          setDateFrom(e.target.value);
-                          setManagePage(1);
-                        }}
+                        onChange={(e) => setDateFrom(e.target.value)}
                         type="date"
                         value={dateFrom}
                       />
@@ -466,10 +412,7 @@ export default function BookingsPage({ initialView = "explore", notice }: { init
                       To
                       <input
                         className="mt-1 h-9 w-full rounded-md border border-[#d8deea] px-2 text-[0.78rem] 2xl:mt-1.5 2xl:h-10 2xl:text-[0.9rem]"
-                        onChange={(e) => {
-                          setDateTo(e.target.value);
-                          setManagePage(1);
-                        }}
+                        onChange={(e) => setDateTo(e.target.value)}
                         type="date"
                         value={dateTo}
                       />
@@ -500,7 +443,6 @@ export default function BookingsPage({ initialView = "explore", notice }: { init
                         }`}
                         onClick={() => {
                           setSelectedStatus(status);
-                          setManagePage(1);
                           setIsStatusMenuOpen(false);
                         }}
                         type="button"
@@ -518,9 +460,8 @@ export default function BookingsPage({ initialView = "explore", notice }: { init
               </span>
             </div>
 
-            <div className="hidden min-h-0 flex-1 overflow-hidden rounded-xl border border-[#e3e8f2] bg-white md:flex md:flex-col">
-              <div className="min-h-0 flex-1 overflow-x-auto" ref={desktopTableViewportRef}>
-                <table className="w-full min-w-[920px] border-collapse text-left text-[0.74em] text-[#5f667b]" ref={desktopTableRef}>
+            <DataTableShell>
+                <table className="w-full min-w-[920px] border-collapse text-left text-[0.74em] text-[#5f667b]">
                   <thead className="bg-[#f2f5fa] text-[#676f85]">
                     <tr>
                       {["Date", "Tutor", "Department", "Subject", "Time", "Duration", "Status", ""].map((head) => (
@@ -529,8 +470,9 @@ export default function BookingsPage({ initialView = "explore", notice }: { init
                     </tr>
                   </thead>
                   <tbody>
-                    {paginatedManagedRows.map((row, index) => {
-                      const rowIndex = (currentManagePage - 1) * rowsPerPage + index;
+                    {filteredManagedRows.map((row, index) => {
+                      const originalIndex = managedRows.indexOf(row);
+                      const rowIndex = originalIndex >= 0 ? originalIndex : index;
                       return (
                       <tr
                         key={`${row.date}-${rowIndex}`}
@@ -565,33 +507,10 @@ export default function BookingsPage({ initialView = "explore", notice }: { init
                     })}
                   </tbody>
                 </table>
-              </div>
-
-              <div className="flex items-center justify-between border-t border-[#edf0f6] px-3 py-2.5 text-[0.68em] text-[#6f768c]">
-                <div className="flex items-center gap-1.5">
-                  <button
-                    className="rounded-md border border-[#e2e7f2] px-2 py-1 text-[#5f667b] disabled:cursor-not-allowed disabled:opacity-50"
-                    disabled={currentManagePage === 1}
-                    onClick={() => setManagePage((prev) => Math.max(1, prev - 1))}
-                    type="button"
-                  >
-                    Previous
-                  </button>
-                  <button
-                    className="rounded-md border border-[#e2e7f2] px-2 py-1 text-[#5f667b] disabled:cursor-not-allowed disabled:opacity-50"
-                    disabled={currentManagePage >= totalManagePages}
-                    onClick={() => setManagePage((prev) => Math.min(totalManagePages, prev + 1))}
-                    type="button"
-                  >
-                    Next
-                  </button>
-                </div>
-                <span>Page {currentManagePage} of {totalManagePages}</span>
-              </div>
-            </div>
+            </DataTableShell>
 
             <div className="space-y-1.5 pb-6 md:hidden">
-              {mobilePaginatedManagedRows.map((row, index) => {
+              {filteredManagedRows.map((row, index) => {
                 const originalIndex = managedRows.indexOf(row);
                 const rowIndex = originalIndex >= 0 ? originalIndex : index;
                 return (
@@ -622,25 +541,6 @@ export default function BookingsPage({ initialView = "explore", notice }: { init
                 </Link>
                 );
               })}
-              <div className="flex items-center justify-between border-t border-[#edf0f6] pt-2 text-[0.72em] text-[#6f768c]">
-                <button
-                  className="rounded-md border border-[#e2e7f2] px-2 py-1 text-[#5f667b] disabled:cursor-not-allowed disabled:opacity-50"
-                  disabled={mobileCurrentManagePage === 1}
-                  onClick={() => setManagePage((prev) => Math.max(1, prev - 1))}
-                  type="button"
-                >
-                  Previous
-                </button>
-                <span>Page {mobileCurrentManagePage} of {mobileTotalManagePages}</span>
-                <button
-                  className="rounded-md border border-[#e2e7f2] px-2 py-1 text-[#5f667b] disabled:cursor-not-allowed disabled:opacity-50"
-                  disabled={mobileCurrentManagePage >= mobileTotalManagePages}
-                  onClick={() => setManagePage((prev) => Math.min(mobileTotalManagePages, prev + 1))}
-                  type="button"
-                >
-                  Next
-                </button>
-              </div>
             </div>
           </section>
         )}

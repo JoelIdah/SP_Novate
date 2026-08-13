@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronDown, EllipsisVertical } from "lucide-react";
 
 import { DashboardShell } from "../layout/DashboardShell";
 import { DataToolbar } from "../ui/DataToolbar";
-import { Pagination } from "../ui/Pagination";
+import { DataTableShell } from "../ui/DataTableShell";
 import { StatusIndicator, type StatusTone } from "../ui/StatusIndicator";
 import { TutorNavbar } from "./TutorNavbar";
 
@@ -44,8 +44,6 @@ const statusTone: Record<BookingStatus, StatusTone> = {
   Rejected: "danger",
 };
 
-const mobileRowsPerPage = 5;
-
 export default function TutorBookingsPage() {
   const router = useRouter();
   const [selectedStatus, setSelectedStatus] = useState<BookingStatus | "All">("All");
@@ -54,38 +52,6 @@ export default function TutorBookingsPage() {
   const [openActionIndex, setOpenActionIndex] = useState<number | null>(null);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
-  const [page, setPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
-  const desktopTableViewportRef = useRef<HTMLDivElement | null>(null);
-  const desktopTableRef = useRef<HTMLTableElement | null>(null);
-
-  useEffect(() => {
-    const computeRowsPerPage = () => {
-      const viewport = desktopTableViewportRef.current;
-      const table = desktopTableRef.current;
-      if (!viewport || !table) return;
-      if (viewport.clientHeight <= 0 || table.offsetParent === null) return;
-
-      const headHeight = table.tHead?.getBoundingClientRect().height ?? 40;
-      const firstRow = table.tBodies[0]?.rows[0];
-      const rowHeight = firstRow?.getBoundingClientRect().height ?? 40;
-      const availableHeight = viewport.clientHeight - headHeight;
-      const nextRowsPerPage = Math.max(1, Math.floor(availableHeight / Math.max(rowHeight, 1)));
-
-      setRowsPerPage((prev) => (prev === nextRowsPerPage ? prev : nextRowsPerPage));
-    };
-
-    computeRowsPerPage();
-    const resizeObserver = new ResizeObserver(computeRowsPerPage);
-    if (desktopTableViewportRef.current) resizeObserver.observe(desktopTableViewportRef.current);
-    if (desktopTableRef.current) resizeObserver.observe(desktopTableRef.current);
-    window.addEventListener("resize", computeRowsPerPage);
-    return () => {
-      resizeObserver.disconnect();
-      window.removeEventListener("resize", computeRowsPerPage);
-    };
-  }, [dateFrom, dateTo, selectedStatus]);
-
   const filteredRows = useMemo(() => {
     return bookingRequests.filter((row) => {
       const statusPass = selectedStatus === "All" ? true : row.status === selectedStatus;
@@ -99,19 +65,6 @@ export default function TutorBookingsPage() {
     });
   }, [dateFrom, dateTo, selectedStatus]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredRows.length / rowsPerPage));
-  const currentPage = Math.min(page, totalPages);
-  const paginatedRows = useMemo(() => {
-    const start = (currentPage - 1) * rowsPerPage;
-    return filteredRows.slice(start, start + rowsPerPage);
-  }, [currentPage, filteredRows, rowsPerPage]);
-  const mobileTotalPages = Math.max(1, Math.ceil(filteredRows.length / mobileRowsPerPage));
-  const mobileCurrentPage = Math.min(page, mobileTotalPages);
-  const mobilePaginatedRows = useMemo(() => {
-    const start = (mobileCurrentPage - 1) * mobileRowsPerPage;
-    return filteredRows.slice(start, start + mobileRowsPerPage);
-  }, [filteredRows, mobileCurrentPage]);
-
   const openDetails = (bookingIndex: number) => {
     router.push(`/tutor/bookings/manage/${bookingIndex + 1}`);
     setOpenActionIndex(null);
@@ -122,8 +75,8 @@ export default function TutorBookingsPage() {
     : "All dates";
 
   return (
-    <DashboardShell mainClassName="min-h-0 md:overflow-hidden" navbar={<TutorNavbar active="Bookings" />}>
-      <section className="flex min-h-full w-full flex-col py-4 md:h-full md:min-h-0 md:py-5">
+    <DashboardShell navbar={<TutorNavbar active="Bookings" />}>
+      <section className="w-full py-4 md:py-5">
               <h1 className="text-xl font-semibold tracking-[-0.01em] text-ui-title sm:text-2xl">Booking requests</h1>
 
               <div className="mt-5 sm:mt-6"><DataToolbar placeholder="Search student name or booking ID" /></div>
@@ -131,7 +84,7 @@ export default function TutorBookingsPage() {
               <div className="mt-2.5 flex flex-wrap items-center gap-2 border-b border-[#e7ebf4] pb-3 md:gap-2.5">
                 <div className="relative">
                   <button
-                    className="inline-flex h-7 items-center gap-1 rounded-full border border-[#e2e7f2] bg-white px-3 text-[0.68em] font-semibold text-[#747e95]"
+                    className="inline-flex h-11 items-center gap-1 rounded-full border border-[#e2e7f2] bg-white px-3 text-[0.68em] font-semibold text-[#747e95] md:h-8"
                     onClick={() => {
                       setIsDateMenuOpen((prev) => !prev);
                       setIsStatusMenuOpen(false);
@@ -147,10 +100,9 @@ export default function TutorBookingsPage() {
                       <label className="mb-1.5 block text-[0.66rem] font-semibold text-[#7a8299]">
                         From
                         <input
-                          className="mt-1 h-8 w-full rounded-md border border-[#d8deea] px-2 text-[0.72rem]"
+                          className="mt-1 h-11 w-full rounded-md border border-[#d8deea] px-2 text-[0.72rem] md:h-10"
                           onChange={(event) => {
                             setDateFrom(event.target.value);
-                            setPage(1);
                           }}
                           type="date"
                           value={dateFrom}
@@ -159,10 +111,9 @@ export default function TutorBookingsPage() {
                       <label className="block text-[0.66rem] font-semibold text-[#7a8299]">
                         To
                         <input
-                          className="mt-1 h-8 w-full rounded-md border border-[#d8deea] px-2 text-[0.72rem]"
+                          className="mt-1 h-11 w-full rounded-md border border-[#d8deea] px-2 text-[0.72rem] md:h-10"
                           onChange={(event) => {
                             setDateTo(event.target.value);
-                            setPage(1);
                           }}
                           type="date"
                           value={dateTo}
@@ -174,7 +125,7 @@ export default function TutorBookingsPage() {
                 <span className="inline-flex h-7 items-center rounded-full bg-[#3236ad] px-3 text-[0.68em] font-semibold text-white">{formatRangeLabel}</span>
                 <div className="relative">
                   <button
-                    className="inline-flex h-7 items-center gap-1 rounded-full border border-[#e2e7f2] bg-white px-3 text-[0.68em] font-semibold text-[#747e95]"
+                    className="inline-flex h-11 items-center gap-1 rounded-full border border-[#e2e7f2] bg-white px-3 text-[0.68em] font-semibold text-[#747e95] md:h-8"
                     onClick={() => {
                       setIsStatusMenuOpen((prev) => !prev);
                       setIsDateMenuOpen(false);
@@ -189,12 +140,11 @@ export default function TutorBookingsPage() {
                       {(["All", "Completed", "Pending", "Awaiting approval", "Rejected"] as const).map((status) => (
                         <button
                           key={status}
-                          className={`flex w-full items-center justify-between rounded-md px-2 py-1.5 text-[0.78rem] 2xl:px-2.5 2xl:py-2 2xl:text-[0.92rem] ${
+                          className={`flex min-h-11 w-full items-center justify-between rounded-md px-2 py-1.5 text-[0.78rem] md:min-h-9 2xl:px-2.5 2xl:py-2 2xl:text-[0.92rem] ${
                             selectedStatus === status ? "bg-[#eef0ff] text-[#2f34aa]" : "text-[#5f667b]"
                           }`}
                           onClick={() => {
                             setSelectedStatus(status);
-                            setPage(1);
                             setIsStatusMenuOpen(false);
                           }}
                           type="button"
@@ -212,9 +162,8 @@ export default function TutorBookingsPage() {
                 </span>
               </div>
 
-              <div className="mt-3 hidden min-h-0 flex-1 overflow-hidden rounded-xl border border-[#e3e8f2] bg-white md:flex md:flex-col">
-                <div className="min-h-0 flex-1 overflow-x-auto" ref={desktopTableViewportRef}>
-                  <table className="w-full min-w-[920px] border-collapse text-left text-[0.74em] text-[#5f667b]" ref={desktopTableRef}>
+              <DataTableShell className="mt-3">
+                  <table className="w-full min-w-[920px] border-collapse text-left text-[0.74em] text-[#5f667b]">
                     <thead className="bg-[#f2f5fa] text-[#676f85]">
                       <tr>
                         {["Date", "Students", "Department", "Subject", "Time", "Duration", "Status", ""].map((head) => (
@@ -223,8 +172,9 @@ export default function TutorBookingsPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {paginatedRows.map((row, index) => {
-                        const rowIndex = (currentPage - 1) * rowsPerPage + index;
+                      {filteredRows.map((row, index) => {
+                        const originalIndex = bookingRequests.indexOf(row);
+                        const rowIndex = originalIndex >= 0 ? originalIndex : index;
                         return (
                           <tr
                             className="cursor-pointer border-t border-[#edf0f6] hover:bg-[#fafbff]"
@@ -264,12 +214,10 @@ export default function TutorBookingsPage() {
                       })}
                     </tbody>
                   </table>
-                </div>
-                <Pagination className="border-t border-ui-border px-3 py-2.5" onNext={() => setPage((prev) => Math.min(totalPages, prev + 1))} onPrevious={() => setPage((prev) => Math.max(1, prev - 1))} page={currentPage} totalPages={totalPages} />
-              </div>
+              </DataTableShell>
 
               <div className="mt-3 space-y-1.5 pb-6 md:hidden">
-                {mobilePaginatedRows.map((row, index) => {
+                {filteredRows.map((row, index) => {
                   const originalIndex = bookingRequests.indexOf(row);
                   const rowIndex = originalIndex >= 0 ? originalIndex : index;
                   return (
@@ -288,7 +236,6 @@ export default function TutorBookingsPage() {
                   </button>
                   );
                 })}
-                <Pagination className="border-t border-ui-border pt-2" onNext={() => setPage((prev) => Math.min(mobileTotalPages, prev + 1))} onPrevious={() => setPage((prev) => Math.max(1, prev - 1))} page={mobileCurrentPage} totalPages={mobileTotalPages} />
               </div>
       </section>
     </DashboardShell>

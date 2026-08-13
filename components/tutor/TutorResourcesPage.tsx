@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import {
   Archive,
   BookOpen,
@@ -16,7 +16,7 @@ import {
 import ResponsiveSheet from "../ui/ResponsiveSheet";
 import { DashboardShell } from "../layout/DashboardShell";
 import { DataToolbar } from "../ui/DataToolbar";
-import { Pagination } from "../ui/Pagination";
+import { DataTableShell } from "../ui/DataTableShell";
 import { StatusIndicator, type StatusTone } from "../ui/StatusIndicator";
 import { TutorNavbar } from "./TutorNavbar";
 
@@ -56,31 +56,13 @@ const statusTone: Record<ResourceStatus | ArchivedBy, StatusTone> = {
   Admin: "info",
 };
 
-const desktopRowsPerPage = 10;
-const mobileRowsPerPage = 5;
-
 export default function TutorResourcesPage() {
   const [activeTab, setActiveTab] = useState<ResourceTab>("manage");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [successOpen, setSuccessOpen] = useState(false);
-  const [page, setPage] = useState(1);
-
-  const totalPages = Math.max(1, Math.ceil(resources.length / desktopRowsPerPage));
-  const currentPage = Math.min(page, totalPages);
-  const mobileTotalPages = Math.max(1, Math.ceil(resources.length / mobileRowsPerPage));
-  const mobileCurrentPage = Math.min(page, mobileTotalPages);
   const tableHeads = activeTab === "manage"
     ? ["Title", "Type", "Department", "Subject", "Date", "Duration", "Status", ""]
     : ["Title", "Type", "Department", "Subject", "Date", "Duration", "Archived by", ""];
-
-  const visibleRows = useMemo(() => {
-    const start = (currentPage - 1) * desktopRowsPerPage;
-    return resources.slice(start, start + desktopRowsPerPage);
-  }, [currentPage]);
-  const mobileVisibleRows = useMemo(() => {
-    const start = (mobileCurrentPage - 1) * mobileRowsPerPage;
-    return resources.slice(start, start + mobileRowsPerPage);
-  }, [mobileCurrentPage]);
 
   const closeCreate = () => setIsCreateOpen(false);
   const showSuccess = () => {
@@ -90,8 +72,8 @@ export default function TutorResourcesPage() {
 
   return (
     <>
-      <DashboardShell mainClassName="min-h-0 md:overflow-hidden" navbar={<TutorNavbar active="Resources" />}>
-        <section className="w-full py-4 md:flex md:h-full md:min-h-0 md:flex-col md:py-5">
+      <DashboardShell navbar={<TutorNavbar active="Resources" />}>
+        <section className="w-full py-4 md:py-5">
               <div className="flex flex-wrap items-center gap-3 border-b border-[#e4e8f2] pb-4">
                 <TabButton active={activeTab === "manage"} icon={<Boxes className="h-3.5 w-3.5" />} label="Manage resources" onClick={() => setActiveTab("manage")} />
                 <TabButton active={activeTab === "archive"} icon={<Archive className="h-3.5 w-3.5" />} label="Archive resources" onClick={() => setActiveTab("archive")} />
@@ -120,8 +102,7 @@ export default function TutorResourcesPage() {
                 <FilterChip label="Type" />
               </div>
 
-              <div className="mt-4 hidden min-h-0 flex-1 overflow-hidden rounded-xl border border-[#e3e8f2] bg-white md:flex md:flex-col">
-                <div className="min-h-0 flex-1 overflow-x-auto">
+              <DataTableShell className="mt-4">
                   <table className="w-full min-w-[940px] border-collapse text-left text-[0.74em] text-[#5f667b]">
                     <thead className="bg-[#f2f5fa] text-[#525a6e]">
                       <tr>
@@ -131,7 +112,7 @@ export default function TutorResourcesPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {visibleRows.map((row, index) => (
+                      {resources.map((row, index) => (
                         <tr className="border-t border-[#edf0f6] hover:bg-[#fafbff]" key={`${row.title}-${index}`}>
                           <td className="px-3 py-2.5">{row.title}</td>
                           <td className="px-3 py-2.5">{row.type}</td>
@@ -149,13 +130,10 @@ export default function TutorResourcesPage() {
                       ))}
                     </tbody>
                   </table>
-                </div>
-
-                <Pagination className="border-t border-ui-border px-3 py-2.5" onNext={() => setPage((prev) => Math.min(totalPages, prev + 1))} onPrevious={() => setPage((prev) => Math.max(1, prev - 1))} page={currentPage} totalPages={totalPages} />
-              </div>
+              </DataTableShell>
 
               <div className="mt-3 space-y-1.5 pb-4 md:hidden">
-                {mobileVisibleRows.map((row, index) => (
+                {resources.map((row, index) => (
                   <article className="rounded-lg border border-[#e6eaf3] bg-white px-2.5 py-2" key={`${row.title}-mobile-${index}`}>
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
@@ -170,7 +148,6 @@ export default function TutorResourcesPage() {
                     </div>
                   </article>
                 ))}
-                <Pagination className="border-t border-ui-border pt-2" onNext={() => setPage((prev) => Math.min(mobileTotalPages, prev + 1))} onPrevious={() => setPage((prev) => Math.max(1, prev - 1))} page={mobileCurrentPage} totalPages={mobileTotalPages} />
               </div>
         </section>
       </DashboardShell>
@@ -212,7 +189,7 @@ function FeatureCard({ icon, iconClassName, title, text }: { icon: ReactNode; ic
 
 function FilterChip({ label }: { label: string }) {
   return (
-    <button className="inline-flex h-7 items-center gap-1 rounded-full bg-[#f4f5fb] px-3 text-[0.68em] font-semibold text-[#747e95]" type="button">
+    <button className="inline-flex h-11 items-center gap-1 rounded-full bg-[#f4f5fb] px-3 text-[0.68em] font-semibold text-[#747e95] md:h-8" type="button">
       {label}
       <span className="text-[0.9em]">+</span>
     </button>

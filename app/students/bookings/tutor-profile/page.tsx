@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   AlertCircle,
   CalendarDays,
@@ -73,6 +74,7 @@ function WatchButton() {
 }
 
 export default function TutorProfilePage() {
+  const router = useRouter();
   const [isBookingOpen, setIsBookingOpen] = useState(false);
   const [bookingStep, setBookingStep] = useState(1);
   const [bookingForm, setBookingForm] = useState<BookingForm>({
@@ -123,6 +125,13 @@ export default function TutorProfilePage() {
     });
   };
 
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("book") === "1") {
+      const timer = window.setTimeout(() => setIsBookingOpen(true), 0);
+      return () => window.clearTimeout(timer);
+    }
+  }, []);
+
   return (
     <main className="min-h-dvh bg-white text-[#2f3547]">
       <header className="border-b border-[#e6e9f2] bg-white">
@@ -137,13 +146,13 @@ export default function TutorProfilePage() {
             Bookings
           </Link>
 
-          <button
-            className="inline-flex items-center gap-1 rounded-full border border-[#e2e6ef] bg-[#f7f8fb] px-3 py-1.5 text-[0.76rem] font-semibold text-[#4f566c]"
-            type="button"
+          <Link
+            className="inline-flex min-h-11 items-center gap-1 rounded-full border border-[#e2e6ef] bg-[#f7f8fb] px-3 py-1.5 text-[0.76rem] font-semibold text-[#4f566c]"
+            href="/students/chat"
           >
             <HelpCircle className="h-3.5 w-3.5" />
             Need help
-          </button>
+          </Link>
         </div>
       </header>
 
@@ -203,15 +212,15 @@ export default function TutorProfilePage() {
               </button>
             </div>
             <p className="text-[0.72rem] text-[#8e96aa]">Tutor fee:</p>
-            <p className="text-3xl font-semibold leading-none text-[#3d3fd0] sm:text-4xl">N3,500/hr</p>
+            <p className="text-3xl font-semibold leading-none text-[#3d3fd0] sm:text-4xl">₦3,500/hr</p>
             <p className="mt-2 inline-flex items-center gap-1 text-[0.72rem] text-[#7f879a]">
               <CalendarDays className="h-3.5 w-3.5 text-[#5b60d7]" />
               Mondays Wednesdays Fridays
             </p>
             <div className="mt-4 flex gap-2">
-              <Button className="flex-1 py-2 text-[0.74rem] font-semibold" variant="secondary">
+              <Link className="inline-flex min-h-11 flex-1 items-center justify-center rounded-full border border-ui-border bg-white px-4 py-2 text-[0.74rem] font-semibold text-ui-body hover:bg-[#f7f8fb]" href="/students/chat?contact=1">
                 Send message
-              </Button>
+              </Link>
               <Button className="flex-1 py-2 text-[0.74rem] font-semibold" onClick={openBookingPanel} variant="primary">
                 Book a session
               </Button>
@@ -260,7 +269,7 @@ export default function TutorProfilePage() {
                     Mondays Wednesdays Fridays
                   </p>
                   <p className="mt-1 text-[0.72rem] text-[#8e96aa]">Tutor fee:</p>
-                  <p className="text-[2.05rem] font-semibold leading-none text-[#3d3fd0]">N3,500/hr</p>
+                  <p className="text-[2.05rem] font-semibold leading-none text-[#3d3fd0]">₦3,500/hr</p>
                 </Card>
                 <Card className="p-3">
                   <p className="inline-flex items-center gap-1 text-[0.78rem] font-semibold text-[#4f566b]">
@@ -273,7 +282,7 @@ export default function TutorProfilePage() {
                     Mondays Wednesdays Fridays
                   </p>
                   <p className="mt-1 text-[0.72rem] text-[#8e96aa]">Tutor fee:</p>
-                  <p className="text-[2.05rem] font-semibold leading-none text-[#3d3fd0]">N4,000/hr</p>
+                  <p className="text-[2.05rem] font-semibold leading-none text-[#3d3fd0]">₦4,000/hr</p>
                 </Card>
               </div>
             </article>
@@ -381,7 +390,7 @@ export default function TutorProfilePage() {
                       return (
                         <button
                           key={day}
-                          className={`rounded-lg border px-3 py-1.5 text-[0.76rem] font-medium ${
+                          className={`min-h-11 rounded-lg border px-3 py-1.5 text-[0.76rem] font-medium ${
                             selected
                               ? "border-[#4b4ad7] bg-[#eff0ff] text-[#2b2d9b]"
                               : "border-[#d7dce8] bg-white text-[#687085]"
@@ -401,11 +410,11 @@ export default function TutorProfilePage() {
                 <article className="rounded-xl border border-[#e5e9f2] bg-[#f8f9fc] p-3">
                   <h3 className="text-[0.85rem] font-semibold text-[#3b4358]">Cost estimate</h3>
                   <div className="mt-2 space-y-1.5 text-[0.76rem] text-[#6b7389]">
-                    <div className="flex items-center justify-between"><span>Tutor&apos;s fee</span><span>N3,500</span></div>
-                    <div className="flex items-center justify-between"><span>Finder&apos;s fee</span><span>N500</span></div>
-                    <div className="flex items-center justify-between"><span>VAT (7.5%)</span><span>N37.50</span></div>
+                    <div className="flex items-center justify-between"><span>Tutor&apos;s fee</span><span>₦3,500</span></div>
+                    <div className="flex items-center justify-between"><span>Finder&apos;s fee</span><span>₦500</span></div>
+                    <div className="flex items-center justify-between"><span>VAT (7.5%)</span><span>₦37.50</span></div>
                     <div className="mt-2 border-t border-[#e0e5f0] pt-2 text-[0.8rem] font-semibold text-[#2f3547]">
-                      <div className="flex items-center justify-between"><span>Total</span><span>N4,037.50</span></div>
+                      <div className="flex items-center justify-between"><span>Total</span><span>₦4,037.50</span></div>
                     </div>
                   </div>
                 </article>
@@ -422,7 +431,7 @@ export default function TutorProfilePage() {
                     <div className="flex items-center justify-between"><span>Hours per day</span><span>{bookingForm.hoursPerDay}</span></div>
                     <div className="flex items-center justify-between"><span>Payment option</span><span>{bookingForm.paymentOption}</span></div>
                     <div className="flex items-center justify-between"><span>Availability</span><span>{bookingForm.availability.join(", ") || "-"}</span></div>
-                    <div className="flex items-center justify-between"><span>Tutor&apos;s fee</span><span>N3,500</span></div>
+                    <div className="flex items-center justify-between"><span>Tutor&apos;s fee</span><span>₦3,500</span></div>
                   </div>
                 </article>
               ) : null}
@@ -448,7 +457,7 @@ export default function TutorProfilePage() {
               ) : (
                 <button
                   className="inline-flex h-11 flex-1 items-center justify-center gap-1.5 rounded-full bg-[#232066] text-[0.82rem] font-semibold text-white"
-                  onClick={closeBookingPanel}
+                  onClick={() => router.push("/students/bookings?view=manage&notice=booking_submitted")}
                   type="button"
                 >
                   <Check className="h-3.5 w-3.5" strokeWidth={3} />
@@ -481,7 +490,7 @@ function BookingField({
       <span className="mb-1.5 block text-[0.82rem] font-semibold text-[#3f4760]">{label}</span>
       <div className="relative">
         <select
-          className="h-10 w-full appearance-none rounded-[10px] border border-[#d7dce8] bg-white px-3 pr-9 text-[0.84rem] text-[#55607a] outline-none focus:border-[#5f64d8]"
+          className="h-11 w-full appearance-none rounded-[10px] border border-[#d7dce8] bg-white px-3 pr-9 text-[0.84rem] text-[#55607a] outline-none focus:border-[#5f64d8]"
           onChange={(event) => onChange(event.target.value)}
           value={value}
         >

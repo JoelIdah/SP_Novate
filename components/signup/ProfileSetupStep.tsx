@@ -10,6 +10,7 @@ import { StepTwoLocationPrompt } from "./profile-setup/StepTwoLocationPrompt";
 import type { SetupMode, SetupStepId, SignUpRole } from "./types";
 import {
   initialProfileForm,
+  isStepOneValid,
   type ProfileFormState,
 } from "./utils";
 
@@ -97,9 +98,11 @@ export function ProfileSetupStep({
   const [placePredictions, setPlacePredictions] = useState<PlacePrediction[]>([]);
   const locationWatchIdRef = useRef<number | null>(null);
   const locationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const placeSearchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const placeSearchAbortRef = useRef<AbortController | null>(null);
 
   const activeStepIndex = activeStep === "location" ? 1 : 0;
-  const profileValid = true;
+  const profileValid = isStepOneValid(profileForm);
   const greetingName = profileForm.firstName.trim() || initialProfile?.firstName?.trim() || "there";
   const userEmail = profileForm.email.trim() || "Complete your profile";
 
@@ -119,6 +122,10 @@ export function ProfileSetupStep({
       if (locationTimeoutRef.current !== null) {
         clearTimeout(locationTimeoutRef.current);
       }
+      if (placeSearchTimeoutRef.current !== null) {
+        clearTimeout(placeSearchTimeoutRef.current);
+      }
+      placeSearchAbortRef.current?.abort();
     };
   }, []);
 
@@ -274,46 +281,54 @@ export function ProfileSetupStep({
     setSetupComplete(true);
   };
 
-  const handlePlaceQueryChange = async (value: string) => {
+  const handlePlaceQueryChange = (value: string) => {
     setPlaceQuery(value);
     setLocationError("");
     setPlacePredictions([]);
 
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY;
-    if (!value.trim()) return;
-    if (!apiKey) {
-      setLocationError("Google Places search is not configured.");
+    if (placeSearchTimeoutRef.current !== null) {
+      clearTimeout(placeSearchTimeoutRef.current);
+    }
+    placeSearchAbortRef.current?.abort();
+
+    const input = value.trim();
+    if (input.length < 3) {
+      setRequestingPlaceSearch(false);
       return;
     }
 
     setRequestingPlaceSearch(true);
-    try {
-      const response = await fetch(
-        `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(value.trim())}&key=${encodeURIComponent(apiKey)}`,
-      );
-      const data = (await response.json()) as {
-        predictions?: Array<{ description?: string; place_id?: string }>;
-        error_message?: string;
-        status?: string;
-      };
+    placeSearchTimeoutRef.current = setTimeout(async () => {
+      const controller = new AbortController();
+      placeSearchAbortRef.current = controller;
 
-      if (!response.ok || (data.status && data.status !== "OK" && data.status !== "ZERO_RESULTS")) {
-        throw new Error(data.error_message ?? "Could not search addresses.");
+      try {
+        const response = await fetch("/api/places/autocomplete", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ input }),
+          signal: controller.signal,
+        });
+        const data = (await response.json()) as {
+          message?: string;
+          predictions?: PlacePrediction[];
+        };
+
+        if (!response.ok) {
+          throw new Error(data.message ?? "Could not search addresses.");
+        }
+
+        setPlacePredictions(data.predictions ?? []);
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+        setLocationError(error instanceof Error ? error.message : "Could not search addresses.");
+      } finally {
+        if (placeSearchAbortRef.current === controller) {
+          placeSearchAbortRef.current = null;
+          setRequestingPlaceSearch(false);
+        }
       }
-
-      setPlacePredictions(
-        (data.predictions ?? [])
-          .filter((prediction) => prediction.description && prediction.place_id)
-          .map((prediction) => ({
-            description: prediction.description!,
-            placeId: prediction.place_id!,
-          })),
-      );
-    } catch (error) {
-      setLocationError(error instanceof Error ? error.message : "Could not search addresses.");
-    } finally {
-      setRequestingPlaceSearch(false);
-    }
+    }, 350);
   };
 
   const handleSelectPlace = async (placeId: string) => {
@@ -365,7 +380,7 @@ export function ProfileSetupStep({
         </button>
       </header>
 
-      <section className="min-h-0 flex-1 overflow-hidden px-4 py-3 sm:px-6 sm:py-5">
+      <section className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-4 py-3 sm:px-6 sm:py-5">
         <div className="flex h-full min-h-0 items-center justify-center">
         {setupComplete ? (
           <SetupSuccessView dashboardHref={dashboardHref} />
@@ -425,11 +440,11 @@ export function ProfileSetupStep({
 
           {activeStep === "personal" ? (
             <div className="flex shrink-0 items-center justify-end gap-2">
-              <button className="h-9 rounded-full border border-[#8278ef] bg-white px-4 text-sm font-semibold text-[#24206f] sm:px-5" onClick={onBack} type="button">
+              <button className="h-11 rounded-full border border-[#8278ef] bg-white px-4 text-sm font-semibold text-[#24206f] sm:px-5" onClick={onBack} type="button">
                 Cancel
               </button>
               <button
-                className="h-9 rounded-full bg-[#17135f] px-4 text-sm font-semibold text-white disabled:bg-[#b5b3cc] sm:px-6"
+                className="h-11 rounded-full bg-[#17135f] px-4 text-sm font-semibold text-white disabled:bg-[#b5b3cc] sm:px-6"
                 disabled={!profileValid}
                 onClick={handleContinue}
                 type="button"
@@ -439,11 +454,11 @@ export function ProfileSetupStep({
             </div>
           ) : (
             <div className="flex shrink-0 items-center justify-end gap-2">
-              <button className="h-9 rounded-full border border-[#e0e4ed] bg-white px-4 text-sm font-semibold text-[#273044] sm:px-5" onClick={handleSkipLocation} type="button">
+              <button className="h-11 rounded-full border border-[#e0e4ed] bg-white px-4 text-sm font-semibold text-[#273044] sm:px-5" onClick={handleSkipLocation} type="button">
                 Skip
               </button>
               <button
-                className="h-9 rounded-full bg-[#17135f] px-4 text-sm font-semibold text-white disabled:bg-[#b8b6cf] sm:px-6"
+                className="h-11 rounded-full bg-[#17135f] px-4 text-sm font-semibold text-white disabled:bg-[#b8b6cf] sm:px-6"
                 disabled={!addressConfirmed}
                 onClick={handleFinishSetup}
                 type="button"

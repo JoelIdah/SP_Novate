@@ -18,8 +18,8 @@ export const initialProfileForm: ProfileFormState = {
   lastName: "",
   firstName: "",
   otherName: "",
-  phoneCountry: "AF",
-  countryCode: "+93",
+  phoneCountry: "NG",
+  countryCode: "+234",
   phoneNumber: "",
   bio: "",
 };

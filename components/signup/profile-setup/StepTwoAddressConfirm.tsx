@@ -10,7 +10,7 @@ export type LocationAddressForm = {
 };
 
 const fieldClassName =
-  "profile-setup-field mt-[0.4em] h-10 w-full rounded-[0.5em] border border-[#d8dde8] bg-white px-[1em] text-sm font-semibold text-[#4f5980] outline-none";
+  "profile-setup-field mt-1.5 h-11 w-full rounded-lg border border-[#d8dde8] bg-white px-4 text-sm font-semibold text-[#4f5980] outline-none";
 
 type StepTwoAddressConfirmProps = {
   addressForm: LocationAddressForm;
@@ -44,13 +44,13 @@ export function StepTwoAddressConfirm({
       <div className="mx-auto mb-5 w-fit">
         <LocationTargetIcon />
       </div>
-      <h1 className="text-[2.2rem] font-bold tracking-[-0.02em] text-[#1d2331]">Confirm address</h1>
-      <p className="mx-auto mt-3 max-w-[390px] text-sm font-medium leading-relaxed text-[#8c93a7]">
+      <h1 className="text-3xl font-bold tracking-[-0.02em] text-[#1d2331] sm:text-4xl">Confirm address</h1>
+      <p className="mx-auto mt-3 max-w-[24.375rem] text-sm font-medium leading-relaxed text-[#8c93a7]">
         Please confirm if this address is your actual location
       </p>
 
       {searchingAddress ? (
-        <div className="mx-auto mt-5 w-full max-w-[620px] text-left">
+        <div className="mx-auto mt-5 w-full max-w-[38.75rem] text-left">
           <label className="block text-xs font-semibold text-[#5d6479]">
             Search address
             <input
@@ -79,7 +79,7 @@ export function StepTwoAddressConfirm({
         </div>
       ) : null}
 
-      <div className="mx-auto mt-6 grid max-w-[620px] grid-cols-1 gap-3 text-left sm:grid-cols-2">
+      <div className="mx-auto mt-6 grid max-w-[38.75rem] grid-cols-1 gap-3 text-left sm:grid-cols-2">
         <label className="sm:col-span-2"><FieldLabel>Address</FieldLabel><input className={fieldClassName} readOnly type="text" value={addressForm.address} /></label>
         <label><FieldLabel>Country</FieldLabel><input className={fieldClassName} readOnly type="text" value={addressForm.country} /></label>
         <label><FieldLabel>Postcode</FieldLabel><input className={fieldClassName} readOnly type="text" value={addressForm.postcode} /></label>
@@ -87,7 +87,7 @@ export function StepTwoAddressConfirm({
         <label><FieldLabel>City</FieldLabel><input className={fieldClassName} readOnly type="text" value={addressForm.city} /></label>
       </div>
 
-      <div className="mx-auto mt-6 flex max-w-[620px] flex-wrap items-center justify-end gap-3">
+      <div className="mx-auto mt-6 flex max-w-[38.75rem] flex-wrap items-center justify-end gap-3">
         <button
           className="h-10 rounded-full border border-[#d8dde8] bg-white px-5 text-sm font-semibold text-[#273044] hover:bg-[#f8fafc]"
           onClick={onRejectAddress}

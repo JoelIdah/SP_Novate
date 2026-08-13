@@ -8,7 +8,6 @@ import { CalendarDays, ChevronDown, ChevronRight, ClipboardList, Compass, Ellips
 import { StudentDashboardNavbar } from "../dashboard/StudentDashboardNavbar";
 import { DashboardShell } from "../layout/DashboardShell";
 import { Avatar } from "../ui/Avatar";
-import { Button } from "../ui/Button";
 import { Card } from "../ui/Card";
 import ResponsiveSheet from "../ui/ResponsiveSheet";
 
@@ -120,10 +119,15 @@ const managedRows: ManagedBookingRow[] = [
 
 const mobileRowsPerPage = 5;
 
-export default function BookingsPage() {
+type BookingView = "explore" | "manage";
+
+export default function BookingsPage({ initialView = "explore", notice }: { initialView?: BookingView; notice?: string }) {
   const router = useRouter();
-  const [view, setView] = useState<"explore" | "manage">("explore");
+  const [view, setView] = useState<BookingView>(initialView);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [tutorQuery, setTutorQuery] = useState("");
+  const [manageQuery, setManageQuery] = useState("");
+  const [newestFirst, setNewestFirst] = useState(true);
   const [subject, setSubject] = useState("");
   const [category, setCategory] = useState("");
   const [location, setLocation] = useState("");
@@ -172,18 +176,31 @@ export default function BookingsPage() {
     () => [subject, category, location, days, time, rating].filter(Boolean).length,
     [subject, category, location, days, time, rating]
   );
+  const filteredTutors = useMemo(() => {
+    const query = tutorQuery.trim().toLowerCase();
+    return tutors.filter((tutor) => {
+      const queryPass = !query || [tutor.name, tutor.title, tutor.location, ...tutor.subjects].some((value) => value.toLowerCase().includes(query));
+      const subjectPass = !subject || tutor.subjects.some((value) => value.toLowerCase().includes(subject.toLowerCase()));
+      const locationPass = !location || tutor.location.toLowerCase().includes(location.toLowerCase());
+      const ratingPass = !rating || Number(tutor.rating) >= Number(rating);
+      return queryPass && subjectPass && locationPass && ratingPass;
+    });
+  }, [location, rating, subject, tutorQuery]);
   const filteredManagedRows = useMemo(() => {
-    return managedRows.filter((row) => {
+    const query = manageQuery.trim().toLowerCase();
+    const rows = managedRows.filter((row) => {
       const statusPass = selectedStatus === "All" ? true : row.status === selectedStatus;
+      const queryPass = !query || [row.tutor, row.department, row.subject, row.status].some((value) => value.toLowerCase().includes(query));
       const rowDate = new Date(row.date);
       const from = dateFrom ? new Date(dateFrom) : null;
       const to = dateTo ? new Date(dateTo) : null;
       const fromPass = from ? rowDate >= from : true;
       const toPass = to ? rowDate <= to : true;
       const datePass = !Number.isNaN(rowDate.valueOf()) && fromPass && toPass;
-      return statusPass && datePass;
+      return statusPass && datePass && queryPass;
     });
-  }, [dateFrom, dateTo, selectedStatus]);
+    return newestFirst ? [...rows].reverse() : rows;
+  }, [dateFrom, dateTo, manageQuery, newestFirst, selectedStatus]);
 
   const totalManagePages = Math.max(1, Math.ceil(filteredManagedRows.length / rowsPerPage));
   const currentManagePage = Math.min(managePage, totalManagePages);
@@ -211,6 +228,12 @@ export default function BookingsPage() {
     setRating("");
   };
 
+  const changeView = (nextView: BookingView) => {
+    setView(nextView);
+    setManagePage(1);
+    router.replace(nextView === "manage" ? "/students/bookings?view=manage" : "/students/bookings", { scroll: false });
+  };
+
   return (
     <>
       <DashboardShell
@@ -220,20 +243,20 @@ export default function BookingsPage() {
         <section className={`w-full py-4 md:py-5 ${view === "manage" ? "flex min-h-full flex-col md:h-full md:min-h-0" : "space-y-5 2xl:space-y-6"}`}>
         <div className="flex flex-wrap gap-[0.55em]">
           <button
-            className={`inline-flex items-center gap-[0.55em] rounded-full border px-[1em] py-[0.45em] text-[0.74em] font-semibold ${
+            className={`inline-flex min-h-11 items-center gap-[0.55em] rounded-full border px-[1em] py-[0.45em] text-[0.74em] font-semibold md:min-h-9 ${
               view === "explore" ? "border-[#cfd6ee] bg-[#eef1ff] text-[#3f3cc4]" : "border-[#e0e4ef] bg-white text-[#6b7280]"
             }`}
-            onClick={() => setView("explore")}
+            onClick={() => changeView("explore")}
             type="button"
           >
             <Compass className="h-[0.95em] w-[0.95em]" />
             Explore tutors
           </button>
           <button
-            className={`inline-flex items-center gap-[0.55em] rounded-full border px-[1em] py-[0.45em] text-[0.74em] font-semibold ${
+            className={`inline-flex min-h-11 items-center gap-[0.55em] rounded-full border px-[1em] py-[0.45em] text-[0.74em] font-semibold md:min-h-9 ${
               view === "manage" ? "border-[#cfd6ee] bg-[#eef1ff] text-[#3f3cc4]" : "border-[#e0e4ef] bg-white text-[#6b7280]"
             }`}
-            onClick={() => setView("manage")}
+            onClick={() => changeView("manage")}
             type="button"
           >
             <ClipboardList className="h-[0.95em] w-[0.95em]" />
@@ -269,12 +292,12 @@ export default function BookingsPage() {
         {view === "explore" ? (
           <div className="hidden rounded-2xl border border-[#e4e8f3] bg-[#f7f9fd] p-[1em] md:block">
           <div className="grid gap-[0.7em] md:grid-cols-3">
-            <FilterSelect label="What do you want to learn" onSelect={setSubject} placeholder="Select subject" value={subject} />
-            <FilterSelect label="What is the field category?" onSelect={setCategory} placeholder="Select department" value={category} />
-            <FilterSelect label="Location" onSelect={setLocation} placeholder="Select department" value={location} />
-            <FilterSelect label="Available days" onSelect={setDays} placeholder="Enter your email" value={days} />
-            <FilterSelect label="Preferred time" onSelect={setTime} placeholder="Enter your email" value={time} />
-            <FilterSelect label="Tutor rating" onSelect={setRating} placeholder="Select department" value={rating} />
+            <FilterSelect label="What do you want to learn" onSelect={setSubject} options={["Mathematics", "Physics", "Further mathematics"]} placeholder="Select subject" value={subject} />
+            <FilterSelect label="What is the field category?" onSelect={setCategory} options={["Academics", "Entrance exams", "Languages"]} placeholder="Select category" value={category} />
+            <FilterSelect label="Location" onSelect={setLocation} options={["Victoria Island", "Lagos Island", "Remote"]} placeholder="Select location" value={location} />
+            <FilterSelect label="Available days" onSelect={setDays} options={["Monday", "Wednesday", "Friday"]} placeholder="Select a day" value={days} />
+            <FilterSelect label="Preferred time" onSelect={setTime} options={["Morning", "Afternoon", "Evening"]} placeholder="Select a time" value={time} />
+            <FilterSelect label="Tutor rating" onSelect={setRating} options={["4", "4.5"]} placeholder="Select minimum rating" value={rating} />
           </div>
           </div>
         ) : null}
@@ -289,6 +312,8 @@ export default function BookingsPage() {
                 className="h-[2.35em] w-full rounded-full border border-[#dfe4ee] bg-[#fbfcff] pl-[2.4em] pr-[0.9em] text-[0.74em] text-[#4a5265] placeholder:text-[#b1b7c6]"
                 placeholder="Search for tutors"
                 type="search"
+                onChange={(event) => setTutorQuery(event.target.value)}
+                value={tutorQuery}
               />
             </div>
           </div>
@@ -297,13 +322,13 @@ export default function BookingsPage() {
 
         {view === "explore" ? (
             <div className="grid gap-[1.1em] xl:grid-cols-2 2xl:grid-cols-3">
-          {tutors.map((tutor, index) => (
-            <Link
+          {filteredTutors.map((tutor, index) => (
+            <article
               key={`${tutor.name}-${index}`}
-              href="/students/bookings/tutor-profile"
               className="min-h-[10.5em] rounded-2xl border border-[#e8ecf3] bg-[#f6f8fc] p-[1em]"
             >
-              <Card className="px-[0.9em] py-[0.9em]">
+              <Link className="block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent" href="/students/bookings/tutor-profile">
+              <Card className="px-[0.9em] py-[0.9em] transition hover:border-[#cfd5e7]">
                 <div className="flex flex-col gap-[0.8em] sm:flex-row sm:items-start">
                   <div className="relative h-[3.6em] w-[3.6em] shrink-0">
                     <Avatar
@@ -357,17 +382,19 @@ export default function BookingsPage() {
                   </div>
                 </div>
               </Card>
+              </Link>
 
-               <div className="mt-[0.7em] flex flex-wrap justify-end gap-[0.45em] px-[0.2em]" onClick={(e) => e.preventDefault()}>
-                <Button className="min-w-[8.5em] px-[0.95em] py-[0.55em] text-[0.72em] font-semibold" variant="secondary">
+               <div className="mt-[0.7em] flex flex-wrap justify-end gap-[0.45em] px-[0.2em]">
+                <Link className="inline-flex min-h-11 min-w-[8.5em] items-center justify-center rounded-full border border-ui-border bg-white px-[0.95em] py-[0.55em] text-[0.72em] font-semibold text-ui-body hover:bg-[#f7f8fb] md:min-h-10" href="/students/chat?contact=1">
                   Send message
-                </Button>
-                <Button className="min-w-[8.5em] px-[0.95em] py-[0.55em] text-[0.72em] font-semibold" variant="primary">
+                </Link>
+                <Link className="inline-flex min-h-11 min-w-[8.5em] items-center justify-center rounded-full border border-brand-primary bg-brand-primary px-[0.95em] py-[0.55em] text-[0.72em] font-semibold text-white hover:bg-[#1c175f] md:min-h-10" href="/students/bookings/tutor-profile?book=1">
                   Book tutor
-                </Button>
+                </Link>
               </div>
-            </Link>
+            </article>
           ))}
+          {filteredTutors.length === 0 ? <p className="col-span-full rounded-2xl border border-dashed border-[#d9deea] bg-[#fafbfe] px-4 py-10 text-center text-sm text-[#747d92]">No tutors match your search and filters.</p> : null}
           </div>
         ) : (
           <section className="flex h-full min-h-0 flex-col space-y-4">
@@ -375,7 +402,7 @@ export default function BookingsPage() {
               <h1 className="text-[2em] font-semibold leading-none text-[#2f3547]">Manage booking</h1>
               <button
                 className="inline-flex h-10 items-center gap-1 rounded-full bg-[#232066] px-4 text-[0.78em] font-semibold text-white"
-                onClick={() => setView("explore")}
+                onClick={() => changeView("explore")}
                 type="button"
               >
                 <Star className="h-3.5 w-3.5" fill="currentColor" strokeWidth={1} />
@@ -383,25 +410,34 @@ export default function BookingsPage() {
               </button>
             </div>
 
+            {notice === "booking_submitted" ? (
+              <p className="rounded-xl border border-[#bde8d0] bg-[#effaf4] px-4 py-3 text-sm font-medium text-[#20784d]" role="status">Your booking request was submitted. You can track it here.</p>
+            ) : null}
+
             <div className="flex items-center justify-between gap-3">
               <div className="relative w-full max-w-[230px] md:max-w-[280px] xl:max-w-[360px] 2xl:max-w-[440px] [@media(min-width:2100px)]:max-w-[860px]">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#9aa1b4]" />
                 <input
-                  className="h-7 w-full rounded-full border border-[#e0e5f0] bg-white pl-9 pr-3 text-[0.76em] text-[#4a5265] placeholder:text-[#b1b7c6]"
+                  className="h-11 w-full rounded-full border border-[#e0e5f0] bg-white pl-9 pr-3 text-[0.76em] text-[#4a5265] placeholder:text-[#b1b7c6] md:h-8"
                   placeholder="Search tutor name or booking ID"
                   type="search"
+                  onChange={(event) => {
+                    setManageQuery(event.target.value);
+                    setManagePage(1);
+                  }}
+                  value={manageQuery}
                 />
               </div>
-              <button className="inline-flex h-8 items-center gap-1 rounded-lg border border-[#e1e6f1] bg-white px-2.5 text-[0.68em] font-semibold text-[#7a8299]" type="button">
+              <button className="inline-flex h-11 items-center gap-1 rounded-lg border border-[#e1e6f1] bg-white px-3 text-[0.68em] font-semibold text-[#7a8299] md:h-8" onClick={() => setNewestFirst((current) => !current)} type="button">
                 <CalendarDays className="h-3.5 w-3.5" />
-                Sort
+                {newestFirst ? "Newest" : "Oldest"}
               </button>
             </div>
 
             <div className="relative flex flex-wrap items-center gap-2 border-b border-[#e7ebf4] pb-3 md:gap-2.5">
               <div className="relative">
                 <button
-                  className="inline-flex h-7 items-center gap-1 rounded-full border border-[#e2e7f2] bg-white px-3 text-[0.68em] font-semibold text-[#747e95]"
+                  className="inline-flex h-11 items-center gap-1 rounded-full border border-[#e2e7f2] bg-white px-3 text-[0.68em] font-semibold text-[#747e95] md:h-8"
                   onClick={() => {
                     setIsDateMenuOpen((prev) => !prev);
                     setIsStatusMenuOpen(false);
@@ -444,7 +480,7 @@ export default function BookingsPage() {
               <span className="inline-flex h-7 items-center rounded-full bg-[#3236ad] px-3 text-[0.68em] font-semibold text-white">{formatRangeLabel}</span>
               <div className="relative">
                 <button
-                  className="inline-flex h-7 items-center gap-1 rounded-full border border-[#e2e7f2] bg-white px-3 text-[0.68em] font-semibold text-[#747e95]"
+                  className="inline-flex h-11 items-center gap-1 rounded-full border border-[#e2e7f2] bg-white px-3 text-[0.68em] font-semibold text-[#747e95] md:h-8"
                   onClick={() => {
                     setIsStatusMenuOpen((prev) => !prev);
                     setIsDateMenuOpen(false);
@@ -574,9 +610,9 @@ export default function BookingsPage() {
                         <span className={`h-1.5 w-1.5 rounded-full ${row.status === "On-going" ? "bg-[#9a5cff]" : "bg-[#e7c754]"}`} />
                         {row.status}
                       </span>
-                      <button className="inline-flex h-6 w-6 items-center justify-center rounded-md text-[#6f768c]" type="button">
+                      <span className="inline-flex h-8 w-8 items-center justify-center rounded-md text-[#6f768c]" aria-hidden>
                         <EllipsisVertical className="h-3.5 w-3.5" />
-                      </button>
+                      </span>
                     </div>
                   </div>
                   <div className="mt-1.5 flex items-center justify-between text-[0.66em] text-[#596177]">
@@ -618,12 +654,12 @@ export default function BookingsPage() {
               <button className="text-[0.75em] font-semibold text-[#7c8498]" onClick={resetFilters} type="button">Reset</button>
             </div>
             <div className="grid gap-3 overflow-y-auto pb-3">
-              <FilterSelect label="What do you want to learn" onSelect={setSubject} placeholder="Select subject" value={subject} />
-              <FilterSelect label="What is the field category?" onSelect={setCategory} placeholder="Select department" value={category} />
-              <FilterSelect label="Location" onSelect={setLocation} placeholder="Select department" value={location} />
-              <FilterSelect label="Available days" onSelect={setDays} placeholder="Enter your email" value={days} />
-              <FilterSelect label="Preferred time" onSelect={setTime} placeholder="Enter your email" value={time} />
-              <FilterSelect label="Tutor rating" onSelect={setRating} placeholder="Select department" value={rating} />
+              <FilterSelect label="What do you want to learn" onSelect={setSubject} options={["Mathematics", "Physics", "Further mathematics"]} placeholder="Select subject" value={subject} />
+              <FilterSelect label="What is the field category?" onSelect={setCategory} options={["Academics", "Entrance exams", "Languages"]} placeholder="Select category" value={category} />
+              <FilterSelect label="Location" onSelect={setLocation} options={["Victoria Island", "Lagos Island", "Remote"]} placeholder="Select location" value={location} />
+              <FilterSelect label="Available days" onSelect={setDays} options={["Monday", "Wednesday", "Friday"]} placeholder="Select a day" value={days} />
+              <FilterSelect label="Preferred time" onSelect={setTime} options={["Morning", "Afternoon", "Evening"]} placeholder="Select a time" value={time} />
+              <FilterSelect label="Tutor rating" onSelect={setRating} options={["4", "4.5"]} placeholder="Select minimum rating" value={rating} />
             </div>
             <div className="mt-auto flex gap-2 border-t border-[#eef1f6] bg-white py-3">
               <button className="h-11 flex-1 rounded-full bg-[#ececef] text-[0.82em] font-semibold text-[#4e576d]" onClick={() => setIsFilterOpen(false)} type="button">
@@ -642,24 +678,25 @@ function FilterSelect({
   label,
   placeholder,
   value,
+  options,
   onSelect,
 }: {
   label: string;
   placeholder: string;
   value: string;
+  options: string[];
   onSelect: (next: string) => void;
 }) {
   return (
     <label className="text-[0.74em] font-semibold text-[#8891a7]">
       <span className="mb-[0.35em] block">{label}</span>
-      <button
-        className="flex h-[2.35em] w-full items-center justify-between rounded-lg border border-[#dfe5f2] bg-white px-[0.8em] py-[0.45em] text-[0.78em] font-medium text-[#7a8195]"
-        onClick={() => onSelect(value ? "" : placeholder)}
-        type="button"
-      >
-        <span>{value || placeholder}</span>
-        <ChevronDown className="h-4 w-4 text-[#9aa1b4]" />
-      </button>
+      <span className="relative block">
+        <select className="h-11 w-full appearance-none rounded-lg border border-[#dfe5f2] bg-white px-[0.8em] pr-9 text-[0.78em] font-medium text-[#7a8195] md:h-[2.65em]" onChange={(event) => onSelect(event.target.value)} value={value}>
+          <option value="">{placeholder}</option>
+          {options.map((option) => <option key={option} value={option}>{option}{label === "Tutor rating" ? "+ stars" : ""}</option>)}
+        </select>
+        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9aa1b4]" />
+      </span>
     </label>
   );
 }

@@ -7,7 +7,7 @@
   --app-gutter:           1rem;
   --dashboard-max-width:  var(--app-max-width);
   --dashboard-gutter:     var(--app-gutter);
-  --topbar-h:             clamp(3.5rem, 3.1rem + 0.35vw, 5rem);
+  --topbar-h:             3.5rem;
 
   /* Semantic color roles. Components should consume these roles instead of
      introducing new one-off hex values. */
@@ -62,6 +62,14 @@
   :root { --app-gutter: 2rem; }
 }
 
+@media (min-width: 768px) {
+  :root { --topbar-h: 4rem; }
+}
+
+@media (min-width: 1280px) {
+  :root { --topbar-h: 4.5rem; }
+}
+
 @media (min-width: 1440px) {
   :root { --app-gutter: clamp(2.5rem, 4vw, 5rem); }
 }
@@ -77,6 +85,22 @@ body {
 html {
   font-size: 16px;
   text-size-adjust: 100%;
+}
+
+/* Ordinary desktop widths stay at the browser-standard 16px root. Beyond
+   1920px, scale in direct proportion to viewport width so a raw 4K canvas has
+   the same apparent UI density as a 1920px desktop. The curve stops at 32px;
+   the content frame has its own pixel/vw cap so it does not grow accidentally
+   through the rem-based type scale. */
+@media (min-width: 1921px) {
+  :root {
+    --app-max-width: clamp(1792px, 82vw, 3200px);
+    --app-gutter: clamp(64px, 4vw, 128px);
+  }
+
+  html {
+    font-size: clamp(16px, 0.833333vw, 32px);
+  }
 }
 
 body {

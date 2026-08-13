@@ -101,12 +101,12 @@ export function DashboardNavbar({ role, active = "Home" }: { role: DashboardRole
 
   return (
     <header className="dashboard-header z-50 border-b border-brand-line bg-white shadow-[0_1px_8px_rgba(31,40,74,0.05)]">
-      <div className="grid min-h-[var(--topbar-h)] w-full grid-cols-[auto_1fr_auto] items-center gap-3 px-[var(--app-gutter)] py-0">
-        <Link href={config.homeHref} aria-label="SP Novate dashboard">
-          <Image alt="SP Novate" className="h-8 w-auto" height={34} priority src="/logo/logo.png" width={34} />
+      <div className="grid min-h-[var(--topbar-h)] w-full grid-cols-[auto_1fr_auto] items-center gap-3 px-[var(--app-gutter)] py-0 xl:gap-5">
+        <Link className="flex h-11 items-center" href={config.homeHref} aria-label="SP Novate dashboard">
+          <Image alt="SP Novate" className="h-8 w-auto xl:h-10" height={40} priority src="/logo/logo.png" width={40} />
         </Link>
 
-        <nav aria-label={`${role} navigation`} className="navbar-scroll hidden self-stretch overflow-x-auto overflow-y-visible xl:flex xl:items-center xl:justify-center xl:gap-4">
+        <nav aria-label={`${role} navigation`} className="navbar-scroll hidden self-stretch overflow-x-auto overflow-y-visible xl:flex xl:items-center xl:justify-center xl:gap-4 2xl:gap-5">
           {config.items.map((item) => {
             const Icon = item.icon;
             const isActive = item.label === active;
@@ -114,14 +114,14 @@ export function DashboardNavbar({ role, active = "Home" }: { role: DashboardRole
               <Link
                 key={item.label}
                 aria-current={isActive ? "page" : undefined}
-                className={`relative flex h-full min-w-20 flex-col items-center justify-center gap-0.5 px-2 pb-1 pt-1 text-sm leading-tight ${
+                className={`relative flex h-full min-w-24 flex-col items-center justify-center gap-1 px-3 pb-1 pt-1 text-[0.9375rem] leading-tight ${
                   isActive ? "font-semibold text-brand-accent" : "font-medium text-[#5f6678] hover:text-[#434b5f]"
                 }`}
                 href={item.href}
               >
-                <Icon className={`h-3.5 w-3.5 ${isActive ? "text-[#7073ea]" : "text-[#aeb5c4]"}`} strokeWidth={1.75} />
+                <Icon className={`h-4 w-4 ${isActive ? "text-[#7073ea]" : "text-[#aeb5c4]"}`} strokeWidth={1.75} />
                 <span>{item.label}</span>
-                {isActive ? <span className="absolute bottom-0 left-1/2 h-0.5 w-14 -translate-x-1/2 rounded-full bg-brand-accent" /> : null}
+                {isActive ? <span className="absolute bottom-0 left-1/2 h-0.5 w-16 -translate-x-1/2 rounded-full bg-brand-accent" /> : null}
               </Link>
             );
           })}
@@ -139,22 +139,22 @@ export function DashboardNavbar({ role, active = "Home" }: { role: DashboardRole
           </button>
 
           <button
-            className="hidden rounded-full border border-ui-border bg-[#f2f3f7] px-3.5 py-1.5 text-xs font-medium text-[#454b5d] hover:bg-[#ebedf3] xl:inline-flex"
+            className="hidden rounded-full border border-ui-border bg-[#f2f3f7] px-4 py-2 text-sm font-medium text-[#454b5d] hover:bg-[#ebedf3] xl:inline-flex"
             onClick={() => setIsSwitchModalOpen(true)}
             type="button"
           >
             {config.switchLabel}
           </button>
 
-          <button className="hidden items-center gap-1.5 rounded-full border border-ui-border bg-[#f2f3f7] p-1 xl:flex" type="button">
-            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-brand-primary text-xs font-semibold text-white">O</span>
+          <button className="hidden items-center gap-2 rounded-full border border-ui-border bg-[#f2f3f7] p-1.5 xl:flex" type="button">
+            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-primary text-sm font-semibold text-white">O</span>
             {role === "tutor" ? (
               <span className="pr-1 text-left leading-tight">
-                <span className="block text-[0.68rem] font-semibold text-[#303755]">{config.profileName}</span>
-                <span className="block text-[0.58rem] text-[#7f879d]">{config.profileEmail}</span>
+                <span className="block text-xs font-semibold text-[#303755]">{config.profileName}</span>
+                <span className="block text-[0.65rem] text-[#7f879d]">{config.profileEmail}</span>
               </span>
             ) : null}
-            <ChevronDown className="h-3 w-3 text-[#8e93a1]" />
+            <ChevronDown className="h-3.5 w-3.5 text-[#8e93a1]" />
           </button>
         </div>
       </div>

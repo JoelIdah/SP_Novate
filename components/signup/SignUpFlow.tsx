@@ -5,9 +5,10 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { AccountStep } from "./AccountStep";
 import { AuthCardHeader } from "./AuthCardHeader";
+import { AuthCard } from "./AuthPrimitives";
 import { AuthShell } from "./AuthShell";
 import { OtpStep } from "./OtpStep";
-import { isProfileSetupActive, subscribeProfileSetupSession, useProfileSetupUser } from "./profileSetupSession";
+import { clearProfileSetupSession, isProfileSetupActive, subscribeProfileSetupSession, useProfileSetupUser } from "./profileSetupSession";
 import { StudentFlow } from "./student/StudentFlow";
 import type { SetupMode, SetupStepId, SignUpFlowStage, SignUpView } from "./types";
 
@@ -230,6 +231,11 @@ export function SignUpFlow({ forceProfileSetup = false }: { forceProfileSetup?: 
           }
         }}
         onStageChange={(stage) => {
+          if ((forceProfileSetup || profileSetupActive) && stage === "overview") {
+            clearProfileSetupSession();
+            router.push("/login");
+            return;
+          }
           if (!forceProfileSetup && !profileSetupActive) {
             writeUrlState({ mode: "form", stage, view: "flow" });
           }
@@ -243,7 +249,7 @@ export function SignUpFlow({ forceProfileSetup = false }: { forceProfileSetup?: 
 
   return (
     <AuthShell>
-      <div className="auth-card relative rounded-[2em] border-[0.08em] border-[#d9dde8] bg-gradient-to-b from-white to-[#fcfdff] px-[1.5em] pb-[1.35em] pt-[1.3em] shadow-[0_14px_34px_rgba(23,30,63,0.11)]">
+      <AuthCard className="rounded-[2em]" tone="gradient">
         {urlState.view !== "otp" ? <AuthCardHeader /> : null}
         {urlState.view === "account" ? (
           <AccountStep
@@ -285,7 +291,7 @@ export function SignUpFlow({ forceProfileSetup = false }: { forceProfileSetup?: 
             }}
           />
         )}
-      </div>
+      </AuthCard>
     </AuthShell>
   );
 }

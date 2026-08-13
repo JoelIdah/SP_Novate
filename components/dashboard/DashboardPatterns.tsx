@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import Link from "next/link";
 
 export function DashboardSectionHeader({ title, action }: { title: string; action?: ReactNode }) {
   return (
@@ -9,9 +10,8 @@ export function DashboardSectionHeader({ title, action }: { title: string; actio
   );
 }
 
-export function DashboardActionCard({ icon, title, description, toneClassName }: { icon: ReactNode; title: string; description: string; toneClassName: string }) {
-  return (
-    <article className={`flex min-h-20 items-center rounded-xl border px-3.5 py-3 ${toneClassName}`}>
+export function DashboardActionCard({ icon, title, description, toneClassName, href }: { icon: ReactNode; title: string; description: string; toneClassName: string; href?: string }) {
+  const content = (
       <div className="flex items-center gap-2.5">
         {icon}
         <div>
@@ -19,8 +19,11 @@ export function DashboardActionCard({ icon, title, description, toneClassName }:
           <p className="mt-1 text-xs leading-snug text-[#6d758e]">{description}</p>
         </div>
       </div>
-    </article>
   );
+
+  const className = `flex min-h-20 items-center rounded-xl border px-3.5 py-3 ${toneClassName}${href ? " transition hover:-translate-y-0.5 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent" : ""}`;
+
+  return href ? <Link className={className} href={href}>{content}</Link> : <article className={className}>{content}</article>;
 }
 
 export function DashboardResourceCard({ title, description, toneClassName, markerClassName }: { title: string; description: string; toneClassName: string; markerClassName?: string }) {

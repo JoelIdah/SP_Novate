@@ -8,7 +8,7 @@ import { FieldLabel } from "./FieldLabel";
 import { isPhoneNumberValid, type ProfileFormState } from "../utils";
 
 const fieldClassName =
-  "profile-setup-field mt-[0.4em] h-8 w-full rounded-[0.5em] border border-[#d8dde8] bg-white px-[1em] text-xs font-semibold text-[#4f5980] outline-none sm:h-9 sm:text-sm";
+  "profile-setup-field mt-1.5 h-11 w-full rounded-lg border border-[#d8dde8] bg-white px-4 text-sm font-semibold text-[#4f5980] outline-none";
 
 const regionNames = new Intl.DisplayNames(["en"], { type: "region" });
 
@@ -74,24 +74,24 @@ export function StepOneProfileForm({ greetingName, profileForm, onProfileFieldCh
   };
 
   return (
-    <section className="mx-auto flex h-full w-full max-w-[820px] flex-col justify-center px-0 py-1 sm:px-8">
+    <section className="mx-auto flex min-h-full w-full max-w-[51.25rem] flex-col justify-center px-0 py-4 sm:px-8">
       <div className="text-center">
-        <h1 className="text-[1.45rem] font-bold sm:text-[1.8rem]">Welcome {greetingName}!</h1>
-        <p className="mt-1 text-xs font-medium text-[#8c93a7] sm:text-sm">We just need a few details to complete your profile.</p>
+        <h1 className="text-2xl font-bold sm:text-3xl">Welcome {greetingName}!</h1>
+        <p className="mt-1.5 text-sm font-medium text-[#8c93a7]">We just need a few details to complete your profile.</p>
       </div>
 
-      <form className="mx-auto mt-3 w-full max-w-[560px]" onSubmit={(e) => e.preventDefault()}>
-        <div className="grid grid-cols-2 gap-2">
+      <form className="mx-auto mt-5 w-full max-w-[35rem]" onSubmit={(e) => e.preventDefault()}>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <label><FieldLabel>Email</FieldLabel><input className={fieldClassName} onChange={(e) => onProfileFieldChange("email", e.target.value)} type="email" value={profileForm.email} /></label>
           <label><FieldLabel>Last name</FieldLabel><input className={fieldClassName} onChange={(e) => onProfileFieldChange("lastName", e.target.value)} type="text" value={profileForm.lastName} /></label>
           <label><FieldLabel>First name</FieldLabel><input className={fieldClassName} onChange={(e) => onProfileFieldChange("firstName", e.target.value)} type="text" value={profileForm.firstName} /></label>
           <label><FieldLabel>Other name</FieldLabel><input className={fieldClassName} onChange={(e) => onProfileFieldChange("otherName", e.target.value)} placeholder="Enter your other name" type="text" value={profileForm.otherName} /></label>
         </div>
 
-        <label className="mt-2 block">
+        <label className="mt-3 block">
           <FieldLabel>Phone number</FieldLabel>
           <div
-            className={`profile-setup-phone-shell relative mt-[0.4em] flex h-8 w-full items-center rounded-[0.5em] border bg-white px-[1em] text-xs font-semibold text-[#4f5980] sm:h-9 sm:text-sm ${phoneInvalid ? "border-[#d04b4b]" : "border-[#d8dde8]"}`}
+            className={`profile-setup-phone-shell relative mt-1.5 flex h-11 w-full items-center rounded-lg border bg-white px-4 text-sm font-semibold text-[#4f5980] ${phoneInvalid ? "border-[#d04b4b]" : "border-[#d8dde8]"}`}
             onBlur={(event) => {
               if (!event.currentTarget.contains(event.relatedTarget)) {
                 setCountryMenuOpen(false);
@@ -113,7 +113,7 @@ export function StepOneProfileForm({ greetingName, profileForm, onProfileFieldCh
               </svg>
             </button>
             <span className="text-[#c5cada]">|</span>
-            <input className="ml-3 min-w-0 flex-1 bg-transparent text-[#4f5980] outline-none" onChange={(e) => onProfileFieldChange("phoneNumber", e.target.value)} placeholder="phone number" ref={phoneInputRef} type="tel" value={profileForm.phoneNumber} />
+            <input aria-label="Phone number" autoComplete="tel-national" className="ml-3 min-w-0 flex-1 bg-transparent text-[#4f5980] outline-none" onChange={(e) => onProfileFieldChange("phoneNumber", e.target.value)} placeholder="phone number" ref={phoneInputRef} required type="tel" value={profileForm.phoneNumber} />
             {countryMenuOpen ? (
               <div className="absolute left-0 top-[calc(100%+0.35rem)] z-20 max-h-52 w-72 overflow-y-auto rounded-[0.65rem] border border-[#d8dde8] bg-white py-1 shadow-[0_14px_34px_rgba(23,30,63,0.16)]" onKeyDown={handleCountryKeyDown}>
                 {countryCodes.map((country) => (
@@ -150,10 +150,10 @@ export function StepOneProfileForm({ greetingName, profileForm, onProfileFieldCh
           ) : null}
         </label>
 
-        <label className="mt-2 block">
+        <label className="mt-3 block">
           <FieldLabel>Bio</FieldLabel>
-          <textarea className="profile-setup-field mt-[0.4em] h-16 w-full resize-none rounded-[0.5em] border border-[#d8dde8] bg-white px-[1em] py-2 text-xs font-semibold text-[#4f5980] outline-none sm:h-20 sm:text-sm" onChange={(e) => onProfileFieldChange("bio", e.target.value)} placeholder="Tell us about yourself..." value={profileForm.bio} />
-          <span className="mt-1 block text-[0.64rem] text-[#98a0b3]">Bio must be at least 10 characters</span>
+          <textarea className="profile-setup-field mt-1.5 h-24 w-full resize-none rounded-lg border border-[#d8dde8] bg-white px-4 py-3 text-sm font-semibold text-[#4f5980] outline-none" onChange={(e) => onProfileFieldChange("bio", e.target.value)} placeholder="Tell us about yourself..." value={profileForm.bio} />
+          <span className="mt-1.5 block text-xs text-[#98a0b3]">Bio must be at least 10 characters</span>
         </label>
 
       </form>

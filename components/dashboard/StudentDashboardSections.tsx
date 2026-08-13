@@ -1,4 +1,5 @@
 import { BookOpenCheck, MessageCircleMore, ReceiptText } from "lucide-react";
+import Link from "next/link";
 import { DashboardActionCard, DashboardResourceCard, DashboardSectionHeader } from "./DashboardPatterns";
 import { StatusIndicator } from "../ui/StatusIndicator";
 
@@ -36,9 +37,9 @@ export function StudentDashboardActionsSection() {
     <div>
       <DashboardSectionHeader title="Actions" />
       <div className="grid gap-3 md:grid-cols-3">
-        <DashboardActionCard description="Find a tutor and schedule your session." icon={<span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#d8ebfa] text-[#2f8fd6]"><BookOpenCheck className="h-[1.125rem] w-[1.125rem]" /></span>} title="Book a session" toneClassName="border-[#b9dcf8] bg-[#f3f9ff]" />
-        <DashboardActionCard description="Go to your chat with the tutors" icon={<span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#daf3f1] text-[#43b8b2]"><MessageCircleMore className="h-[1.125rem] w-[1.125rem]" /></span>} title="Start a conversation" toneClassName="border-[#b4e5e4] bg-[#f4fcfc]" />
-        <DashboardActionCard description="Add money to your main balance." icon={<span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#f6ead0] text-[#d8aa2c]"><ReceiptText className="h-[1.125rem] w-[1.125rem]" /></span>} title="Check transactions" toneClassName="border-[#ecd8b2] bg-[#fcf8ef]" />
+        <DashboardActionCard description="Find a tutor and schedule your session." href="/students/bookings" icon={<span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#d8ebfa] text-[#2f8fd6]"><BookOpenCheck className="h-[1.125rem] w-[1.125rem]" /></span>} title="Book a session" toneClassName="border-[#b9dcf8] bg-[#f3f9ff]" />
+        <DashboardActionCard description="Go to your chat with the tutors" href="/students/chat" icon={<span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#daf3f1] text-[#43b8b2]"><MessageCircleMore className="h-[1.125rem] w-[1.125rem]" /></span>} title="Start a conversation" toneClassName="border-[#b4e5e4] bg-[#f4fcfc]" />
+        <DashboardActionCard description="Add money to your main balance." href="/students/transactions" icon={<span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#f6ead0] text-[#d8aa2c]"><ReceiptText className="h-[1.125rem] w-[1.125rem]" /></span>} title="Check transactions" toneClassName="border-[#ecd8b2] bg-[#fcf8ef]" />
       </div>
     </div>
   );
@@ -70,7 +71,7 @@ export function StudentDashboardBookingsSection() {
     <section className="flex h-full min-h-0 flex-col">
       <div className="mb-2 flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5">
         <h2 className="text-[0.9rem] font-semibold text-[#616a82]">Managed Bookings</h2>
-        <button className="max-w-[48vw] truncate text-right text-[0.75rem] font-semibold text-[#6f74a7] hover:text-[#5954c9] sm:max-w-none" type="button">Go to managed bookings &gt;</button>
+        <Link className="max-w-[48vw] truncate text-right text-[0.75rem] font-semibold text-[#6f74a7] hover:text-[#5954c9] sm:max-w-none" href="/students/bookings?view=manage">Go to managed bookings &gt;</Link>
       </div>
       <div className="flex min-h-48 flex-col overflow-hidden rounded-xl border border-[#e4e8f1] bg-white">
         <div className="md:hidden">
@@ -143,7 +144,7 @@ export function StudentDashboardMessagesSection() {
     <section className="flex h-full min-h-0 flex-col">
       <div className="mb-2 flex items-center justify-between">
         <h2 className="text-[0.9rem] font-semibold text-[#616a82]">Messages</h2>
-        <button className="max-w-[48vw] truncate text-right text-[0.75rem] font-semibold text-[#6f74a7] hover:text-[#5954c9] sm:max-w-none" type="button">Go to chat &gt;</button>
+        <Link className="max-w-[48vw] truncate text-right text-[0.75rem] font-semibold text-[#6f74a7] hover:text-[#5954c9] sm:max-w-none" href="/students/chat">Go to chat &gt;</Link>
       </div>
       <div className="flex min-h-48 flex-col overflow-hidden rounded-xl border border-[#e4e8f1] bg-white">
         <p className="border-b border-[#edf0f6] px-4 py-2 text-[1rem] font-medium text-[#9aa3b8]">Chat</p>

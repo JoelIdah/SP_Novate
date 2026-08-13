@@ -11,6 +11,7 @@ type ResponsiveSheetProps = {
   mobileOnly?: boolean;
   panelClassName?: string;
   backdropClassName?: string;
+  ariaLabel?: string;
 };
 
 export default function ResponsiveSheet({
@@ -20,6 +21,7 @@ export default function ResponsiveSheet({
   mobileOnly = false,
   panelClassName = "",
   backdropClassName = "",
+  ariaLabel,
 }: ResponsiveSheetProps) {
   const transitionMs = 300;
   const [mounted, setMounted] = useState(open);
@@ -116,6 +118,7 @@ export default function ResponsiveSheet({
       />
       <div
         ref={panelRef}
+        aria-label={ariaLabel}
         aria-modal="true"
         className={`absolute bottom-0 left-0 right-0 z-10 flex h-auto max-h-[92dvh] w-full min-w-0 flex-col overflow-hidden rounded-t-2xl border-t border-[#d6dce8] bg-white px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+10px)] shadow-2xl transition-transform duration-300 ease-out will-change-transform xl:bottom-0 xl:left-auto xl:right-0 xl:top-0 xl:max-h-none xl:h-full xl:w-full xl:max-w-[558px] xl:rounded-l-xl xl:rounded-tr-none xl:border-l xl:border-t-0 xl:px-5 xl:pb-0 ${isActive ? "translate-y-0 xl:translate-x-0" : "translate-y-full xl:translate-y-0 xl:translate-x-full"} ${panelClassName}`}
         onClick={(event) => event.stopPropagation()}

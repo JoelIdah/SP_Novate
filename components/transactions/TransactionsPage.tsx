@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { ArrowLeft, BanknoteArrowDown, CalendarDays, CheckCircle2, Copy, EllipsisVertical, Landmark, Wallet } from "lucide-react";
+import { ArrowLeft, ArrowUpDown, BanknoteArrowDown, CalendarDays, CheckCircle2, Copy, EllipsisVertical, Landmark, Wallet } from "lucide-react";
 
 import { StudentDashboardNavbar } from "../dashboard/StudentDashboardNavbar";
 import { DashboardShell } from "../layout/DashboardShell";
@@ -23,16 +23,16 @@ type Transaction = {
 };
 
 const transactions: Transaction[] = [
-  { id: "B4927183010373", amount: "N11,037.50", method: "Bank Transfer", type: "CR", date: "March 15, 2026", status: "Successful" },
-  { id: "B4927183010373", amount: "N11,037.50", method: "Bank Transfer", type: "CR", date: "March 15, 2026", status: "Successful" },
-  { id: "B4927183010373", amount: "N11,037.50", method: "Bank Transfer", type: "CR", date: "March 15, 2026", status: "Successful" },
-  { id: "B4927183010373", amount: "N16,050.50", method: "Card", type: "CR", date: "March 15, 2026", status: "Failed" },
-  { id: "B4927183010373", amount: "N24,760.00", method: "Card", type: "CR", date: "March 15, 2026", status: "Pending" },
-  { id: "B4927183010373", amount: "N11,037.50", method: "Bank Transfer", type: "CR", date: "March 15, 2026", status: "Successful" },
-  { id: "B4927183010373", amount: "N24,760.00", method: "Card", type: "CR", date: "March 15, 2026", status: "Pending" },
-  { id: "B4927183010373", amount: "N11,037.50", method: "Bank Transfer", type: "CR", date: "March 15, 2026", status: "Successful" },
-  { id: "B4927183010373", amount: "N16,050.50", method: "Card", type: "CR", date: "March 15, 2026", status: "Failed" },
-  { id: "B4927183010373", amount: "N11,037.50", method: "Bank Transfer", type: "CR", date: "March 15, 2026", status: "Successful" },
+  { id: "B4927183010373", amount: "₦11,037.50", method: "Bank Transfer", type: "CR", date: "March 19, 2026", status: "Successful" },
+  { id: "B4927183010374", amount: "₦11,037.50", method: "Bank Transfer", type: "CR", date: "March 19, 2026", status: "Successful" },
+  { id: "B4927183010375", amount: "₦11,037.50", method: "Bank Transfer", type: "CR", date: "March 18, 2026", status: "Successful" },
+  { id: "B4927183010376", amount: "₦16,050.50", method: "Card", type: "CR", date: "March 18, 2026", status: "Failed" },
+  { id: "B4927183010377", amount: "₦24,760.00", method: "Card", type: "CR", date: "March 17, 2026", status: "Pending" },
+  { id: "B4927183010378", amount: "₦11,037.50", method: "Bank Transfer", type: "CR", date: "March 17, 2026", status: "Successful" },
+  { id: "B4927183010379", amount: "₦24,760.00", method: "Card", type: "CR", date: "March 16, 2026", status: "Pending" },
+  { id: "B4927183010380", amount: "₦11,037.50", method: "Bank Transfer", type: "CR", date: "March 16, 2026", status: "Successful" },
+  { id: "B4927183010381", amount: "₦16,050.50", method: "Card", type: "CR", date: "March 15, 2026", status: "Failed" },
+  { id: "B4927183010382", amount: "₦11,037.50", method: "Bank Transfer", type: "CR", date: "March 15, 2026", status: "Successful" },
 ];
 
 const statusTone: Record<TxStatus, StatusTone> = {
@@ -43,14 +43,33 @@ const statusTone: Record<TxStatus, StatusTone> = {
 
 const mobileRowsPerPage = 5;
 
+async function writeClipboard(text: string) {
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(text);
+    return;
+  }
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.style.position = "fixed";
+  textarea.style.opacity = "0";
+  document.body.appendChild(textarea);
+  textarea.select();
+  document.execCommand("copy");
+  textarea.remove();
+}
+
 export default function TransactionsPage() {
   const [selectedStatus, setSelectedStatus] = useState<"All" | TxStatus>("All");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [newestFirst, setNewestFirst] = useState(true);
   const [isDateMenuOpen, setIsDateMenuOpen] = useState(false);
   const [isStatusMenuOpen, setIsStatusMenuOpen] = useState(false);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
+  const [copiedId, setCopiedId] = useState("");
+  const [shareFeedback, setShareFeedback] = useState("");
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const desktopTableViewportRef = useRef<HTMLDivElement | null>(null);
@@ -81,20 +100,26 @@ export default function TransactionsPage() {
       resizeObserver.disconnect();
       window.removeEventListener("resize", computeRowsPerPage);
     };
-  }, [dateFrom, dateTo, selectedStatus]);
+  }, [dateFrom, dateTo, searchQuery, selectedStatus]);
 
   const filteredRows = useMemo(() => {
-    return transactions.filter((row) => {
+    const query = searchQuery.trim().toLowerCase();
+    const rows = transactions.filter((row) => {
       const statusPass = selectedStatus === "All" ? true : row.status === selectedStatus;
+      const queryPass = !query || [row.id, row.amount, row.method, row.type, row.date, row.status].some((value) => value.toLowerCase().includes(query));
       const rowDate = new Date(row.date);
       const from = dateFrom ? new Date(dateFrom) : null;
       const to = dateTo ? new Date(dateTo) : null;
       const fromPass = from ? rowDate >= from : true;
       const toPass = to ? rowDate <= to : true;
       const datePass = !Number.isNaN(rowDate.valueOf()) && fromPass && toPass;
-      return statusPass && datePass;
+      return statusPass && datePass && queryPass;
     });
-  }, [dateFrom, dateTo, selectedStatus]);
+    return [...rows].sort((first, second) => {
+      const difference = new Date(second.date).valueOf() - new Date(first.date).valueOf();
+      return newestFirst ? difference : -difference;
+    });
+  }, [dateFrom, dateTo, newestFirst, searchQuery, selectedStatus]);
 
   const totalPages = Math.max(1, Math.ceil(filteredRows.length / rowsPerPage));
   const currentPage = Math.min(page, totalPages);
@@ -111,7 +136,32 @@ export default function TransactionsPage() {
 
   const openDetails = (tx: Transaction) => {
     setSelectedTx(tx);
+    setShareFeedback("");
     setDetailsOpen(true);
+  };
+
+  const copyReference = async (id: string) => {
+    await writeClipboard(id);
+    setCopiedId(id);
+    window.setTimeout(() => setCopiedId((current) => current === id ? "" : current), 1600);
+  };
+
+  const shareDetails = async () => {
+    if (!selectedTx) return;
+    const text = `Transaction ${selectedTx.id}\n${selectedTx.amount} via ${selectedTx.method}\n${selectedTx.status} · ${selectedTx.date}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: "SP Novate transaction", text });
+        setShareFeedback("Shared");
+      } else {
+        await writeClipboard(text);
+        setShareFeedback("Details copied");
+      }
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") return;
+      await writeClipboard(text);
+      setShareFeedback("Details copied");
+    }
   };
 
   const formatRangeLabel = dateFrom || dateTo
@@ -123,18 +173,31 @@ export default function TransactionsPage() {
       <DashboardShell mainClassName="min-h-0 md:overflow-hidden" navbar={<StudentDashboardNavbar active="Transactions" />}>
         <section className="flex min-h-full w-full flex-col py-4 md:h-full md:min-h-0 md:py-5">
               <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
-                <MetricCard icon={<Wallet className="h-4 w-4 text-[#dca95a]" />} label="Total Value" value="N200,000.00" />
-                <MetricCard icon={<CheckCircle2 className="h-4 w-4 text-[#289c7f]" />} label="Successful Transactions" value="10" />
-                <MetricCard icon={<BanknoteArrowDown className="h-4 w-4 text-[#9553da]" />} label="Session Fees" value="N4,000" />
-                <MetricCard icon={<Landmark className="h-4 w-4 text-[#157ac8]" />} label="Finders Fees" value="N500" />
+                <MetricCard icon={<Wallet className="h-4 w-4 text-[#dca95a]" />} label="Total Value" value="₦147,846.50" />
+                <MetricCard icon={<CheckCircle2 className="h-4 w-4 text-[#289c7f]" />} label="Successful Transactions" value="6" />
+                <MetricCard icon={<BanknoteArrowDown className="h-4 w-4 text-[#9553da]" />} label="Session Fees" value="₦4,000" />
+                <MetricCard icon={<Landmark className="h-4 w-4 text-[#157ac8]" />} label="Finders Fees" value="₦500" />
               </div>
 
-              <DataToolbar placeholder="Search transactions" />
+              <DataToolbar
+                actions={(
+                  <button className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-lg border border-ui-border bg-white px-3 text-xs font-semibold text-ui-body hover:bg-[#f7f8fb] md:min-h-10" onClick={() => setNewestFirst((current) => !current)} type="button">
+                    <ArrowUpDown className="h-4 w-4" />
+                    <span className="hidden sm:inline">{newestFirst ? "Newest" : "Oldest"}</span>
+                  </button>
+                )}
+                onChange={(value) => {
+                  setSearchQuery(value);
+                  setPage(1);
+                }}
+                placeholder="Search transactions"
+                value={searchQuery}
+              />
 
-              <div className="mt-2.5 flex items-center gap-2 border-b border-[#e7ebf4] pb-3 md:gap-2.5">
+              <div className="mt-2.5 flex flex-wrap items-center gap-2 border-b border-[#e7ebf4] pb-3 md:gap-2.5">
                 <div className="relative">
                   <button
-                    className="inline-flex h-7 items-center gap-1 rounded-full border border-[#e2e7f2] bg-white px-3 text-[0.68em] font-semibold text-[#747e95]"
+                    className="inline-flex h-11 items-center gap-1 rounded-full border border-[#e2e7f2] bg-white px-3 text-[0.68em] font-semibold text-[#747e95] md:h-8"
                     onClick={() => {
                       setIsDateMenuOpen((prev) => !prev);
                       setIsStatusMenuOpen(false);
@@ -149,11 +212,11 @@ export default function TransactionsPage() {
                       <p className="mb-2 text-[0.78rem] font-semibold text-[#55607a] 2xl:mb-2.5 2xl:text-[0.92rem]">Pick date range</p>
                       <label className="mb-2 block text-[0.72rem] font-semibold text-[#7a8299] 2xl:mb-2.5 2xl:text-[0.84rem]">
                         From
-                        <input className="mt-1 h-9 w-full rounded-md border border-[#d8deea] px-2 text-[0.78rem] 2xl:mt-1.5 2xl:h-10 2xl:text-[0.9rem]" onChange={(e) => setDateFrom(e.target.value)} type="date" value={dateFrom} />
+                        <input className="mt-1 h-11 w-full rounded-md border border-[#d8deea] px-2 text-[0.78rem] md:h-10 2xl:mt-1.5 2xl:text-[0.9rem]" onChange={(e) => { setDateFrom(e.target.value); setPage(1); }} type="date" value={dateFrom} />
                       </label>
                       <label className="block text-[0.72rem] font-semibold text-[#7a8299] 2xl:text-[0.84rem]">
                         To
-                        <input className="mt-1 h-9 w-full rounded-md border border-[#d8deea] px-2 text-[0.78rem] 2xl:mt-1.5 2xl:h-10 2xl:text-[0.9rem]" onChange={(e) => setDateTo(e.target.value)} type="date" value={dateTo} />
+                        <input className="mt-1 h-11 w-full rounded-md border border-[#d8deea] px-2 text-[0.78rem] md:h-10 2xl:mt-1.5 2xl:text-[0.9rem]" onChange={(e) => { setDateTo(e.target.value); setPage(1); }} type="date" value={dateTo} />
                       </label>
                     </div>
                   ) : null}
@@ -161,7 +224,7 @@ export default function TransactionsPage() {
                 <span className="inline-flex h-7 items-center rounded-full bg-[#3236ad] px-3 text-[0.68em] font-semibold text-white">{formatRangeLabel}</span>
                 <div className="relative">
                   <button
-                    className="inline-flex h-7 items-center gap-1 rounded-full border border-[#e2e7f2] bg-white px-3 text-[0.68em] font-semibold text-[#747e95]"
+                    className="inline-flex h-11 items-center gap-1 rounded-full border border-[#e2e7f2] bg-white px-3 text-[0.68em] font-semibold text-[#747e95] md:h-8"
                     onClick={() => {
                       setIsStatusMenuOpen((prev) => !prev);
                       setIsDateMenuOpen(false);
@@ -176,7 +239,7 @@ export default function TransactionsPage() {
                       {(["All", "Successful", "Pending", "Failed"] as const).map((status) => (
                         <button
                           key={status}
-                          className={`flex w-full items-center justify-between rounded-md px-2 py-1.5 text-[0.78rem] 2xl:px-2.5 2xl:py-2 2xl:text-[0.92rem] ${
+                          className={`flex min-h-11 w-full items-center justify-between rounded-md px-2 py-1.5 text-[0.78rem] md:min-h-9 2xl:px-2.5 2xl:py-2 2xl:text-[0.92rem] ${
                             selectedStatus === status ? "bg-[#eef0ff] text-[#2f34aa]" : "text-[#5f667b]"
                           }`}
                           onClick={() => {
@@ -218,7 +281,9 @@ export default function TransactionsPage() {
                           <td className="px-3 py-2.5">
                             <span className="inline-flex items-center gap-2">
                               {row.id}
-                              <Copy className="h-3 w-3 text-[#4b69d2]" />
+                              <button aria-label={`Copy reference ${row.id}`} className="inline-flex h-8 w-8 items-center justify-center rounded-md text-[#4b69d2] hover:bg-[#eef1fb]" onClick={(event) => { event.stopPropagation(); void copyReference(row.id); }} title={copiedId === row.id ? "Copied" : "Copy reference"} type="button">
+                                <Copy className="h-3.5 w-3.5" />
+                              </button>
                             </span>
                           </td>
                           <td className="px-3 py-2.5">{row.amount}</td>
@@ -228,6 +293,9 @@ export default function TransactionsPage() {
                           <td className="px-3 py-2.5 text-right"><EllipsisVertical className="ml-auto h-3.5 w-3.5 text-[#6f768c]" /></td>
                         </tr>
                       ))}
+                      {paginatedRows.length === 0 ? (
+                        <tr><td className="px-4 py-10 text-center text-sm text-[#7a8297]" colSpan={7}>No transactions match your search and filters.</td></tr>
+                      ) : null}
                     </tbody>
                   </table>
                 </div>
@@ -236,52 +304,66 @@ export default function TransactionsPage() {
 
               <div className="mt-3 space-y-1.5 pb-6 md:hidden">
                 {mobilePaginatedRows.map((row, idx) => (
-                  <button className="w-full rounded-lg border border-[#e6eaf3] bg-white px-2.5 py-2 text-left" key={`${row.id}-mobile-${idx}`} onClick={() => openDetails(row)} type="button">
+                  <article className="rounded-lg border border-[#e6eaf3] bg-white px-3 py-2.5" key={`${row.id}-mobile-${idx}`}>
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
                         <div className="inline-flex max-w-full items-center gap-1.5 text-[0.76em] font-semibold text-[#2f3547]">
                           <span className="truncate">{row.id}</span>
-                          <Copy className="h-3 w-3 text-[#4b69d2]" />
+                          <button aria-label={`Copy reference ${row.id}`} className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-[#4b69d2]" onClick={() => void copyReference(row.id)} title={copiedId === row.id ? "Copied" : "Copy reference"} type="button">
+                            <Copy className="h-3.5 w-3.5" />
+                          </button>
                         </div>
                         <p className="mt-0.5 text-[0.64em] text-[#7a8299]">{row.method}</p>
                       </div>
-                      <EllipsisVertical className="h-3.5 w-3.5 shrink-0 text-[#7b8296]" />
+                      <span className="text-[0.64em] text-[#7a8299]">{row.date}</span>
                     </div>
                     <div className="mt-1.5 flex items-center justify-between">
                       <StatusIndicator className="text-[0.66em]" label={row.status} tone={statusTone[row.status]} />
                       <span className="text-[0.68em] font-semibold text-[#4a5166]">{row.amount}</span>
                     </div>
-                  </button>
+                    <button className="mt-2 min-h-11 w-full rounded-lg border border-[#e0e5f0] bg-[#fafbfe] text-[0.72em] font-semibold text-[#4f576d]" onClick={() => openDetails(row)} type="button">View transaction details</button>
+                  </article>
                 ))}
+                {mobilePaginatedRows.length === 0 ? <p className="rounded-lg border border-dashed border-[#dce1ec] px-4 py-10 text-center text-sm text-[#7a8297]">No transactions match your search and filters.</p> : null}
                 <Pagination className="border-t border-ui-border pt-2" onNext={() => setPage((prev) => Math.min(mobileTotalPages, prev + 1))} onPrevious={() => setPage((prev) => Math.max(1, prev - 1))} page={mobileCurrentPage} totalPages={mobileTotalPages} />
               </div>
         </section>
       </DashboardShell>
 
       <ResponsiveSheet
+        ariaLabel="Transaction details"
         open={detailsOpen}
         onClose={() => setDetailsOpen(false)}
         panelClassName="max-h-[100dvh] rounded-none border-0 px-0 pt-0 pb-[calc(env(safe-area-inset-bottom)+12px)] md:max-h-[92dvh] md:rounded-t-2xl md:border-t md:px-4 md:pt-3 xl:max-w-[560px] xl:rounded-l-xl xl:rounded-tr-none xl:border-l xl:px-5 xl:pt-5"
       >
         <div className="flex h-full min-h-0 flex-col">
           <div className="flex items-center gap-2 border-b border-[#eceff5] px-4 py-3 xl:px-1 xl:py-0 xl:pb-4">
-            <button className="inline-flex h-8 w-8 items-center justify-center rounded-full text-[#5a647e] xl:hidden" onClick={() => setDetailsOpen(false)} type="button">
+            <button aria-label="Close transaction details" className="inline-flex h-11 w-11 items-center justify-center rounded-full text-[#5a647e] xl:hidden" onClick={() => setDetailsOpen(false)} type="button">
               <ArrowLeft className="h-4 w-4" />
             </button>
             <p className="text-[0.94em] font-semibold text-[#2f3547]">Transaction details</p>
           </div>
 
           <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3 xl:px-1 xl:py-0">
+            <DetailsBlock title="Transaction summary">
+              <DetailRow label="Reference" value={selectedTx?.id ?? "—"} />
+              <DetailRow label="Status" value={selectedTx?.status ?? "—"} />
+              <DetailRow label="Amount" value={selectedTx?.amount ?? "—"} />
+              <DetailRow label="Payment method" value={selectedTx?.method ?? "—"} />
+              <DetailRow label="Transaction type" value={selectedTx?.type ?? "—"} />
+              <DetailRow label="Date created" value={selectedTx?.date ?? "—"} />
+            </DetailsBlock>
+
             <DetailsBlock title="Cost estimate">
-              <DetailRow label="Tutor's fee" value="N3,500" />
-              <DetailRow label="Weekly rate" value="N7,000" subLabel="Based on 2 sessions per week and 1 hour per session" />
-              <DetailRow label="Finder's fee" value="N2,760.00   N500" />
-              <DetailRow label="VAT (7.5%)" value="N37.50" />
-              <DetailRow label="Subtotal" value={selectedTx?.amount ?? "N11,037.50"} />
-              <DetailRow label="Applicable taxes" value="N0.00" />
+              <DetailRow label="Tutor's fee" value="₦3,500" />
+              <DetailRow label="Weekly rate" value="₦7,000" subLabel="Based on 2 sessions per week and 1 hour per session" />
+              <DetailRow label="Finder's fee" value="₦500" />
+              <DetailRow label="VAT (7.5%)" value="₦37.50" />
+              <DetailRow label="Subtotal" value={selectedTx?.amount ?? "₦11,037.50"} />
+              <DetailRow label="Applicable taxes" value="₦0.00" />
               <div className="mt-2 flex items-center justify-between border-t border-[#e7ebf4] pt-2.5 text-[0.84em] font-semibold text-[#2f3547]">
                 <span>Total cost</span>
-                <span>{selectedTx?.amount ?? "N11,037.50"}</span>
+                <span>{selectedTx?.amount ?? "₦11,037.50"}</span>
               </div>
             </DetailsBlock>
 
@@ -294,17 +376,17 @@ export default function TransactionsPage() {
               <DetailRow label="Hours per day" value="1 hour" />
               <DetailRow label="Payment option" value="Full payment" />
               <DetailRow label="Availability" value="Mondays" />
-              <DetailRow label="Tutor's fee" value="N3,500" />
+              <DetailRow label="Tutor's fee" value="₦3,500" />
             </DetailsBlock>
           </div>
 
           <div className="border-t border-[#eceff5] px-4 py-3 xl:px-1">
             <div className="flex flex-col-reverse gap-2 md:flex-row md:justify-end">
-              <button className="h-10 rounded-full bg-[#e5e7eb] px-6 text-[0.78em] font-semibold text-[#4f576d]" onClick={() => setDetailsOpen(false)} type="button">
+              <button className="h-11 rounded-full bg-[#e5e7eb] px-6 text-[0.78em] font-semibold text-[#4f576d]" onClick={() => setDetailsOpen(false)} type="button">
                 Close
               </button>
-              <button className="h-10 rounded-full bg-[#262563] px-6 text-[0.78em] font-semibold text-white" type="button">
-                Share details
+              <button className="h-11 rounded-full bg-[#262563] px-6 text-[0.78em] font-semibold text-white" onClick={() => void shareDetails()} type="button">
+                {shareFeedback || "Share details"}
               </button>
             </div>
           </div>

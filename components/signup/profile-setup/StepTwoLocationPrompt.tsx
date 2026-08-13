@@ -14,7 +14,7 @@ type StepTwoLocationPromptProps = {
 };
 
 const searchFieldClassName =
-  "mt-2 h-10 w-full rounded-[0.5rem] border border-[#d8dde8] bg-white px-4 text-sm font-semibold text-[#4f5980] outline-none focus:border-[#7770df]";
+  "mt-2 h-11 w-full rounded-lg border border-[#d8dde8] bg-white px-4 text-sm font-semibold text-[#4f5980] outline-none focus:border-[#7770df]";
 
 export function StepTwoLocationPrompt({
   locationError,
@@ -33,12 +33,12 @@ export function StepTwoLocationPrompt({
       <div className="mx-auto mb-5 w-fit">
         <LocationTargetIcon />
       </div>
-      <h1 className="text-[2.2rem] font-bold tracking-[-0.02em] text-[#1d2331]">Find tutors near you</h1>
-      <p className="mx-auto mt-3 max-w-[390px] text-sm font-medium leading-relaxed text-[#8c93a7]">
+      <h1 className="text-3xl font-bold tracking-[-0.02em] text-[#1d2331] sm:text-4xl">Find tutors near you</h1>
+      <p className="mx-auto mt-3 max-w-[24.375rem] text-sm font-medium leading-relaxed text-[#8c93a7]">
         Allow location access so we can show you the best tutors available in your area and help you book sessions faster.
       </p>
       <button
-        className="mt-6 h-11 rounded-full bg-[#231d71] px-8 text-sm font-semibold text-white hover:bg-[#1c175f] disabled:cursor-not-allowed disabled:opacity-60"
+        className="mx-auto mt-6 inline-flex h-11 items-center rounded-full bg-[#231d71] px-8 text-sm font-semibold text-white hover:bg-[#1c175f] disabled:cursor-not-allowed disabled:opacity-60"
         disabled={requestingLocation}
         onClick={onAllowLocation}
         type="button"
@@ -49,7 +49,7 @@ export function StepTwoLocationPrompt({
 
       {!searchingAddress ? (
         <button
-          className="mt-4 text-sm font-semibold text-[#3d38c2] underline-offset-4 hover:underline"
+          className="mx-auto mt-4 block text-sm font-semibold text-[#3d38c2] underline-offset-4 hover:underline"
           onClick={onSearchAddress}
           type="button"
         >
@@ -58,7 +58,7 @@ export function StepTwoLocationPrompt({
       ) : null}
 
       {searchingAddress ? (
-        <div className="relative mx-auto mt-4 w-full max-w-[520px] text-left">
+        <div className="relative mx-auto mt-4 w-full max-w-[32.5rem] text-left">
           <label className="block text-xs font-semibold text-[#5d6479]">
             Search address
             <input

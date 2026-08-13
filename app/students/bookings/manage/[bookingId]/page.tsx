@@ -21,7 +21,8 @@ export default function BookingDetailsPage() {
   const [recommend, setRecommend] = useState("");
   const [comment, setComment] = useState("");
 
-  const canSubmit = rating > 0 && clarity && onTime && goals && recommend && comment.trim().length >= 10;
+  const commentIsValid = comment.trim().length === 0 || comment.trim().length >= 10;
+  const canSubmit = Boolean(rating > 0 && clarity && onTime && goals && recommend && commentIsValid);
 
   return (
     <main className="min-h-dvh bg-white text-[#2f3547]">
@@ -33,10 +34,10 @@ export default function BookingDetailsPage() {
             </span>
             Bookings
           </Link>
-          <button className="inline-flex items-center gap-1 rounded-full border border-[#e2e6ef] bg-[#f7f8fb] px-3 py-1.5 text-[0.76rem] font-semibold text-[#4f566c]" type="button">
+          <Link className="inline-flex min-h-11 items-center gap-1 rounded-full border border-[#e2e6ef] bg-[#f7f8fb] px-3 py-1.5 text-[0.76rem] font-semibold text-[#4f566c]" href="/students/chat">
             <HelpCircle className="h-3.5 w-3.5" />
             Need help
-          </button>
+          </Link>
         </div>
       </header>
 
@@ -53,7 +54,7 @@ export default function BookingDetailsPage() {
             <SummaryItem label="Hours per day" value="1 hour" />
             <SummaryItem label="Payment option" value="Full payment" />
             <SummaryItem label="Availability" value="Mondays" />
-            <SummaryItem label="Tutor's fee" value="N3,500" />
+            <SummaryItem label="Tutor's fee" value="₦3,500" />
           </div>
         </article>
 
@@ -90,15 +91,15 @@ export default function BookingDetailsPage() {
                 <span className="rounded-full bg-[#eaf8ef] px-2 py-0.5 text-[0.68rem] font-semibold text-[#1f9a5f]">Paid</span>
               </div>
               <div className="space-y-1.5 text-[0.76rem] text-[#6b7389]">
-                <CostRow label="Tutor's fee" value="N3,500" />
-                <CostRow label="Weekly rate" value="N7,000" />
+                <CostRow label="Tutor's fee" value="₦3,500" />
+                <CostRow label="Weekly rate" value="₦7,000" />
                 <p className="text-[0.62rem] text-[#8e96aa]">Based on 2 sessions per week and 1 hour per session</p>
-                <CostRow label="Finder's fee" value="N500" />
-                <CostRow label="VAT (7.5%)" value="N37.50" />
-                <CostRow label="Subtotal" value="N11,037.50" />
-                <CostRow label="Applicable taxes" value="N0.00" />
+                <CostRow label="Finder's fee" value="₦500" />
+                <CostRow label="VAT (7.5%)" value="₦37.50" />
+                <CostRow label="Subtotal" value="₦11,037.50" />
+                <CostRow label="Applicable taxes" value="₦0.00" />
                 <div className="mt-2 border-t border-[#e0e5f0] pt-2">
-                  <CostRow bold label="Total cost" value="N11,037.50" />
+                  <CostRow bold label="Total cost" value="₦11,037.50" />
                 </div>
               </div>
             </article>
@@ -107,7 +108,7 @@ export default function BookingDetailsPage() {
           <article className="rounded-xl border border-[#e3e8f2] bg-white p-4">
             <div className="mb-3 flex items-center justify-between">
               <h3 className="text-[0.9rem] font-semibold text-[#3c4359]">Timeline</h3>
-              <button className="rounded-full bg-[#232066] px-3 py-1 text-[0.7rem] font-semibold text-white" onClick={() => setShowRating(true)} type="button">
+              <button className="min-h-11 rounded-full bg-[#232066] px-4 py-1 text-[0.7rem] font-semibold text-white md:min-h-9" onClick={() => setShowRating(true)} type="button">
                 Rate session
               </button>
             </div>
@@ -136,8 +137,8 @@ export default function BookingDetailsPage() {
       </section>
 
       {showRating ? (
-        <div className="fixed inset-0 z-50 bg-[#101634]/45 p-4" onClick={() => setShowRating(false)}>
-          <div aria-labelledby="rate-session-title" aria-modal="true" className="mx-auto mt-[8vh] w-full max-w-[620px] rounded-2xl bg-white p-4 shadow-2xl" onClick={(e) => e.stopPropagation()} role="dialog">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-[#101634]/45 p-4" onClick={() => setShowRating(false)}>
+          <div aria-labelledby="rate-session-title" aria-modal="true" className="mx-auto my-[4vh] w-full max-w-[620px] rounded-2xl bg-white p-4 shadow-2xl sm:my-[8vh]" onClick={(e) => e.stopPropagation()} role="dialog">
             <h3 className="text-2xl font-semibold leading-tight text-[#2f3547] sm:text-3xl" id="rate-session-title">Rate your session</h3>
             <p className="mt-1 text-[0.72rem] text-[#8b93a8]">How was your session? Share your feedback about your tutor.</p>
 
@@ -145,7 +146,7 @@ export default function BookingDetailsPage() {
               <p className="mb-2 text-center text-[0.78rem] font-semibold text-[#5d657b]">How would you rate your session?</p>
               <div className="flex justify-center gap-1">
                 {[1, 2, 3, 4, 5].map((n) => (
-                  <button key={n} className="p-1" onClick={() => setRating(n)} type="button">
+                  <button key={n} aria-label={`${n} star${n === 1 ? "" : "s"}`} className="inline-flex h-11 w-11 items-center justify-center rounded-full" onClick={() => setRating(n)} type="button">
                     <Star className={`h-5 w-5 ${rating >= n ? "text-[#f7c845]" : "text-[#d5dbeb]"}`} fill="currentColor" strokeWidth={1} />
                   </button>
                 ))}
@@ -160,14 +161,14 @@ export default function BookingDetailsPage() {
               <label className="block text-[0.76rem] font-semibold text-[#3f4760]">
                 Tell us more about your experience <span className="font-medium text-[#8b93a8]">(optional)</span>
                 <textarea className="mt-1.5 h-24 w-full resize-none rounded-xl border border-[#d7dce8] px-3 py-2 text-[0.76rem] outline-none focus:border-[#5f64d8]" onChange={(e) => setComment(e.target.value)} placeholder="Share what you liked or what could be improved..." value={comment} />
-                <span className="mt-1 block text-[0.62rem] text-[#8b93a8]">Bio must be at least 10 characters</span>
+                <span className={`mt-1 block text-[0.62rem] ${commentIsValid ? "text-[#8b93a8]" : "text-[#c74747]"}`}>Optional — if you add a comment, please enter at least 10 characters.</span>
               </label>
             </div>
 
             <div className="mt-3 flex items-center justify-end gap-2">
-              <button className="h-9 rounded-full bg-[#ececef] px-4 text-[0.78rem] font-semibold text-[#4e576d]" onClick={() => setShowRating(false)} type="button">Cancel</button>
+              <button className="h-11 rounded-full bg-[#ececef] px-4 text-[0.78rem] font-semibold text-[#4e576d]" onClick={() => setShowRating(false)} type="button">Cancel</button>
               <button
-                className="inline-flex h-9 items-center gap-1 rounded-full bg-[#232066] px-4 text-[0.78rem] font-semibold text-white disabled:cursor-not-allowed disabled:bg-[#a6a9c9]"
+                className="inline-flex h-11 items-center gap-1 rounded-full bg-[#232066] px-4 text-[0.78rem] font-semibold text-white disabled:cursor-not-allowed disabled:bg-[#a6a9c9]"
                 disabled={!canSubmit}
                 onClick={() => {
                   setShowRating(false);
@@ -194,7 +195,7 @@ export default function BookingDetailsPage() {
             <h3 className="mt-5 text-2xl font-semibold leading-tight text-[#2f3547] sm:text-3xl" id="rating-success-title">You&apos;re good to go.</h3>
             <p className="mt-2 text-[0.95rem] text-[#6d758a]">Thank you for your feedback!</p>
             <Link className="mt-6 inline-flex rounded-full border border-[#d9dfeb] bg-white px-4 py-2 text-[0.82rem] font-semibold text-[#3e4a66]" href="/students/bookings">
-              back to dashboard
+              Back to bookings
             </Link>
           </div>
         </div>
@@ -234,7 +235,7 @@ function QuestionSelect({
     <label className="block text-[0.76rem] font-semibold text-[#3f4760]">
       {label}
       <div className="relative mt-1.5">
-        <select className="h-10 w-full appearance-none rounded-xl border border-[#d7dce8] bg-white px-3 pr-9 text-[0.76rem] outline-none focus:border-[#5f64d8]" onChange={(e) => onChange(e.target.value)} value={value}>
+        <select className="h-11 w-full appearance-none rounded-xl border border-[#d7dce8] bg-white px-3 pr-9 text-[0.76rem] outline-none focus:border-[#5f64d8]" onChange={(e) => onChange(e.target.value)} value={value}>
           <option value="">Select answer</option>
           <option value="yes">Yes</option>
           <option value="mostly">Mostly</option>

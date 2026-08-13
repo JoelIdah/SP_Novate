@@ -1,6 +1,7 @@
 "use client";
 
 import { StudentDashboardNavbar } from "./StudentDashboardNavbar";
+import { DashboardShell } from "../layout/DashboardShell";
 import {
   StudentDashboardActionsSection,
   StudentDashboardBookingsSection,
@@ -11,16 +12,11 @@ import {
 
 export default function StudentDashboardPage() {
   return (
-    <div className="dashboard-screen dashboard-home-fit bg-white text-[#1E1E1E]">
-      <div className="dashboard-shell">
-        <StudentDashboardNavbar active="Home" />
-
-        <main className="dashboard-main overflow-y-auto overflow-x-hidden scrollbar-hover">
-          <div className="dashboard-content-frame px-[var(--dashboard-gutter)]">
-            <div
-              className="dashboard-stack gap-3 2xl:gap-4"
-              data-dashboard-content
-            >
+    <DashboardShell homeFit navbar={<StudentDashboardNavbar active="Home" />}>
+      <div
+        className="dashboard-stack gap-3 2xl:gap-4"
+        data-dashboard-content
+      >
               <section>
                 <StudentDashboardActionsSection />
               </section>
@@ -44,11 +40,8 @@ export default function StudentDashboardPage() {
               <section>
                 <StudentDashboardResourcesSection />
               </section>
-            </div>
-          </div>
-        </main>
       </div>
-    </div>
+    </DashboardShell>
   );
 }
 

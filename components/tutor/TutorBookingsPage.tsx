@@ -2,8 +2,12 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, EllipsisVertical, Search, SlidersHorizontal } from "lucide-react";
+import { ChevronDown, EllipsisVertical } from "lucide-react";
 
+import { DashboardShell } from "../layout/DashboardShell";
+import { DataToolbar } from "../ui/DataToolbar";
+import { Pagination } from "../ui/Pagination";
+import { StatusIndicator, type StatusTone } from "../ui/StatusIndicator";
 import { TutorNavbar } from "./TutorNavbar";
 
 type BookingStatus = "Completed" | "Pending" | "Awaiting approval" | "Rejected";
@@ -33,11 +37,11 @@ const bookingRequests: BookingRequest[] = [
   { date: "March 15, 2026", student: "Mr. Oluyinka Alabi", department: "Academics", subject: "Entrance Exams", time: "4:00 PM", duration: "1 Hour", status: "Completed" },
 ];
 
-const statusColor: Record<BookingStatus, string> = {
-  Completed: "bg-[#14b861]",
-  Pending: "bg-[#e8bc3d]",
-  "Awaiting approval": "bg-[#1c8ddd]",
-  Rejected: "bg-[#e04f4f]",
+const statusTone: Record<BookingStatus, StatusTone> = {
+  Completed: "success",
+  Pending: "warning",
+  "Awaiting approval": "info",
+  Rejected: "danger",
 };
 
 const mobileRowsPerPage = 5;
@@ -118,24 +122,11 @@ export default function TutorBookingsPage() {
     : "All dates";
 
   return (
-    <main className="dashboard-screen bg-white text-[#2b3245]">
-      <div className="dashboard-shell">
-        <TutorNavbar active="Bookings" />
-        <section className="dashboard-main min-h-0 overflow-y-auto overflow-x-hidden md:overflow-hidden">
-          <div className="dashboard-content-frame px-[var(--dashboard-gutter)]">
-            <section className="flex min-h-full w-full flex-col py-[1.1em] md:h-full md:min-h-0">
-              <h1 className="text-[1.35em] font-semibold text-[#1f2550]">Booking requests</h1>
+    <DashboardShell mainClassName="min-h-0 md:overflow-hidden" navbar={<TutorNavbar active="Bookings" />}>
+      <section className="flex min-h-full w-full flex-col py-4 md:h-full md:min-h-0 md:py-5">
+              <h1 className="text-xl font-semibold tracking-[-0.01em] text-ui-title sm:text-2xl">Booking requests</h1>
 
-              <div className="mt-6 flex items-center justify-between gap-2">
-                <div className="relative w-full max-w-[22rem]">
-                  <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#a1a9bc]" />
-                  <input className="h-9 w-full rounded-full border border-[#e1e6f2] bg-white pl-9 pr-3 text-[0.76em] text-[#495167] placeholder:text-[#adb4c5]" placeholder="Search tutor name or booking ID" type="search" />
-                </div>
-                <button className="inline-flex h-8 items-center gap-1 rounded-md border border-[#e2e7f2] bg-white px-2.5 text-[0.68em] font-semibold text-[#7a8299]" type="button">
-                  <SlidersHorizontal className="h-3.5 w-3.5" />
-                  Sort
-                </button>
-              </div>
+              <div className="mt-5 sm:mt-6"><DataToolbar placeholder="Search student name or booking ID" /></div>
 
               <div className="mt-2.5 flex flex-wrap items-center gap-2 border-b border-[#e7ebf4] pb-3 md:gap-2.5">
                 <div className="relative">
@@ -247,10 +238,7 @@ export default function TutorBookingsPage() {
                             <td className="px-3 py-2.5">{row.time}</td>
                             <td className="px-3 py-2.5">{row.duration}</td>
                             <td className="px-3 py-2.5">
-                              <span className="inline-flex items-center gap-1.5">
-                                <span className={`h-1.5 w-1.5 rounded-full ${statusColor[row.status]}`} />
-                                {row.status}
-                              </span>
+                              <StatusIndicator label={row.status} tone={statusTone[row.status]} />
                             </td>
                             <td className="relative px-3 py-2.5 text-right">
                               <button
@@ -277,13 +265,7 @@ export default function TutorBookingsPage() {
                     </tbody>
                   </table>
                 </div>
-                <div className="flex items-center justify-between border-t border-[#edf0f6] px-3 py-2.5 text-[0.68em] text-[#6f768c]">
-                  <div className="flex items-center gap-1.5">
-                    <button className="rounded-md border border-[#e2e7f2] px-2 py-1 text-[#5f667b] disabled:opacity-50" disabled={currentPage === 1} onClick={() => setPage((prev) => Math.max(1, prev - 1))} type="button">Previous</button>
-                    <button className="rounded-md border border-[#e2e7f2] px-2 py-1 text-[#5f667b] disabled:opacity-50" disabled={currentPage >= totalPages} onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))} type="button">Next</button>
-                  </div>
-                  <span>Page {currentPage} of {totalPages}</span>
-                </div>
+                <Pagination className="border-t border-ui-border px-3 py-2.5" onNext={() => setPage((prev) => Math.min(totalPages, prev + 1))} onPrevious={() => setPage((prev) => Math.max(1, prev - 1))} page={currentPage} totalPages={totalPages} />
               </div>
 
               <div className="mt-3 space-y-1.5 pb-6 md:hidden">
@@ -301,24 +283,14 @@ export default function TutorBookingsPage() {
                     </div>
                     <div className="mt-1.5 flex items-center justify-between">
                       <span className="text-[0.66em] text-[#596177]">{row.date}</span>
-                      <span className="inline-flex items-center gap-1 text-[0.66em] text-[#596177]">
-                        <span className={`h-1.5 w-1.5 rounded-full ${statusColor[row.status]}`} />
-                        {row.status}
-                      </span>
+                      <StatusIndicator className="text-[0.66em]" label={row.status} tone={statusTone[row.status]} />
                     </div>
                   </button>
                   );
                 })}
-                <div className="flex items-center justify-between border-t border-[#edf0f6] pt-2 text-[0.72em] text-[#6f768c]">
-                  <button className="rounded-md border border-[#e2e7f2] px-2 py-1 text-[#5f667b] disabled:opacity-50" disabled={mobileCurrentPage === 1} onClick={() => setPage((prev) => Math.max(1, prev - 1))} type="button">Previous</button>
-                  <span>Page {mobileCurrentPage} of {mobileTotalPages}</span>
-                  <button className="rounded-md border border-[#e2e7f2] px-2 py-1 text-[#5f667b] disabled:opacity-50" disabled={mobileCurrentPage >= mobileTotalPages} onClick={() => setPage((prev) => Math.min(mobileTotalPages, prev + 1))} type="button">Next</button>
-                </div>
+                <Pagination className="border-t border-ui-border pt-2" onNext={() => setPage((prev) => Math.min(mobileTotalPages, prev + 1))} onPrevious={() => setPage((prev) => Math.max(1, prev - 1))} page={mobileCurrentPage} totalPages={mobileTotalPages} />
               </div>
-            </section>
-          </div>
-        </section>
-      </div>
-    </main>
+      </section>
+    </DashboardShell>
   );
 }

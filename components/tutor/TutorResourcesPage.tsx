@@ -9,13 +9,15 @@ import {
   EllipsisVertical,
   Info,
   Lightbulb,
-  Search,
-  SlidersHorizontal,
   Upload,
   Video,
 } from "lucide-react";
 
 import ResponsiveSheet from "../ui/ResponsiveSheet";
+import { DashboardShell } from "../layout/DashboardShell";
+import { DataToolbar } from "../ui/DataToolbar";
+import { Pagination } from "../ui/Pagination";
+import { StatusIndicator, type StatusTone } from "../ui/StatusIndicator";
 import { TutorNavbar } from "./TutorNavbar";
 
 type ResourceTab = "manage" | "archive";
@@ -47,11 +49,11 @@ const resources: ResourceRow[] = [
   { title: "Intro to data structure", type: "Videos", department: "Academics", subject: "Entrance Exams", date: "March 15, 2026", duration: "1 Hour", status: "Draft", archivedBy: "Admin" },
 ];
 
-const statusColor: Record<ResourceStatus | ArchivedBy, string> = {
-  Published: "bg-[#12b76a]",
-  Draft: "bg-[#1c8ddd]",
-  me: "bg-[#12b76a]",
-  Admin: "bg-[#1c8ddd]",
+const statusTone: Record<ResourceStatus | ArchivedBy, StatusTone> = {
+  Published: "success",
+  Draft: "info",
+  me: "success",
+  Admin: "info",
 };
 
 const desktopRowsPerPage = 10;
@@ -87,45 +89,31 @@ export default function TutorResourcesPage() {
   };
 
   return (
-    <main className="dashboard-screen bg-white text-[#2b3245]">
-      <div className="dashboard-shell">
-        <TutorNavbar active="Resources" />
-        <section className="dashboard-main min-h-0 overflow-y-auto overflow-x-hidden md:overflow-hidden">
-          <div className="dashboard-content-frame px-[var(--dashboard-gutter)]">
-            <section className="w-full py-[1.1em] md:flex md:h-full md:min-h-0 md:flex-col">
+    <>
+      <DashboardShell mainClassName="min-h-0 md:overflow-hidden" navbar={<TutorNavbar active="Resources" />}>
+        <section className="w-full py-4 md:flex md:h-full md:min-h-0 md:flex-col md:py-5">
               <div className="flex flex-wrap items-center gap-3 border-b border-[#e4e8f2] pb-4">
                 <TabButton active={activeTab === "manage"} icon={<Boxes className="h-3.5 w-3.5" />} label="Manage resources" onClick={() => setActiveTab("manage")} />
                 <TabButton active={activeTab === "archive"} icon={<Archive className="h-3.5 w-3.5" />} label="Archive resources" onClick={() => setActiveTab("archive")} />
               </div>
 
-              <section className="mt-3 grid items-center gap-4 rounded-xl bg-[#f3f6fb] px-3 py-4 sm:mt-5 sm:px-5 md:px-7 md:py-7 xl:grid-cols-[1.1fr_2fr]">
+              <section className="mt-3 grid items-center gap-4 rounded-xl bg-[#f3f6fb] px-4 py-5 sm:mt-5 sm:px-5 md:px-7 md:py-7 lg:grid-cols-[1fr_1.7fr]">
                 <div>
-                  <h1 className="text-[1em] font-semibold text-[#1f2550] sm:text-[1.1em] md:text-[1.35em]">Create Educational resources</h1>
-                  <p className="mt-1.5 max-w-[23rem] text-[0.74em] leading-relaxed text-[#6f7891] sm:mt-2 sm:text-[0.8em]">
-                    Upload and organize videos, links, and documents to support your students&apos; learning.
-                  </p>
+                  <h1 className="text-xl font-semibold tracking-[-0.01em] text-ui-title sm:text-2xl">Create educational resources</h1>
+                  <p className="mt-1 max-w-3xl text-sm leading-relaxed text-ui-body">Upload and organize videos, links, and documents to support your students&apos; learning.</p>
                   <button className="mt-3 h-9 rounded-full bg-[#262563] px-4 text-[0.74em] font-semibold text-white sm:mt-5 sm:h-10 sm:px-5 sm:text-[0.78em]" onClick={() => setIsCreateOpen(true)} type="button">
                     Create Resource
                   </button>
                 </div>
 
-                <div className="hidden gap-3 md:grid md:grid-cols-3 md:gap-4">
+                <div className="grid gap-3 sm:grid-cols-3 sm:gap-4">
                   <FeatureCard icon={<Video className="h-4 w-4" />} iconClassName="bg-[#d9b4f8] text-[#8d4bd6]" title="Resources content" text="Upload educational materials to enhance your students&apos; learning" />
                   <FeatureCard icon={<BookOpen className="h-4 w-4" />} iconClassName="bg-[#b9eceb] text-[#168b8a]" title="Multiple subjects" text="Create resources across various departments and subjects" />
                   <FeatureCard icon={<Info className="h-4 w-4" />} iconClassName="bg-[#c4e6ff] text-[#2688d1]" title="Guidelines" text="Ensure courses are educational and aligns with the course objectives" />
                 </div>
               </section>
 
-              <div className="mt-4 flex items-center justify-between gap-2 md:mt-6">
-                <div className="relative w-full max-w-[24rem]">
-                  <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#a1a9bc]" />
-                  <input className="h-9 w-full rounded-full border border-transparent bg-white pl-9 pr-3 text-[0.76em] text-[#495167] placeholder:text-[#adb4c5]" placeholder="Search resource title or subject" type="search" />
-                </div>
-                <button className="inline-flex h-8 items-center gap-1 rounded-md border border-[#e2e7f2] bg-white px-2.5 text-[0.68em] font-semibold text-[#7a8299]" type="button">
-                  <SlidersHorizontal className="h-3.5 w-3.5" />
-                  Sort
-                </button>
-              </div>
+              <div className="mt-4 md:mt-6"><DataToolbar placeholder="Search resource title or subject" /></div>
 
               <div className="mt-2.5 flex items-center gap-2 border-b border-[#e7ebf4] pb-3">
                 <FilterChip label="Date" />
@@ -152,10 +140,7 @@ export default function TutorResourcesPage() {
                           <td className="px-3 py-2.5">{row.date}</td>
                           <td className="px-3 py-2.5">{row.duration}</td>
                           <td className="px-3 py-2.5">
-                            <span className="inline-flex items-center gap-1.5">
-                              <span className={`h-1.5 w-1.5 rounded-full ${activeTab === "manage" ? statusColor[row.status] : statusColor[row.archivedBy]}`} />
-                              {activeTab === "manage" ? row.status : row.archivedBy}
-                            </span>
+                            <StatusIndicator label={activeTab === "manage" ? row.status : row.archivedBy} tone={activeTab === "manage" ? statusTone[row.status] : statusTone[row.archivedBy]} />
                           </td>
                           <td className="px-3 py-2.5 text-right">
                             <EllipsisVertical className="ml-auto h-3.5 w-3.5 text-[#6f768c]" />
@@ -166,13 +151,7 @@ export default function TutorResourcesPage() {
                   </table>
                 </div>
 
-                <div className="flex items-center justify-between border-t border-[#edf0f6] px-3 py-2.5 text-[0.68em] text-[#6f768c]">
-                  <div className="flex items-center gap-1.5">
-                    <button className="rounded-md border border-[#e2e7f2] px-2 py-1 text-[#5f667b] disabled:opacity-50" disabled={currentPage === 1} onClick={() => setPage((prev) => Math.max(1, prev - 1))} type="button">Previous</button>
-                    <button className="rounded-md border border-[#e2e7f2] px-2 py-1 text-[#5f667b] disabled:opacity-50" disabled={currentPage === totalPages} onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))} type="button">Next</button>
-                  </div>
-                  <span>Page {currentPage} of {totalPages}</span>
-                </div>
+                <Pagination className="border-t border-ui-border px-3 py-2.5" onNext={() => setPage((prev) => Math.min(totalPages, prev + 1))} onPrevious={() => setPage((prev) => Math.max(1, prev - 1))} page={currentPage} totalPages={totalPages} />
               </div>
 
               <div className="mt-3 space-y-1.5 pb-4 md:hidden">
@@ -187,27 +166,18 @@ export default function TutorResourcesPage() {
                     </div>
                     <div className="mt-1.5 flex items-center justify-between text-[0.66em] text-[#596177]">
                       <span>{row.date}</span>
-                      <span className="inline-flex items-center gap-1">
-                        <span className={`h-1.5 w-1.5 rounded-full ${activeTab === "manage" ? statusColor[row.status] : statusColor[row.archivedBy]}`} />
-                        {activeTab === "manage" ? row.status : row.archivedBy}
-                      </span>
+                      <StatusIndicator className="text-[0.66em]" label={activeTab === "manage" ? row.status : row.archivedBy} tone={activeTab === "manage" ? statusTone[row.status] : statusTone[row.archivedBy]} />
                     </div>
                   </article>
                 ))}
-                <div className="flex items-center justify-between border-t border-[#edf0f6] pt-2 text-[0.72em] text-[#6f768c]">
-                  <button className="rounded-md border border-[#e2e7f2] px-2 py-1 text-[#5f667b] disabled:opacity-50" disabled={mobileCurrentPage === 1} onClick={() => setPage((prev) => Math.max(1, prev - 1))} type="button">Previous</button>
-                  <span>Page {mobileCurrentPage} of {mobileTotalPages}</span>
-                  <button className="rounded-md border border-[#e2e7f2] px-2 py-1 text-[#5f667b] disabled:opacity-50" disabled={mobileCurrentPage === mobileTotalPages} onClick={() => setPage((prev) => Math.min(mobileTotalPages, prev + 1))} type="button">Next</button>
-                </div>
+                <Pagination className="border-t border-ui-border pt-2" onNext={() => setPage((prev) => Math.min(mobileTotalPages, prev + 1))} onPrevious={() => setPage((prev) => Math.max(1, prev - 1))} page={mobileCurrentPage} totalPages={mobileTotalPages} />
               </div>
-            </section>
-          </div>
         </section>
-      </div>
+      </DashboardShell>
 
       <CreateResourceSheet open={isCreateOpen} onClose={closeCreate} onCreate={showSuccess} />
       <SuccessModal open={successOpen} onClose={() => setSuccessOpen(false)} />
-    </main>
+    </>
   );
 }
 
@@ -332,11 +302,11 @@ function SuccessModal({ open, onClose }: { open: boolean; onClose: () => void })
 
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center bg-[#1e1e1e]/45 px-4" onClick={onClose}>
-      <div className="w-full max-w-[310px] rounded-xl bg-white p-4 text-center shadow-2xl" onClick={(event) => event.stopPropagation()}>
+      <div aria-labelledby="resource-success-title" aria-modal="true" className="w-full max-w-[310px] rounded-xl bg-white p-4 text-center shadow-2xl" onClick={(event) => event.stopPropagation()} role="dialog">
         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#eef0ff] text-[#4b49d8]">
           <Lightbulb className="h-5 w-5" />
         </div>
-        <h2 className="mx-auto mt-5 max-w-[12rem] text-[1.15rem] font-semibold leading-tight text-[#1f2537]">Resources Created successfully</h2>
+        <h2 className="mx-auto mt-5 max-w-[12rem] text-[1.15rem] font-semibold leading-tight text-[#1f2537]" id="resource-success-title">Resource created successfully</h2>
         <p className="mx-auto mt-2 max-w-[11rem] text-[0.74rem] leading-relaxed text-[#6f7891]">Your resource has been added successfully</p>
         <div className="mt-8 flex items-center gap-2 border-t border-[#edf0f6] pt-3">
           <button className="h-9 flex-1 rounded-full bg-[#f0f1f4] text-[0.74rem] font-semibold text-[#2f3547]" onClick={onClose} type="button">Cancel</button>

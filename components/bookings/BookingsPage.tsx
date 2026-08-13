@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { CalendarDays, ChevronDown, ChevronRight, ClipboardList, Compass, EllipsisVertical, MapPin, Search, Star } from "lucide-react";
 
 import { StudentDashboardNavbar } from "../dashboard/StudentDashboardNavbar";
+import { DashboardShell } from "../layout/DashboardShell";
 import { Avatar } from "../ui/Avatar";
 import { Button } from "../ui/Button";
 import { Card } from "../ui/Card";
@@ -211,17 +212,12 @@ export default function BookingsPage() {
   };
 
   return (
-    <main className="dashboard-screen bg-white text-[#2b3245]">
-      <div className="dashboard-shell">
-        <StudentDashboardNavbar active="Bookings" />
-        <section
-          className={`dashboard-main min-h-0 overflow-x-hidden ${
-            view === "explore" ? "scrollbar-hover overflow-y-auto" : "overflow-y-hidden"
-          }`}
-          style={{ overflowX: "hidden", overflowY: view === "explore" ? "auto" : "hidden" }}
-        >
-          <div className="dashboard-content-frame px-[var(--dashboard-gutter)]">
-            <section className={`w-full py-[1.2em] ${view === "manage" ? "flex h-full min-h-0 flex-col" : "space-y-[1.25em] 2xl:space-y-[1.4em]"}`}>
+    <>
+      <DashboardShell
+        mainClassName={view === "explore" ? "scrollbar-hover" : "md:overflow-hidden"}
+        navbar={<StudentDashboardNavbar active="Bookings" />}
+      >
+        <section className={`w-full py-4 md:py-5 ${view === "manage" ? "flex min-h-full flex-col md:h-full md:min-h-0" : "space-y-5 2xl:space-y-6"}`}>
         <div className="flex flex-wrap gap-[0.55em]">
           <button
             className={`inline-flex items-center gap-[0.55em] rounded-full border px-[1em] py-[0.45em] text-[0.74em] font-semibold ${
@@ -612,10 +608,8 @@ export default function BookingsPage() {
             </div>
           </section>
         )}
-            </section>
-          </div>
         </section>
-      </div>
+      </DashboardShell>
 
       <ResponsiveSheet mobileOnly open={view === "explore" && isFilterOpen} onClose={() => setIsFilterOpen(false)}>
             <div className="mx-auto mb-2 h-1.5 w-10 rounded-full bg-[#d8dde8]" />
@@ -640,7 +634,7 @@ export default function BookingsPage() {
               </button>
             </div>
       </ResponsiveSheet>
-    </main>
+    </>
   );
 }
 

@@ -93,17 +93,19 @@
 
   .auth-content-wrap {
     display: flex;
+    flex-direction: column;
     min-height: 100svh;
     height: auto;
     width: min(calc(100% - 2rem), 24rem);
     align-items: center;
-    justify-content: flex-start;
+    justify-content: center;
     overflow: visible;
     padding-block: max(2rem, calc(env(safe-area-inset-top) + 0.85rem)) max(1.1rem, env(safe-area-inset-bottom));
   }
 
   .auth-panel {
     width: 100%;
+    min-width: 0;
   }
 
   .auth-card {

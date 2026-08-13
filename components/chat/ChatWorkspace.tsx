@@ -106,14 +106,14 @@ export default function ChatWorkspace({ role, navbar }: ChatWorkspaceProps) {
   const composerValue = role === "tutor" ? "Great Kene. please what day works for you" : "Hi Oluyinka, I would love to book a sessio";
 
   return (
-    <main className="dashboard-screen overflow-hidden bg-[#f1f1fb] text-[#2b3245]">
+    <main className="dashboard-screen overflow-hidden bg-brand-surface text-brand-ink">
       <div className="dashboard-shell bg-cover bg-center" style={{ backgroundImage: "url('/images/hero-pattern.png')" }}>
         {navbar}
 
         <section className="dashboard-main p-0">
           <div className="dashboard-content-frame px-4 py-4 md:px-5">
             <section className="grid h-full min-h-0 w-full gap-5 xl:grid-cols-[23rem_minmax(0,1fr)]">
-              <aside className={`${activeContactId ? "hidden xl:flex" : "flex"} min-h-0 flex-col overflow-hidden rounded-xl border border-[#dfe3ee] bg-white shadow-[0_10px_24px_rgba(31,40,74,0.05)]`}>
+              <aside className={`${activeContactId ? "hidden xl:flex" : "flex"} min-h-0 flex-col overflow-hidden rounded-xl border border-ui-border bg-white shadow-[var(--ui-shadow-card)]`}>
                 <div className="border-b border-[#edf0f6] px-4 py-4">
                   <h1 className="text-[1rem] font-medium text-[#858ea2]">Chat</h1>
                 </div>
@@ -122,7 +122,7 @@ export default function ChatWorkspace({ role, navbar }: ChatWorkspaceProps) {
                   <label className="relative block">
                     <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#aeb6c7]" />
                     <input
-                      className="h-9 w-full rounded-full border border-[#e2e7f2] bg-white pl-9 pr-3 text-[0.74rem] text-[#5f667b] outline-none placeholder:text-[#b1b8c8]"
+                      className="min-h-10 w-full rounded-full border border-ui-border bg-white pl-9 pr-3 text-sm text-ui-body outline-none placeholder:text-[#b1b8c8] focus:border-brand-accent"
                       placeholder={searchPlaceholder}
                       type="search"
                     />
@@ -161,7 +161,7 @@ export default function ChatWorkspace({ role, navbar }: ChatWorkspaceProps) {
                 </div>
               </aside>
 
-              <section className={`${activeContactId ? "flex" : "hidden xl:flex"} min-h-0 flex-col overflow-hidden rounded-xl border border-[#dfe3ee] bg-white shadow-[0_10px_24px_rgba(31,40,74,0.05)]`}>
+              <section className={`${activeContactId ? "flex" : "hidden xl:flex"} min-h-0 flex-col overflow-hidden rounded-xl border border-ui-border bg-white shadow-[var(--ui-shadow-card)]`}>
                 <header className="flex h-[4.4rem] items-center justify-between border-b border-[#edf0f6] px-4">
                   <div className="flex min-w-0 items-center gap-2 sm:gap-3">
                     <button
@@ -175,8 +175,8 @@ export default function ChatWorkspace({ role, navbar }: ChatWorkspaceProps) {
                     <ContactAvatar contact={activeContact} size="h-8 w-8" />
                     <p className="truncate text-[1rem] font-semibold text-[#222838]">{activeContact.name}</p>
                   </div>
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-[#e8fbf1] px-3 py-1 text-[0.72rem] font-semibold text-[#10935a]">
-                    <span className="h-1.5 w-1.5 rounded-full bg-[#15b86b]" />
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-[#e8fbf1] px-3 py-1 text-xs font-semibold text-brand-success">
+                    <span className="h-1.5 w-1.5 rounded-full bg-brand-success" />
                     Online
                   </span>
                 </header>
@@ -198,15 +198,15 @@ export default function ChatWorkspace({ role, navbar }: ChatWorkspaceProps) {
                 </div>
 
                 <footer className="flex items-center gap-3 border-t border-[#edf0f6] bg-white px-4 py-3">
-                  <button className="inline-flex h-8 w-8 items-center justify-center rounded-full text-[#2f3547] hover:bg-[#f1f3f8]" type="button">
+                  <button aria-label="Add attachment" className="inline-flex h-10 w-10 items-center justify-center rounded-full text-[#2f3547] hover:bg-[#f1f3f8]" type="button">
                     <Plus className="h-4 w-4" />
                   </button>
                   <input
-                    className="h-9 min-w-0 flex-1 rounded-full border border-[#d4d9ef] bg-[#ececf8] px-4 text-[0.76rem] text-[#4d5395] outline-none placeholder:text-[#4d5395]"
+                    className="min-h-10 min-w-0 flex-1 rounded-full border border-ui-border bg-brand-primary-soft px-4 text-sm text-[#4d5395] outline-none placeholder:text-[#4d5395] focus:border-brand-accent"
                     defaultValue={composerValue}
                     type="text"
                   />
-                  <button className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#16b76d] text-white" type="button">
+                  <button aria-label="Send message" className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-success text-white" type="button">
                     <SendHorizontal className="h-3 w-3" fill="currentColor" strokeWidth={2.5} />
                   </button>
                 </footer>

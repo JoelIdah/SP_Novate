@@ -27,6 +27,7 @@ export default function ResponsiveSheet({
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const openRafRef = useRef<number | null>(null);
   const panelRef = useRef<HTMLDivElement | null>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     if (open) {
@@ -56,6 +57,7 @@ export default function ResponsiveSheet({
 
   useEffect(() => {
     if (!mounted) return;
+    previousFocusRef.current = document.activeElement as HTMLElement | null;
     const previousOverflow = document.body.style.overflow;
     const previousPaddingRight = document.body.style.paddingRight;
     const scrollbarCompensation = window.innerWidth - document.documentElement.clientWidth;
@@ -85,10 +87,16 @@ export default function ResponsiveSheet({
     };
 
     window.addEventListener("keydown", handleKeydown);
+    requestAnimationFrame(() => {
+      panelRef.current?.querySelector<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      )?.focus();
+    });
     return () => {
       document.body.style.overflow = previousOverflow;
       document.body.style.paddingRight = previousPaddingRight;
       window.removeEventListener("keydown", handleKeydown);
+      previousFocusRef.current?.focus();
     };
   }, [mounted, onClose]);
 
@@ -108,8 +116,10 @@ export default function ResponsiveSheet({
       />
       <div
         ref={panelRef}
+        aria-modal="true"
         className={`absolute bottom-0 left-0 right-0 z-10 flex h-auto max-h-[92dvh] w-full min-w-0 flex-col overflow-hidden rounded-t-2xl border-t border-[#d6dce8] bg-white px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+10px)] shadow-2xl transition-transform duration-300 ease-out will-change-transform xl:bottom-0 xl:left-auto xl:right-0 xl:top-0 xl:max-h-none xl:h-full xl:w-full xl:max-w-[558px] xl:rounded-l-xl xl:rounded-tr-none xl:border-l xl:border-t-0 xl:px-5 xl:pb-0 ${isActive ? "translate-y-0 xl:translate-x-0" : "translate-y-full xl:translate-y-0 xl:translate-x-full"} ${panelClassName}`}
         onClick={(event) => event.stopPropagation()}
+        role="dialog"
       >
         {children}
       </div>

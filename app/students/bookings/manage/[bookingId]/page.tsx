@@ -26,7 +26,7 @@ export default function BookingDetailsPage() {
   return (
     <main className="min-h-dvh bg-white text-[#2f3547]">
       <header className="border-b border-[#e6e9f2] bg-white">
-        <div className="flex h-14 items-center justify-between px-4">
+        <div className="mx-auto flex h-14 w-full max-w-[var(--app-max-width)] items-center justify-between px-[var(--app-gutter)]">
           <Link className="inline-flex items-center gap-2 text-[0.75rem] font-medium text-[#6f7891]" href="/students/bookings">
             <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#efeffa]">
               <ChevronLeft className="h-3.5 w-3.5 text-[#6d6bd6]" />
@@ -40,8 +40,8 @@ export default function BookingDetailsPage() {
         </div>
       </header>
 
-      <section className="mx-auto w-full max-w-[1260px] space-y-4 px-5 py-4">
-        <h1 className="text-[1.25rem] font-semibold text-[#2f3547]">Booking details</h1>
+      <section className="mx-auto w-full max-w-[var(--app-max-width)] space-y-4 px-[var(--app-gutter)] py-4 sm:py-5">
+        <h1 className="text-xl font-semibold text-ui-title sm:text-2xl">Booking details</h1>
 
         <article className="rounded-xl border border-[#e3e8f2] bg-white p-4">
           <h2 className="mb-3 text-[0.92rem] font-semibold text-[#3c4359]">Booking summary</h2>
@@ -57,7 +57,7 @@ export default function BookingDetailsPage() {
           </div>
         </article>
 
-        <div className="grid gap-4 xl:grid-cols-[1fr_1.5fr]">
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)]">
           <div className="space-y-4">
             <article className="rounded-xl border border-[#e3e8f2] bg-white p-4">
               <h3 className="mb-3 text-[0.9rem] font-semibold text-[#3c4359]">Tutor details</h3>
@@ -69,8 +69,8 @@ export default function BookingDetailsPage() {
                   </span>
                 </div>
                 <div className="flex-1">
-                  <p className="text-[2rem] leading-none font-semibold text-[#30364a]">Oluyinka Emmanuel</p>
-                  <p className="text-[0.95rem] text-[#6f7689]">Software engineer • B.sc, M.sc</p>
+                  <p className="text-xl leading-tight font-semibold text-[#30364a] sm:text-2xl">Oluyinka Emmanuel</p>
+                  <p className="text-sm text-[#6f7689] sm:text-base">Software engineer • B.sc, M.sc</p>
                   <div className="mt-2 flex flex-wrap gap-1.5">
                     {["Mathematics", "Physics", "Further mathematics"].map((tag) => (
                       <span key={tag} className="rounded-md bg-[#ecf0f5] px-2 py-0.5 text-[0.68rem] font-medium text-[#5e677b]">{tag}</span>
@@ -115,7 +115,7 @@ export default function BookingDetailsPage() {
               {timeline.map((step, index) => {
                 const Icon = step.icon;
                 return (
-                  <div key={step.title} className="grid grid-cols-[1.5rem_1fr_auto] items-start gap-3">
+                  <div key={step.title} className="grid grid-cols-[1.5rem_minmax(0,1fr)] items-start gap-3 sm:grid-cols-[1.5rem_minmax(0,1fr)_auto]">
                     <div className="relative mt-0.5">
                       <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-[#d9def0] bg-white text-[#585ddb]">
                         <Icon className="h-3.5 w-3.5" />
@@ -126,7 +126,7 @@ export default function BookingDetailsPage() {
                       <p className="text-[0.95rem] font-semibold text-[#565ddb]">{step.title}</p>
                       <p className="text-[0.72rem] text-[#8a92a6]">{step.note}</p>
                     </div>
-                    <p className="text-[0.78rem] text-[#7b8398]">{step.time}</p>
+                    <p className="col-start-2 text-xs text-[#7b8398] sm:col-start-auto sm:text-[0.78rem]">{step.time}</p>
                   </div>
                 );
               })}
@@ -137,8 +137,8 @@ export default function BookingDetailsPage() {
 
       {showRating ? (
         <div className="fixed inset-0 z-50 bg-[#101634]/45 p-4" onClick={() => setShowRating(false)}>
-          <div className="mx-auto mt-[8vh] w-full max-w-[620px] rounded-2xl bg-white p-4 shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-[2rem] font-semibold leading-none text-[#2f3547]">Rate your session</h3>
+          <div aria-labelledby="rate-session-title" aria-modal="true" className="mx-auto mt-[8vh] w-full max-w-[620px] rounded-2xl bg-white p-4 shadow-2xl" onClick={(e) => e.stopPropagation()} role="dialog">
+            <h3 className="text-2xl font-semibold leading-tight text-[#2f3547] sm:text-3xl" id="rate-session-title">Rate your session</h3>
             <p className="mt-1 text-[0.72rem] text-[#8b93a8]">How was your session? Share your feedback about your tutor.</p>
 
             <div className="mt-3">
@@ -185,13 +185,13 @@ export default function BookingDetailsPage() {
 
       {showSuccess ? (
         <div className="fixed inset-0 z-50 bg-[#101634]/45 p-4" onClick={() => setShowSuccess(false)}>
-          <div className="mx-auto mt-[20vh] w-full max-w-[520px] rounded-3xl bg-white p-8 text-center shadow-2xl" onClick={(e) => e.stopPropagation()}>
+          <div aria-labelledby="rating-success-title" aria-modal="true" className="mx-auto mt-[20vh] w-full max-w-[520px] rounded-3xl bg-white p-8 text-center shadow-2xl" onClick={(e) => e.stopPropagation()} role="dialog">
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#eff2ff]">
               <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-[#1f9ec7] text-white">
                 <CircleDot className="h-6 w-6" />
               </span>
             </div>
-            <h3 className="mt-5 text-[2rem] font-semibold leading-none text-[#2f3547]">You&apos;re good to go.</h3>
+            <h3 className="mt-5 text-2xl font-semibold leading-tight text-[#2f3547] sm:text-3xl" id="rating-success-title">You&apos;re good to go.</h3>
             <p className="mt-2 text-[0.95rem] text-[#6d758a]">Thank you for your feedback!</p>
             <Link className="mt-6 inline-flex rounded-full border border-[#d9dfeb] bg-white px-4 py-2 text-[0.82rem] font-semibold text-[#3e4a66]" href="/students/bookings">
               back to dashboard

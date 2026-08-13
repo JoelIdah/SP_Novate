@@ -1,6 +1,9 @@
 "use client";
 
 import { BookOpenCheck, Boxes, EllipsisVertical, PencilLine } from "lucide-react";
+import { DashboardShell } from "../layout/DashboardShell";
+import { DashboardActionCard, DashboardResourceCard, DashboardSectionHeader } from "../dashboard/DashboardPatterns";
+import { StatusIndicator } from "../ui/StatusIndicator";
 import { TutorNavbar } from "./TutorNavbar";
 
 type BookingRequestRow = {
@@ -30,50 +33,18 @@ const messages: MessageRow[] = [
   { initials: "Q", name: "Quadri Ahmed", preview: "Hi Oluyinka, I would love to book a session.", time: "11:25" },
 ];
 
-function StatusDot({ status }: { status: BookingRequestRow["status"] }) {
-  const color = status === "Completed" ? "bg-[#1ab26e]" : status === "Ongoing" ? "bg-[#9b57f6]" : "bg-[#2295ea]";
-  return <span className={`inline-block h-2 w-2 rounded-full ${color}`} />;
-}
+const bookingTone = { Completed: "success", Ongoing: "accent", "Awaiting approval": "info" } as const;
 
 export default function TutorDashboardPage() {
   return (
-    <div className="dashboard-screen dashboard-home-fit bg-white text-[#1E1E1E]">
-      <div className="dashboard-shell">
-        <TutorNavbar active="Home" />
-
-        <main className="dashboard-main overflow-y-auto overflow-x-hidden scrollbar-hover">
-          <div className="dashboard-content-frame px-[var(--dashboard-gutter)]">
-            <div className="dashboard-stack gap-3 py-3 2xl:gap-4">
+    <DashboardShell homeFit navbar={<TutorNavbar active="Home" />}>
+      <div className="dashboard-stack gap-3 py-3 2xl:gap-4">
               <section>
-                <h2 className="mb-2 text-[0.875rem] font-semibold text-[#616a82]">Actions</h2>
+                <DashboardSectionHeader title="Actions" />
                 <div className="grid gap-3 md:grid-cols-3">
-                  <article className="flex min-h-[4.75rem] items-center rounded-xl border border-[#dcc7f7] bg-[#f7f0ff] px-3.5 py-2.5">
-                    <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#e7d8fb] text-[#9a5cdf]">
-                      <BookOpenCheck className="h-[1.1rem] w-[1.1rem]" />
-                    </span>
-                    <div className="ml-2">
-                      <p className="text-[1rem] font-semibold text-[#2b3350]">Set up subjects</p>
-                      <p className="mt-1 text-[0.75rem] leading-[1.25] text-[#6d758e]">Go to your subjects and active tutor profile.</p>
-                    </div>
-                  </article>
-                  <article className="flex min-h-[4.75rem] items-center rounded-xl border border-[#bcdaf2] bg-[#f0f8ff] px-3.5 py-2.5">
-                    <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#d7ecff] text-[#2586d8]">
-                      <Boxes className="h-[1.1rem] w-[1.1rem]" />
-                    </span>
-                    <div className="ml-2">
-                      <p className="text-[1rem] font-semibold text-[#2b3350]">Create a new resource</p>
-                      <p className="mt-1 text-[0.75rem] leading-[1.25] text-[#6d758e]">See request from prospective students.</p>
-                    </div>
-                  </article>
-                  <article className="flex min-h-[4.75rem] items-center rounded-xl border border-[#bde9ea] bg-[#f1fcfd] px-3.5 py-2.5">
-                    <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#d7f1f2] text-[#19929a]">
-                      <PencilLine className="h-[1.1rem] w-[1.1rem]" />
-                    </span>
-                    <div className="ml-2">
-                      <p className="text-[1rem] font-semibold text-[#2b3350]">Update profile</p>
-                      <p className="mt-1 text-[0.75rem] leading-[1.25] text-[#6d758e]">Keep your tutor profile fresh and complete.</p>
-                    </div>
-                  </article>
+                  <DashboardActionCard description="Go to your subjects and active tutor profile." icon={<span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#e7d8fb] text-[#9a5cdf]"><BookOpenCheck className="h-[1.1rem] w-[1.1rem]" /></span>} title="Set up subjects" toneClassName="border-[#dcc7f7] bg-[#f7f0ff]" />
+                  <DashboardActionCard description="See requests from prospective students." icon={<span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#d7ecff] text-[#2586d8]"><Boxes className="h-[1.1rem] w-[1.1rem]" /></span>} title="Create a new resource" toneClassName="border-[#bcdaf2] bg-[#f0f8ff]" />
+                  <DashboardActionCard description="Keep your tutor profile fresh and complete." icon={<span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#d7f1f2] text-[#19929a]"><PencilLine className="h-[1.1rem] w-[1.1rem]" /></span>} title="Update profile" toneClassName="border-[#bde9ea] bg-[#f1fcfd]" />
                 </div>
               </section>
 
@@ -121,8 +92,7 @@ export default function TutorDashboardPage() {
                                 <td className="px-4 py-3">{row.subject}</td>
                                 <td className="px-4 py-3">
                                   <span className="inline-flex items-center gap-2">
-                                    <StatusDot status={row.status} />
-                                    {row.status}
+                                    <StatusIndicator label={row.status} tone={bookingTone[row.status]} />
                                   </span>
                                 </td>
                                 <td className="px-4 py-3 text-right">
@@ -168,33 +138,12 @@ export default function TutorDashboardPage() {
               <section>
                 <h2 className="mb-2 text-[0.875rem] font-semibold text-[#616a82]">Resource &amp; Support</h2>
                 <div className="grid gap-3 xl:grid-cols-[2fr_1fr_1fr]">
-                  <article className="min-h-[7rem] rounded-xl border border-[#c5dbed] bg-[#e5f2ff] p-3.5">
-                    <p className="text-[1rem] font-semibold text-[#2d3448]">Watch our demo video</p>
-                    <p className="mt-1 max-w-[18rem] text-[0.8rem] text-[#5c6884]">Watch this intro video to learn how SP novate works.</p>
-                    <button className="mt-2.5 rounded-full border border-[#54607b] bg-white px-4 py-1 text-[0.78rem] font-semibold text-[#2d3448]" type="button">
-                      Watch video
-                    </button>
-                  </article>
-                  <article className="min-h-[7rem] rounded-xl border border-[#e6decf] bg-[#f7f2e8] p-3.5">
-                    <p className="text-[1rem] font-semibold text-[#2d3448]">Learn about our tutors</p>
-                    <p className="mt-1 text-[0.8rem] text-[#5c6884]">Watch this intro video to learn more about our tutors</p>
-                    <button className="mt-2.5 rounded-full border border-[#54607b] bg-white px-4 py-1 text-[0.78rem] font-semibold text-[#2d3448]" type="button">
-                      Watch video
-                    </button>
-                  </article>
-                  <article className="min-h-[7rem] rounded-xl border border-[#dfe4ed] bg-[#eef2f7] p-3.5">
-                    <p className="text-[1rem] font-semibold text-[#2d3448]">What is a finder&apos;s fee</p>
-                    <p className="mt-1 text-[0.8rem] text-[#5c6884]">Watch this intro video to learn about our finder&apos;s fee</p>
-                    <button className="mt-2.5 rounded-full border border-[#54607b] bg-white px-4 py-1 text-[0.78rem] font-semibold text-[#2d3448]" type="button">
-                      Watch video
-                    </button>
-                  </article>
+                  <DashboardResourceCard description="Watch this intro video to learn how SP Novate works." title="Watch our demo video" toneClassName="border-[#c5dbed] bg-[#e5f2ff]" />
+                  <DashboardResourceCard description="Watch this intro video to learn more about our tutors." title="Learn about our tutors" toneClassName="border-[#e6decf] bg-[#f7f2e8]" />
+                  <DashboardResourceCard description="Watch this intro video to learn about our finder's fee." title="What is a finder's fee" toneClassName="border-[#dfe4ed] bg-[#eef2f7]" />
                 </div>
               </section>
-            </div>
-          </div>
-        </main>
       </div>
-    </div>
+    </DashboardShell>
   );
 }

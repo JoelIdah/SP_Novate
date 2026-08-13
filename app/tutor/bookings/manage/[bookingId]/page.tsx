@@ -16,7 +16,7 @@ export default function TutorBookingDetailsPage() {
   return (
     <main className="min-h-dvh bg-white text-[#2f3547]">
       <header className="border-b border-[#e6e9f2] bg-white">
-        <div className="flex h-14 items-center justify-between px-4">
+        <div className="mx-auto flex min-h-14 w-full max-w-[var(--app-max-width)] items-center justify-between gap-3 px-[var(--app-gutter)] py-2">
           <div>
             <Link className="inline-flex items-center gap-2 text-[0.72rem] font-medium text-[#6f7891]" href="/tutor/bookings">
               <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#efeffa]">
@@ -33,11 +33,11 @@ export default function TutorBookingDetailsPage() {
         </div>
       </header>
 
-      <section className="mx-auto w-full max-w-[1260px] space-y-5 px-5 py-8">
+      <section className="mx-auto w-full max-w-[var(--app-max-width)] space-y-5 px-[var(--app-gutter)] py-4 sm:py-6">
         <article className="rounded-xl border border-[#e3e8f2] bg-white p-5">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-[0.92rem] font-semibold text-[#3c4359]">Booking summary</h2>
-            <div className="flex items-center gap-2">
+            <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
               <button className="h-8 rounded-full border border-[#dfe4ef] bg-[#f7f8fb] px-5 text-[0.74rem] font-semibold text-[#4f566c]" type="button">Send message</button>
               <button className="inline-flex h-8 items-center gap-2 rounded-full bg-[#232066] px-5 text-[0.74rem] font-semibold text-white" type="button">
                 <Check className="h-3.5 w-3.5" strokeWidth={3} />
@@ -63,7 +63,7 @@ export default function TutorBookingDetailsPage() {
           </div>
         </article>
 
-        <div className="grid gap-5 xl:grid-cols-[0.82fr_1.18fr]">
+        <div className="grid gap-5 lg:grid-cols-[minmax(16rem,0.82fr)_minmax(0,1.18fr)]">
           <article className="h-fit rounded-xl border border-[#e3e8f2] bg-white p-4">
             <h3 className="border-b border-[#eef1f6] pb-3 text-[0.82rem] font-semibold text-[#3c4359]">
               <span className="mr-2 inline-flex h-4 w-4 items-center justify-center rounded-full bg-[#eef0ff] text-[#4b49d8]">!</span>
@@ -93,7 +93,7 @@ export default function TutorBookingDetailsPage() {
                   </span>
                 </div>
                 <div>
-                  <p className="text-[1.65rem] font-semibold leading-none text-[#30364a]">Oluyinka Emmanuel</p>
+                  <p className="text-xl font-semibold leading-tight text-[#30364a] sm:text-2xl">Oluyinka Emmanuel</p>
                   <p className="mt-2 inline-flex items-center gap-1 text-[0.75rem] text-[#6c7488]">
                     <MapPin className="h-3.5 w-3.5 text-[#6366d7]" />
                     Oniru, Victoria Island
@@ -117,7 +117,7 @@ export default function TutorBookingDetailsPage() {
                 {timeline.map((step, index) => {
                   const Icon = step.icon;
                   return (
-                    <div key={step.title} className="grid grid-cols-[1.7rem_1fr_auto] items-start gap-3">
+                    <div key={step.title} className="grid grid-cols-[1.7rem_minmax(0,1fr)] items-start gap-3 sm:grid-cols-[1.7rem_minmax(0,1fr)_auto]">
                       <div className="relative mt-0.5">
                         <span className={`inline-flex h-7 w-7 items-center justify-center rounded-full border bg-white ${step.active ? "border-[#dbdefb] text-[#4b49d8]" : "border-[#e0e5ef] text-[#4f566c]"}`}>
                           <Icon className="h-3.5 w-3.5" />
@@ -128,7 +128,7 @@ export default function TutorBookingDetailsPage() {
                         <p className={`text-[0.86rem] font-semibold ${step.active ? "text-[#4b49d8]" : "text-[#4f566c]"}`}>{step.title}</p>
                         <p className="mt-0.5 text-[0.7rem] text-[#8a92a6]">{step.note}</p>
                       </div>
-                      <p className="text-[0.76rem] text-[#7b8398]">{step.time}</p>
+                      <p className="col-start-2 text-xs text-[#7b8398] sm:col-start-auto sm:text-[0.76rem]">{step.time}</p>
                     </div>
                   );
                 })}

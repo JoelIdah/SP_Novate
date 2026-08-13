@@ -126,7 +126,7 @@ export default function TutorProfilePage() {
   return (
     <main className="min-h-dvh bg-white text-[#2f3547]">
       <header className="border-b border-[#e6e9f2] bg-white">
-        <div className="flex h-14 items-center justify-between px-4">
+        <div className="mx-auto flex h-14 w-full max-w-[var(--app-max-width)] items-center justify-between px-[var(--app-gutter)]">
           <Link
             className="inline-flex items-center gap-2 text-[0.75rem] font-medium text-[#6f7891]"
             href="/students/bookings"
@@ -147,10 +147,10 @@ export default function TutorProfilePage() {
         </div>
       </header>
 
-      <section className="mx-auto w-full max-w-[1260px] px-5 py-3">
-        <h1 className="text-[1.12rem] font-semibold text-[#2f3547]">Tutor Profile</h1>
+      <section className="mx-auto w-full max-w-[var(--app-max-width)] px-[var(--app-gutter)] py-4 sm:py-5">
+        <h1 className="text-xl font-semibold text-ui-title sm:text-2xl">Tutor Profile</h1>
 
-        <div className="mt-4 grid grid-cols-1 gap-3 xl:grid-cols-[1fr_22rem]">
+        <div className="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_20rem] xl:grid-cols-[minmax(0,1fr)_22rem]">
           <Card className="p-4">
             <div className="flex flex-col gap-4 sm:flex-row">
               <Avatar alt="Oluyinka Emmanuel" className="relative h-24 w-28 overflow-hidden rounded-xl" randomImage randomSeed="Oluyinka Emmanuel-profile">
@@ -163,8 +163,8 @@ export default function TutorProfilePage() {
               <div className="flex-1">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <h2 className="text-[2.15rem] leading-none font-semibold text-[#30364a]">Oluyinka Emmanuel</h2>
-                    <p className="mt-1 text-[1rem] text-[#6f7689]">Software engineer - B.sc, M.sc</p>
+                    <h2 className="text-2xl leading-tight font-semibold text-[#30364a] sm:text-3xl">Oluyinka Emmanuel</h2>
+                    <p className="mt-1 text-sm text-[#6f7689] sm:text-base">Software engineer - B.sc, M.sc</p>
                   </div>
                   <span className="inline-flex items-center gap-1 rounded-full bg-[#e8f8f0] px-2.5 py-1 text-[0.72rem] font-semibold text-[#27a56c]">
                     <CheckCircle2 className="h-3.5 w-3.5" />
@@ -203,7 +203,7 @@ export default function TutorProfilePage() {
               </button>
             </div>
             <p className="text-[0.72rem] text-[#8e96aa]">Tutor fee:</p>
-            <p className="text-[2.35rem] font-semibold leading-none text-[#3d3fd0]">N3,500/hr</p>
+            <p className="text-3xl font-semibold leading-none text-[#3d3fd0] sm:text-4xl">N3,500/hr</p>
             <p className="mt-2 inline-flex items-center gap-1 text-[0.72rem] text-[#7f879a]">
               <CalendarDays className="h-3.5 w-3.5 text-[#5b60d7]" />
               Mondays Wednesdays Fridays
@@ -225,10 +225,10 @@ export default function TutorProfilePage() {
               <AlertCircle className="h-3.5 w-3.5 text-[#6366d7]" />
               Important Guidelines
             </h3>
-            <ul className="mt-3 space-y-2 text-[0.75rem] text-[#636b7f]">
+            <ul className="mt-3 grid gap-2 text-[0.75rem] text-[#636b7f] sm:grid-cols-2 xl:grid-cols-1">
               {guidelineItems.map((item) => (
-                <li key={item} className="inline-flex items-start gap-1.5">
-                  <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-[#6d7488]" />
+                <li key={item} className="flex min-w-0 items-start gap-2">
+                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#6d7488]" />
                   <span>{item}</span>
                 </li>
               ))}

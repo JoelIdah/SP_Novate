@@ -1,9 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { ArrowLeft, BanknoteArrowDown, CalendarDays, CheckCircle2, Copy, EllipsisVertical, Landmark, Search, SlidersHorizontal, Wallet } from "lucide-react";
+import { ArrowLeft, BanknoteArrowDown, CalendarDays, CheckCircle2, Copy, EllipsisVertical, Landmark, Wallet } from "lucide-react";
 
 import { StudentDashboardNavbar } from "../dashboard/StudentDashboardNavbar";
+import { DashboardShell } from "../layout/DashboardShell";
+import { MetricCard } from "../ui/MetricCard";
+import { DataToolbar } from "../ui/DataToolbar";
+import { Pagination } from "../ui/Pagination";
+import { StatusIndicator, type StatusTone } from "../ui/StatusIndicator";
 import ResponsiveSheet from "../ui/ResponsiveSheet";
 
 type TxStatus = "Successful" | "Pending" | "Failed";
@@ -30,10 +35,10 @@ const transactions: Transaction[] = [
   { id: "B4927183010373", amount: "N11,037.50", method: "Bank Transfer", type: "CR", date: "March 15, 2026", status: "Successful" },
 ];
 
-const statusColor: Record<TxStatus, string> = {
-  Successful: "bg-[#14b861]",
-  Pending: "bg-[#e8bc3d]",
-  Failed: "bg-[#e04f4f]",
+const statusTone: Record<TxStatus, StatusTone> = {
+  Successful: "success",
+  Pending: "warning",
+  Failed: "danger",
 };
 
 const mobileRowsPerPage = 5;
@@ -114,29 +119,17 @@ export default function TransactionsPage() {
     : "All dates";
 
   return (
-    <main className="dashboard-screen bg-white text-[#2b3245]">
-      <div className="dashboard-shell">
-        <StudentDashboardNavbar active="Transactions" />
-        <section className="dashboard-main min-h-0 overflow-y-auto overflow-x-hidden md:overflow-hidden">
-          <div className="dashboard-content-frame px-[var(--dashboard-gutter)]">
-            <section className="flex min-h-full w-full flex-col py-[1.1em] md:h-full md:min-h-0">
+    <>
+      <DashboardShell mainClassName="min-h-0 md:overflow-hidden" navbar={<StudentDashboardNavbar active="Transactions" />}>
+        <section className="flex min-h-full w-full flex-col py-4 md:h-full md:min-h-0 md:py-5">
               <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
-                <SummaryCard icon={<Wallet className="h-4 w-4 text-[#dca95a]" />} label="Total Value" value="N200,000.00" />
-                <SummaryCard icon={<CheckCircle2 className="h-4 w-4 text-[#289c7f]" />} label="Successful Transactions" value="10" />
-                <SummaryCard icon={<BanknoteArrowDown className="h-4 w-4 text-[#9553da]" />} label="Session Fees" value="N4,000" />
-                <SummaryCard icon={<Landmark className="h-4 w-4 text-[#157ac8]" />} label="Finders Fees" value="N500" />
+                <MetricCard icon={<Wallet className="h-4 w-4 text-[#dca95a]" />} label="Total Value" value="N200,000.00" />
+                <MetricCard icon={<CheckCircle2 className="h-4 w-4 text-[#289c7f]" />} label="Successful Transactions" value="10" />
+                <MetricCard icon={<BanknoteArrowDown className="h-4 w-4 text-[#9553da]" />} label="Session Fees" value="N4,000" />
+                <MetricCard icon={<Landmark className="h-4 w-4 text-[#157ac8]" />} label="Finders Fees" value="N500" />
               </div>
 
-              <div className="mt-3.5 flex items-center justify-between gap-2">
-                <div className="relative w-full max-w-[20rem]">
-                  <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#a1a9bc]" />
-                  <input className="h-9 w-full rounded-full border border-[#e1e6f2] bg-white pl-9 pr-3 text-[0.76em] text-[#495167] placeholder:text-[#adb4c5]" placeholder="Search transactions" type="search" />
-                </div>
-                <button className="inline-flex h-8 items-center gap-1 rounded-md border border-[#e2e7f2] bg-white px-2.5 text-[0.68em] font-semibold text-[#7a8299]" type="button">
-                  <SlidersHorizontal className="h-3.5 w-3.5" />
-                  Sort
-                </button>
-              </div>
+              <DataToolbar placeholder="Search transactions" />
 
               <div className="mt-2.5 flex items-center gap-2 border-b border-[#e7ebf4] pb-3 md:gap-2.5">
                 <div className="relative">
@@ -220,10 +213,7 @@ export default function TransactionsPage() {
                       {paginatedRows.map((row, idx) => (
                         <tr className="cursor-pointer border-t border-[#edf0f6] hover:bg-[#fafbff]" key={`${row.id}-${idx}`} onClick={() => openDetails(row)}>
                           <td className="px-3 py-2.5">
-                            <span className="inline-flex items-center gap-1.5">
-                              <span className={`h-1.5 w-1.5 rounded-full ${statusColor[row.status]}`} />
-                              {row.status}
-                            </span>
+                            <StatusIndicator label={row.status} tone={statusTone[row.status]} />
                           </td>
                           <td className="px-3 py-2.5">
                             <span className="inline-flex items-center gap-2">
@@ -241,13 +231,7 @@ export default function TransactionsPage() {
                     </tbody>
                   </table>
                 </div>
-                <div className="flex items-center justify-between border-t border-[#edf0f6] px-3 py-2.5 text-[0.68em] text-[#6f768c]">
-                  <div className="flex items-center gap-1.5">
-                    <button className="rounded-md border border-[#e2e7f2] px-2 py-1 text-[#5f667b] disabled:opacity-50" disabled={currentPage === 1} onClick={() => setPage((prev) => Math.max(1, prev - 1))} type="button">Previous</button>
-                    <button className="rounded-md border border-[#e2e7f2] px-2 py-1 text-[#5f667b] disabled:opacity-50" disabled={currentPage >= totalPages} onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))} type="button">Next</button>
-                  </div>
-                  <span>Page {currentPage} of {totalPages}</span>
-                </div>
+                <Pagination className="border-t border-ui-border px-3 py-2.5" onNext={() => setPage((prev) => Math.min(totalPages, prev + 1))} onPrevious={() => setPage((prev) => Math.max(1, prev - 1))} page={currentPage} totalPages={totalPages} />
               </div>
 
               <div className="mt-3 space-y-1.5 pb-6 md:hidden">
@@ -264,24 +248,15 @@ export default function TransactionsPage() {
                       <EllipsisVertical className="h-3.5 w-3.5 shrink-0 text-[#7b8296]" />
                     </div>
                     <div className="mt-1.5 flex items-center justify-between">
-                      <span className="inline-flex items-center gap-1 text-[0.66em] text-[#596177]">
-                        <span className={`h-1.5 w-1.5 rounded-full ${statusColor[row.status]}`} />
-                        {row.status}
-                      </span>
+                      <StatusIndicator className="text-[0.66em]" label={row.status} tone={statusTone[row.status]} />
                       <span className="text-[0.68em] font-semibold text-[#4a5166]">{row.amount}</span>
                     </div>
                   </button>
                 ))}
-                <div className="flex items-center justify-between border-t border-[#edf0f6] pt-2 text-[0.72em] text-[#6f768c]">
-                  <button className="rounded-md border border-[#e2e7f2] px-2 py-1 text-[#5f667b] disabled:opacity-50" disabled={mobileCurrentPage === 1} onClick={() => setPage((prev) => Math.max(1, prev - 1))} type="button">Previous</button>
-                  <span>Page {mobileCurrentPage} of {mobileTotalPages}</span>
-                  <button className="rounded-md border border-[#e2e7f2] px-2 py-1 text-[#5f667b] disabled:opacity-50" disabled={mobileCurrentPage >= mobileTotalPages} onClick={() => setPage((prev) => Math.min(mobileTotalPages, prev + 1))} type="button">Next</button>
-                </div>
+                <Pagination className="border-t border-ui-border pt-2" onNext={() => setPage((prev) => Math.min(mobileTotalPages, prev + 1))} onPrevious={() => setPage((prev) => Math.max(1, prev - 1))} page={mobileCurrentPage} totalPages={mobileTotalPages} />
               </div>
-            </section>
-          </div>
         </section>
-      </div>
+      </DashboardShell>
 
       <ResponsiveSheet
         open={detailsOpen}
@@ -335,21 +310,7 @@ export default function TransactionsPage() {
           </div>
         </div>
       </ResponsiveSheet>
-    </main>
-  );
-}
-
-function SummaryCard({ label, value, icon }: { label: string; value: string; icon: ReactNode }) {
-  return (
-    <article className="rounded-lg border border-[#e2e7f2] bg-white px-3 py-2.5">
-      <div className="flex items-center justify-between gap-2">
-        <div>
-          <p className="text-[0.62em] font-medium text-[#838ca3]">{label}</p>
-          <p className="mt-[0.1em] text-[0.95em] font-semibold text-[#2f3547]">{value}</p>
-        </div>
-        <span className="inline-flex h-6 w-6 items-center justify-center rounded-md bg-[#f5f7fc]">{icon}</span>
-      </div>
-    </article>
+    </>
   );
 }
 

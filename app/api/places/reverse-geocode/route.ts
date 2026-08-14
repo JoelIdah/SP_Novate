@@ -13,6 +13,7 @@ type GoogleGeocodingResponse = {
     address_components?: GoogleAddressComponent[];
     formatted_address?: string;
     geometry?: { location?: { lat?: number; lng?: number } };
+    place_id?: string;
   }>;
   status?: string;
 };
@@ -70,6 +71,7 @@ export async function POST(request: Request) {
         postcode: componentValue(components, "postal_code"),
         state: componentValue(components, "administrative_area_level_1"),
         city: componentValue(components, "locality", "postal_town", "administrative_area_level_2", "sublocality"),
+        placeId: result.place_id?.trim() ?? "",
         latitude: result.geometry?.location?.lat ?? latitude,
         longitude: result.geometry?.location?.lng ?? longitude,
       },

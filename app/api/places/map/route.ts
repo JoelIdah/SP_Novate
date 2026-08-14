@@ -28,7 +28,9 @@ export async function GET(request: Request) {
   googleUrl.searchParams.set("size", "640x360");
   googleUrl.searchParams.set("scale", "2");
   googleUrl.searchParams.set("maptype", "roadmap");
-  googleUrl.searchParams.set("markers", `color:0x232066|${center}`);
+  if (requestUrl.searchParams.get("editable") !== "true") {
+    googleUrl.searchParams.set("markers", `color:0x232066|${center}`);
+  }
   googleUrl.searchParams.set("key", apiKey);
 
   try {

@@ -94,6 +94,7 @@ export function ProfileSetupStep({
   });
   const [requestingLocation, setRequestingLocation] = useState(false);
   const [requestingPlaceSearch, setRequestingPlaceSearch] = useState(false);
+  const [resolvingMapLocation, setResolvingMapLocation] = useState(false);
   const [savingLocation, setSavingLocation] = useState(false);
   const [locationView, setLocationView] = useState<LocationView>("prompt");
   const [locationSource, setLocationSource] = useState<LocationSource>("manual");
@@ -340,7 +341,7 @@ export function ProfileSetupStep({
   };
 
   const handleFinishSetup = async () => {
-    if (!addressComplete || savingLocation) return;
+    if (!addressComplete || savingLocation || resolvingMapLocation) return;
     stopLocationRequest();
     stopPlaceSearchRequest();
     setSavingLocation(true);
@@ -486,6 +487,32 @@ export function ProfileSetupStep({
     }
   };
 
+  const handleMapLocationChange = async (coordinates: LocationCoordinates) => {
+    setResolvingMapLocation(true);
+    setLocationError("");
+    try {
+      const result = await fetchGpsAddress(coordinates);
+      const resolvedAddress = readAddressFromResponse(result);
+      const placeId = result?.placeId?.trim() ?? "";
+      if (!isAddressComplete(resolvedAddress) || !placeId) {
+        throw new Error("We couldn't verify an address at that map position. Try a nearby point.");
+      }
+
+      setAddressForm(resolvedAddress);
+      setMapCoordinates(coordinates);
+      setGpsAccuracy(null);
+      setSelectedPlaceId(placeId);
+      setLocationSource("search");
+      setPlaceQuery(resolvedAddress.address);
+      return true;
+    } catch (error) {
+      setLocationError(error instanceof Error ? error.message : "Could not update the map location.");
+      return false;
+    } finally {
+      setResolvingMapLocation(false);
+    }
+  };
+
   const currentStep = steps[activeStepIndex];
   const dashboardHref = "/students/dashboard";
 
@@ -525,7 +552,9 @@ export function ProfileSetupStep({
                     onSelectPlace={handleSelectPlace}
                     placePredictions={placePredictions}
                     placeQuery={placeQuery}
+                    resolvingMapLocation={resolvingMapLocation}
                     requestingPlaceSearch={requestingPlaceSearch}
+                    onMapLocationChange={handleMapLocationChange}
                   />
                 )}
               </div>
@@ -580,7 +609,7 @@ export function ProfileSetupStep({
               ) : (
                 <div className="grid grid-cols-2 gap-2 sm:flex sm:shrink-0 sm:justify-end">
                   <button className="h-11 rounded-full border border-[#d8dde8] bg-white px-4 text-xs font-semibold text-[#3f4759] hover:bg-[#f8f9fb] sm:px-5 sm:text-sm" onClick={locationView === "edit" ? handleLocationBack : handleEditAddress} type="button">{locationView === "edit" ? "Cancel" : "No, this is not my address"}</button>
-                  <button className="h-11 rounded-full bg-brand-primary px-5 text-sm font-semibold text-white disabled:bg-[#b8b6cf]" disabled={!addressComplete || savingLocation} onClick={() => void handleFinishSetup()} type="button">{savingLocation ? "Saving..." : "Yes, this is my address"}</button>
+                  <button className="h-11 rounded-full bg-brand-primary px-5 text-sm font-semibold text-white disabled:bg-[#b8b6cf]" disabled={!addressComplete || savingLocation || resolvingMapLocation} onClick={() => void handleFinishSetup()} type="button">{resolvingMapLocation ? "Checking..." : savingLocation ? "Saving..." : "Yes, this is my address"}</button>
                 </div>
               )
             )}

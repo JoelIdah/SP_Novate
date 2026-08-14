@@ -30,6 +30,11 @@ export default function ResponsiveSheet({
   const openRafRef = useRef<number | null>(null);
   const panelRef = useRef<HTMLDivElement | null>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
+  const onCloseRef = useRef(onClose);
+
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
   useEffect(() => {
     if (open) {
@@ -67,7 +72,7 @@ export default function ResponsiveSheet({
     if (scrollbarCompensation > 0) document.body.style.paddingRight = `${scrollbarCompensation}px`;
 
     const handleKeydown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape") onCloseRef.current();
       if (event.key !== "Tab" || !panelRef.current) return;
 
       const focusable = panelRef.current.querySelectorAll<HTMLElement>(
@@ -100,7 +105,7 @@ export default function ResponsiveSheet({
       window.removeEventListener("keydown", handleKeydown);
       previousFocusRef.current?.focus();
     };
-  }, [mounted, onClose]);
+  }, [mounted]);
 
   useEffect(() => {
     return () => {

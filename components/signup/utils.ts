@@ -37,13 +37,17 @@ export function formatPhoneNumberE164(form: Pick<ProfileFormState, "phoneCountry
   return phone?.isValid() ? phone.number : "";
 }
 
+export function isEmailValid(value: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+}
+
 export function isStepOneValid(form: ProfileFormState): boolean {
   const bioValid = form.bio.trim().length >= 10;
   const countryCodeValid = form.countryCode.trim().length > 0;
   const phoneValid = isPhoneNumberValid(form);
 
   return (
-    form.email.trim().length > 0 &&
+    isEmailValid(form.email) &&
     form.lastName.trim().length > 0 &&
     form.firstName.trim().length > 0 &&
     countryCodeValid &&

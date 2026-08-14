@@ -98,12 +98,12 @@ export function DashboardNavbar({ role, active = "Home" }: { role: DashboardRole
 
   return (
     <header className="dashboard-header sticky top-0 z-50 border-b border-[#dfe4ee] bg-white shadow-[0_2px_12px_rgba(31,40,74,0.06)]">
-      <div className="mx-auto grid min-h-[var(--topbar-h)] w-full max-w-[var(--dashboard-max-width)] grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 px-[var(--dashboard-gutter)] xl:gap-6">
-        <Link className="flex h-11 w-fit items-center rounded-lg" href={config.homeHref} aria-label="SP Novate dashboard">
+      <div className="mx-auto grid min-h-[var(--topbar-h)] w-full max-w-[var(--dashboard-max-width)] grid-cols-[auto_1fr_auto] items-center gap-3 px-[var(--dashboard-gutter)] xl:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] xl:gap-6">
+        <Link className="col-start-1 flex h-11 w-fit items-center rounded-lg" href={config.homeHref} aria-label="SP Novate dashboard">
           <Image alt="SP Novate" className="h-8 w-auto xl:h-10" height={40} priority src="/logo/logo.png" width={40} />
         </Link>
 
-        <nav aria-label={`${role} navigation`} className="navbar-scroll hidden self-stretch xl:flex xl:items-center xl:justify-center xl:gap-1.5 2xl:gap-2.5">
+        <nav aria-label={`${role} navigation`} className="navbar-scroll col-start-2 hidden self-stretch xl:flex xl:items-center xl:justify-center xl:gap-1.5 2xl:gap-2.5">
           {config.items.map((item) => {
             const Icon = item.icon;
             const isActive = item.label === active;
@@ -126,7 +126,7 @@ export function DashboardNavbar({ role, active = "Home" }: { role: DashboardRole
           })}
         </nav>
 
-        <div className="flex min-w-0 items-center justify-end gap-2.5">
+        <div className="col-start-3 flex min-w-0 items-center justify-end gap-2.5">
           <button
             aria-expanded={isMenuOpen}
             aria-label={isMenuOpen ? "Close navigation menu" : "Open navigation menu"}

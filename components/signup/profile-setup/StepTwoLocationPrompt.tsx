@@ -2,94 +2,48 @@ import { LocationTargetIcon } from "./icons";
 
 type StepTwoLocationPromptProps = {
   locationError: string;
-  placePredictions: Array<{ description: string; placeId: string }>;
-  placeQuery: string;
-  requestingPlaceSearch: boolean;
   requestingLocation: boolean;
   onAllowLocation: () => void;
-  onPlaceQueryChange: (value: string) => void;
-  onSearchAddress: () => void;
-  onSelectPlace: (placeId: string) => void;
-  searchingAddress: boolean;
+  onEnterAddress: () => void;
 };
-
-const searchFieldClassName =
-  "mt-2 h-11 w-full rounded-lg border border-[#d8dde8] bg-white px-4 text-sm font-semibold text-[#4f5980] outline-none focus:border-[#7770df]";
 
 export function StepTwoLocationPrompt({
   locationError,
-  placePredictions,
-  placeQuery,
-  requestingPlaceSearch,
   requestingLocation,
   onAllowLocation,
-  onPlaceQueryChange,
-  onSearchAddress,
-  onSelectPlace,
-  searchingAddress,
+  onEnterAddress,
 }: StepTwoLocationPromptProps) {
   return (
-    <>
+    <section className="mx-auto w-full max-w-[32rem] py-4 text-center">
       <div className="mx-auto mb-5 w-fit">
         <LocationTargetIcon />
       </div>
-      <h1 className="text-3xl font-bold tracking-[-0.02em] text-[#1d2331] sm:text-4xl">Find tutors near you</h1>
-      <p className="mx-auto mt-3 max-w-[24.375rem] text-sm font-medium leading-relaxed text-[#8c93a7]">
-        Allow location access so we can show you the best tutors available in your area and help you book sessions faster.
+      <h1 className="text-2xl font-bold tracking-[-0.02em] text-[#1d2331] sm:text-3xl">Find tutors near you</h1>
+      <p className="mx-auto mt-3 max-w-[25rem] text-sm font-medium leading-relaxed text-[#8c93a7]">
+        Use your current location for better tutor recommendations, or enter an address manually.
       </p>
-      <button
-        className="mx-auto mt-6 inline-flex h-11 items-center rounded-full bg-[#231d71] px-8 text-sm font-semibold text-white hover:bg-[#1c175f] disabled:cursor-not-allowed disabled:opacity-60"
-        disabled={requestingLocation}
-        onClick={onAllowLocation}
-        type="button"
-      >
-        {requestingLocation ? "Requesting location..." : "Allow location access"}
-      </button>
-      {locationError ? <p className="mt-3 text-sm font-medium text-[#d04b4b]">{locationError}</p> : null}
 
-      {!searchingAddress ? (
+      <div className="mx-auto mt-6 flex w-full max-w-[18rem] flex-col gap-3">
         <button
-          className="mx-auto mt-4 block text-sm font-semibold text-[#3d38c2] underline-offset-4 hover:underline"
-          onClick={onSearchAddress}
+          className="inline-flex h-11 items-center justify-center rounded-full bg-[#231d71] px-8 text-sm font-semibold text-white hover:bg-[#1c175f] disabled:cursor-wait disabled:opacity-70"
+          disabled={requestingLocation}
+          onClick={onAllowLocation}
           type="button"
         >
-          Search your address instead
+          {requestingLocation ? "Finding your location..." : "Use my current location"}
         </button>
-      ) : null}
+        <button
+          className="h-11 rounded-full border border-[#d8dde8] bg-white px-6 text-sm font-semibold text-[#3d38c2] hover:bg-[#f8f9fb]"
+          onClick={onEnterAddress}
+          type="button"
+        >
+          Enter address manually
+        </button>
+      </div>
 
-      {searchingAddress ? (
-        <div className="relative mx-auto mt-4 w-full max-w-[32.5rem] text-left">
-          <label className="block text-xs font-semibold text-[#5d6479]">
-            Search address
-            <input
-              autoFocus
-              className={searchFieldClassName}
-              onChange={(event) => onPlaceQueryChange(event.target.value)}
-              placeholder="Start typing your address"
-              type="text"
-              value={placeQuery}
-            />
-          </label>
-          {requestingPlaceSearch ? <p className="mt-2 text-xs font-medium text-[#8c93a7]">Searching...</p> : null}
-          {placePredictions.length > 0 ? (
-            <div className="absolute z-10 mt-2 max-h-40 w-full overflow-y-auto rounded-[0.65rem] border border-[#d8dde8] bg-white py-1 shadow-[0_14px_34px_rgba(23,30,63,0.12)]">
-              {placePredictions.map((prediction) => (
-                <button
-                  className="block w-full px-3 py-2 text-left text-xs font-semibold text-[#4f5980] hover:bg-[#f5f7fb]"
-                  key={prediction.placeId}
-                  onClick={() => onSelectPlace(prediction.placeId)}
-                  type="button"
-                >
-                  {prediction.description}
-                </button>
-              ))}
-            </div>
-          ) : null}
-        </div>
-      ) : null}
-
-      <p className="mt-4 text-sm font-medium text-[#8c93a7]">You can change this later in your settings</p>
-    </>
+      {requestingLocation ? <p className="mt-4 text-xs font-medium text-[#7d869c]">This may take a few seconds. You can enter an address instead at any time.</p> : null}
+      {locationError ? <p className="mx-auto mt-4 max-w-[28rem] text-sm font-medium text-[#d04b4b]" role="alert">{locationError}</p> : null}
+      <p className="mt-4 text-sm font-medium text-[#8c93a7]">You can add or change this later in your settings.</p>
+    </section>
   );
 }
-

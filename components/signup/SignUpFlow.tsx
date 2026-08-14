@@ -38,7 +38,7 @@ function parseStage(value: string | null): SignUpFlowStage {
 }
 
 function parseStep(value: string | null): SetupStepId {
-  return value === "identification" || value === "compensation" || value === "location" ? value : "personal";
+  return value === "location" ? value : "personal";
 }
 
 function parseMode(value: string | null): SetupMode {
@@ -46,9 +46,6 @@ function parseMode(value: string | null): SetupMode {
 }
 
 function normalizeStep(step: SetupStepId): SetupStepId {
-  if (step === "identification" || step === "compensation") {
-    return "personal";
-  }
   return step;
 }
 

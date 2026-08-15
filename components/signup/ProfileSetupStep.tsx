@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
+import { getAccessToken } from "../auth/authSession";
 import { OnboardingNavbar } from "./OnboardingNavbar";
 import { SetupSuccessView } from "./profile-setup/SetupSuccessView";
 import { StepTwoAddressConfirm, type LocationAddressForm, type LocationCoordinates } from "./profile-setup/StepTwoAddressConfirm";
@@ -139,8 +140,7 @@ export function ProfileSetupStep({
   };
 
   const getLocationToken = () => {
-    if (typeof window === "undefined") return "";
-    return localStorage.getItem("sp_profile_setup_token") || localStorage.getItem("sp_access_token") || "";
+    return getAccessToken();
   };
 
   const readAddressFromResponse = (
@@ -329,6 +329,7 @@ export function ProfileSetupStep({
       });
       return;
     }
+
     setActiveStep("location");
     setLocationView("prompt");
     setProfileValidationVisible(false);

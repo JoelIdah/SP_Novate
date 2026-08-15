@@ -5,6 +5,7 @@ type StepTwoLocationPromptProps = {
   requestingLocation: boolean;
   onAllowLocation: () => void;
   onEnterAddress: () => void;
+  variant?: "student" | "tutor";
 };
 
 export function StepTwoLocationPrompt({
@@ -12,15 +13,17 @@ export function StepTwoLocationPrompt({
   requestingLocation,
   onAllowLocation,
   onEnterAddress,
+  variant = "student",
 }: StepTwoLocationPromptProps) {
+  const tutor = variant === "tutor";
   return (
     <section className="mx-auto w-full max-w-[32rem] py-4 text-center">
       <div className="mx-auto mb-5 w-fit">
         <LocationTargetIcon />
       </div>
-      <h1 className="text-2xl font-bold tracking-[-0.02em] text-[#1d2331] sm:text-3xl">Find tutors near you</h1>
+      <h1 className="text-2xl font-bold tracking-[-0.02em] text-[#1d2331] sm:text-3xl">{tutor ? "Allow students to find you easily" : "Find tutors near you"}</h1>
       <p className="mx-auto mt-3 max-w-[25rem] text-sm font-medium leading-relaxed text-[#8c93a7]">
-        Use your current location for better tutor recommendations, or enter an address manually.
+        {tutor ? "Share your tutoring location so nearby students can discover and book you." : "Use your current location for better tutor recommendations, or enter an address manually."}
       </p>
 
       <div className="mx-auto mt-6 flex w-full max-w-[18rem] flex-col gap-3">
@@ -30,14 +33,14 @@ export function StepTwoLocationPrompt({
           onClick={onAllowLocation}
           type="button"
         >
-          {requestingLocation ? "Finding your location..." : "Use my current location"}
+          {requestingLocation ? "Finding your location..." : tutor ? "Allow location access" : "Use my current location"}
         </button>
         <button
           className="h-11 rounded-full border border-[#d8dde8] bg-white px-6 text-sm font-semibold text-[#3d38c2] hover:bg-[#f8f9fb]"
           onClick={onEnterAddress}
           type="button"
         >
-          Enter address manually
+          {tutor ? "Search for address" : "Enter address manually"}
         </button>
       </div>
 

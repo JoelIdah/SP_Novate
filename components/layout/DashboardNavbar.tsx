@@ -14,6 +14,7 @@ import {
   Repeat2,
   X,
 } from "lucide-react";
+import { useSessionUser } from "../auth/authSession";
 
 type DashboardRole = "student" | "tutor";
 type NavLabel = "Home" | "Bookings" | "Transactions" | "Resources" | "Chat";
@@ -27,7 +28,6 @@ const roleConfig = {
     switchTitle: "Switch to tutor dashboard?",
     switchText: "You are about to switch from student view to tutor view. Do you want to continue?",
     switchHref: "/tutor/dashboard",
-    profileName: "Oluyinka Alabi",
     items: [
       { label: "Home", href: "/students/dashboard", icon: Home },
       { label: "Bookings", href: "/students/bookings", icon: CalendarDays },
@@ -43,7 +43,6 @@ const roleConfig = {
     switchTitle: "Switch to student dashboard?",
     switchText: "You are about to switch from tutor view to student view. Do you want to continue?",
     switchHref: "/students/dashboard",
-    profileName: "Oluyinka Alabi",
     items: [
       { label: "Home", href: "/tutor/dashboard", icon: Home },
       { label: "Bookings", href: "/tutor/bookings", icon: CalendarDays },
@@ -60,13 +59,23 @@ const roleConfig = {
   switchTitle: string;
   switchText: string;
   switchHref: string;
-  profileName: string;
   items: Array<{ label: NavLabel; href: string; icon: typeof Home }>;
 }>;
 
 export function DashboardNavbar({ role, active = "Home" }: { role: DashboardRole; active?: NavLabel }) {
   const router = useRouter();
   const config = roleConfig[role];
+  const sessionUser = useSessionUser();
+  const profileName = [sessionUser?.firstName, sessionUser?.lastName].filter(Boolean).join(" ") || sessionUser?.email || "Student";
+  const profileInitial = profileName.charAt(0).toUpperCase();
+  const hasTutorAccount = sessionUser?.role === "tutor";
+  const switchLabel = role === "student" && !hasTutorAccount ? "Become a tutor" : config.switchLabel;
+  const switchMobileLabel = role === "student" && !hasTutorAccount ? "Become a tutor" : config.switchMobileLabel;
+  const switchTitle = role === "student" && !hasTutorAccount ? "Become a tutor?" : config.switchTitle;
+  const switchText = role === "student" && !hasTutorAccount
+    ? "Set up your tutor profile and submit it for evaluation while keeping your student account."
+    : config.switchText;
+  const switchHref = role === "student" && !hasTutorAccount ? "/tutor/onboarding" : config.switchHref;
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMenuMounted, setIsMenuMounted] = useState(false);
   const [isSwitchModalOpen, setIsSwitchModalOpen] = useState(false);
@@ -143,13 +152,13 @@ export function DashboardNavbar({ role, active = "Home" }: { role: DashboardRole
             type="button"
           >
             <Repeat2 className="h-4 w-4 text-[#70798c]" strokeWidth={1.8} />
-            {config.switchLabel}
+            {switchLabel}
           </button>
 
-          <div aria-label={`Signed in as ${config.profileName}`} className="hidden min-h-10 max-w-[12rem] items-center gap-2 border-l border-[#e1e5ed] pl-3 xl:flex">
-            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-primary text-sm font-semibold text-white">O</span>
+          <div aria-label={`Signed in as ${profileName}`} className="hidden min-h-10 max-w-[12rem] items-center gap-2 border-l border-[#e1e5ed] pl-3 xl:flex">
+            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-primary text-sm font-semibold text-white">{profileInitial}</span>
             <span className="min-w-0 text-left leading-tight">
-              <span className="block truncate text-xs font-semibold text-[#303755]">{config.profileName}</span>
+              <span className="block truncate text-xs font-semibold text-[#303755]">{profileName}</span>
               <span className="mt-0.5 block text-[0.65rem] font-medium text-[#8a91a1]">{role === "tutor" ? "Tutor account" : "Student account"}</span>
             </span>
           </div>
@@ -202,7 +211,7 @@ export function DashboardNavbar({ role, active = "Home" }: { role: DashboardRole
               }}
               type="button"
             >
-              {config.switchMobileLabel}
+              {switchMobileLabel}
             </button>
           </aside>
         </div>
@@ -211,11 +220,11 @@ export function DashboardNavbar({ role, active = "Home" }: { role: DashboardRole
       {isSwitchModalOpen ? (
         <div className="fixed inset-0 z-[80] flex items-center justify-center bg-[#0f1530]/35 px-4" onClick={() => setIsSwitchModalOpen(false)}>
           <section aria-labelledby="switch-dashboard-title" aria-modal="true" className="w-full max-w-md rounded-2xl border border-brand-line bg-white p-5 shadow-[var(--ui-shadow-overlay)]" onClick={(event) => event.stopPropagation()} role="dialog">
-            <h2 className="text-base font-semibold text-ui-title" id="switch-dashboard-title">{config.switchTitle}</h2>
-            <p className="mt-2 text-sm leading-relaxed text-ui-body">{config.switchText}</p>
+            <h2 className="text-base font-semibold text-ui-title" id="switch-dashboard-title">{switchTitle}</h2>
+            <p className="mt-2 text-sm leading-relaxed text-ui-body">{switchText}</p>
             <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
               <button className="min-h-11 rounded-full border border-ui-border bg-white px-4 text-sm font-semibold text-ui-body" onClick={() => setIsSwitchModalOpen(false)} type="button">Cancel</button>
-              <button className="min-h-11 rounded-full bg-brand-primary px-4 text-sm font-semibold text-white" onClick={() => router.push(config.switchHref)} type="button">Yes, switch</button>
+              <button className="min-h-11 rounded-full bg-brand-primary px-4 text-sm font-semibold text-white" onClick={() => router.push(switchHref)} type="button">{role === "student" && !hasTutorAccount ? "Start tutor setup" : "Yes, switch"}</button>
             </div>
           </section>
         </div>

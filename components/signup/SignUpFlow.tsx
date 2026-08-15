@@ -279,11 +279,6 @@ export function SignUpFlow({ forceProfileSetup = false }: { forceProfileSetup?: 
                 return;
               }
 
-              if (!resolveSafeReturnTo() || !resolveState()) {
-                router.push("/coming-soon");
-                return;
-              }
-
               redirectToLoginAfterVerification(payload.email);
             }}
           />

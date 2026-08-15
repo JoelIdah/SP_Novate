@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 
 import ResponsiveSheet from "../ui/ResponsiveSheet";
+import { apiFetch } from "../auth/apiClient";
 import { DashboardShell } from "../layout/DashboardShell";
 import { DataToolbar } from "../ui/DataToolbar";
 import { DataTableShell } from "../ui/DataTableShell";
@@ -57,18 +58,7 @@ type ResourceRow = {
   archivedBy: ArchivedBy;
 };
 
-const resources: ResourceRow[] = [
-  { title: "Intro to data structure", type: "Videos", department: "Academics", subject: "Entrance Exams", date: "March 15, 2026", status: "Published", archivedBy: "me" },
-  { title: "Intro to data structure", type: "Links", department: "Academics", subject: "Entrance Exams", date: "March 15, 2026", status: "Published", archivedBy: "me" },
-  { title: "Intro to data structure", type: "Docs.", department: "Academics", subject: "Entrance Exams", date: "March 15, 2026", status: "Published", archivedBy: "me" },
-  { title: "Intro to data structure", type: "Videos", department: "Academics", subject: "Entrance Exams", date: "March 15, 2026", status: "Draft", archivedBy: "Admin" },
-  { title: "Intro to data structure", type: "Videos", department: "Academics", subject: "Entrance Exams", date: "March 15, 2026", status: "Published", archivedBy: "me" },
-  { title: "Intro to data structure", type: "Links", department: "Academics", subject: "Entrance Exams", date: "March 15, 2026", status: "Published", archivedBy: "me" },
-  { title: "Intro to data structure", type: "Links", department: "Academics", subject: "Entrance Exams", date: "March 15, 2026", status: "Published", archivedBy: "me" },
-  { title: "Intro to data structure", type: "Links", department: "Academics", subject: "Entrance Exams", date: "March 15, 2026", status: "Published", archivedBy: "me" },
-  { title: "Intro to data structure", type: "Docs.", department: "Academics", subject: "Entrance Exams", date: "March 15, 2026", status: "Draft", archivedBy: "Admin" },
-  { title: "Intro to data structure", type: "Videos", department: "Academics", subject: "Entrance Exams", date: "March 15, 2026", status: "Draft", archivedBy: "Admin" },
-];
+const resources: ResourceRow[] = [];
 
 const statusTone: Record<ResourceStatus | ArchivedBy, StatusTone> = {
   Published: "success",
@@ -150,6 +140,7 @@ export default function TutorResourcesPage() {
                       </tr>
                     </thead>
                     <tbody>
+                      {filteredResources.length === 0 ? <tr><td className="px-4 py-10 text-center text-sm text-[#8a93a7]" colSpan={7}>Your resources will appear here when resource data is available.</td></tr> : null}
                       {filteredResources.map((row, index) => (
                         <tr className="border-t border-[#edf0f6] hover:bg-[#fafbff]" key={`${row.title}-${index}`}>
                           <td className="px-3 py-2.5">{row.title}</td>
@@ -170,6 +161,7 @@ export default function TutorResourcesPage() {
               </DataTableShell>
 
               <div className="mt-3 space-y-1.5 pb-4 md:hidden">
+                {filteredResources.length === 0 ? <p className="rounded-lg border border-dashed border-[#dce1ec] px-4 py-10 text-center text-sm text-[#8a93a7]">Your resources will appear here when resource data is available.</p> : null}
                 {filteredResources.map((row, index) => (
                   <article className="rounded-lg border border-[#e6eaf3] bg-white px-2.5 py-2" key={`${row.title}-mobile-${index}`}>
                     <div className="flex items-start justify-between gap-2">
@@ -292,18 +284,6 @@ function CreateResourceSheet({ open, onClose, onCreate }: { open: boolean; onClo
       return;
     }
 
-    const token = localStorage.getItem("sp_access_token");
-    if (!token) {
-      setError("Your session has expired. Please sign in again.");
-      return;
-    }
-
-    const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-    if (!apiBaseUrl) {
-      setError("The API base URL is not configured.");
-      return;
-    }
-
     setSubmittingStatus(status);
     setError("");
 
@@ -326,9 +306,8 @@ function CreateResourceSheet({ open, onClose, onCreate }: { open: boolean; onClo
     }
 
     try {
-      const response = await fetch(`${apiBaseUrl}/v1/tutor/resources`, {
+      const response = await apiFetch("/v1/tutor/resources", {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
         body: payload,
       });
       const responseData = (await response.json().catch(() => null)) as { message?: string } | null;

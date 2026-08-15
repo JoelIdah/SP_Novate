@@ -25,6 +25,7 @@ import type { SocialProvider } from "../signup/social/types";
 import { AuthShell } from "../signup/AuthShell";
 import { DIRECT_ONBOARDING_ENABLED } from "../../config/featureFlags";
 import { saveProfileSetupUser } from "../signup/profileSetupSession";
+import { setAuthSession } from "../auth/authSession";
 
 type LoginUser = {
   role?: "student" | "tutor";
@@ -183,8 +184,7 @@ export function LoginPageContent() {
 
   const storeProfileSetupSession = (token?: string, user?: LoginUser) => {
     if (token) {
-      localStorage.setItem("sp_profile_setup_token", token);
-      localStorage.removeItem("sp_access_token");
+      setAuthSession(token, user);
     }
 
     if (user) {
@@ -215,27 +215,28 @@ export function LoginPageContent() {
         return;
       }
 
+      if (!result.token?.trim()) {
+        setSocialError("Authentication completed, but the server did not return an access token. Please try again.");
+        return;
+      }
+      const accessToken = result.token.trim();
+
       if (result.profileSetupRequired) {
-        if (result.token && redirectToReturnTarget(result.token, result.user)) {
+        if (redirectToReturnTarget(accessToken, result.user)) {
           return;
         }
 
-        storeProfileSetupSession(result.token, result.user);
+        storeProfileSetupSession(accessToken, result.user);
         router.push(buildProfileSetupHref());
         return;
       }
 
-      if (result.token) {
-        localStorage.setItem("sp_access_token", result.token);
-        if (redirectToReturnTarget(result.token, result.user)) {
-          return;
-        }
+      setAuthSession(accessToken, result.user);
+      if (redirectToReturnTarget(accessToken, result.user)) {
+        return;
+      }
 
-        if (isDirectOnboardingDisabled) {
-          redirectToComingSoon();
-          return;
-        }
-      } else if (isDirectOnboardingDisabled) {
+      if (isDirectOnboardingDisabled) {
         redirectToComingSoon();
         return;
       }
@@ -311,30 +312,30 @@ export function LoginPageContent() {
         return;
       }
 
-      const token = data?.data?.token;
+      const token = data?.data?.token?.trim();
       const user = data?.data?.user;
-      if (token) {
-        const profileSetupRequired =
-          data?.data?.profile_setup_required === true ||
-          user?.is_profile_setup === false;
+      if (!token?.trim()) {
+        setPasswordError("Login completed, but the server did not return an access token. Please try again.");
+        return;
+      }
 
-        if (redirectToReturnTarget(token, user)) {
-          return;
-        }
+      const profileSetupRequired =
+        data?.data?.profile_setup_required === true ||
+        user?.is_profile_setup === false;
 
-        if (profileSetupRequired) {
-          storeProfileSetupSession(token, user);
-          router.push(buildProfileSetupHref());
-          return;
-        }
+      if (redirectToReturnTarget(token, user)) {
+        return;
+      }
 
-        localStorage.setItem("sp_access_token", token);
+      if (profileSetupRequired) {
+        storeProfileSetupSession(token, user);
+        router.push(buildProfileSetupHref());
+        return;
+      }
 
-        if (isDirectOnboardingDisabled) {
-          redirectToComingSoon();
-          return;
-        }
-      } else if (isDirectOnboardingDisabled) {
+      setAuthSession(token, user);
+
+      if (isDirectOnboardingDisabled) {
         redirectToComingSoon();
         return;
       }

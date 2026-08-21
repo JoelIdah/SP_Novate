@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { BadgeCheck, BookOpenCheck, Check, ChevronDown, ChevronLeft, CircleDot, HelpCircle, Hourglass, MapPin, Star, Target } from "lucide-react";
+import { BadgeCheck, BookOpenCheck, Check, ChevronLeft, CircleDot, HelpCircle, Hourglass, MapPin, Star, Target } from "lucide-react";
+
+import { SelectMenu } from "../../../../../components/ui/SelectMenu";
 
 const timeline = [
   { title: "Pending Request", note: "request is awaiting tutor review", time: "May 6, 2024 · 12:04 PM", icon: Hourglass, done: true },
@@ -234,15 +236,7 @@ function QuestionSelect({
   return (
     <label className="block text-[0.76rem] font-semibold text-[#3f4760]">
       {label}
-      <div className="relative mt-1.5">
-        <select className="h-11 w-full appearance-none rounded-xl border border-[#d7dce8] bg-white px-3 pr-9 text-[0.76rem] outline-none focus:border-[#5f64d8]" onChange={(e) => onChange(e.target.value)} value={value}>
-          <option value="">Select answer</option>
-          <option value="yes">Yes</option>
-          <option value="mostly">Mostly</option>
-          <option value="no">No</option>
-        </select>
-        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#a3abba]" />
-      </div>
+      <SelectMenu ariaLabel={label} buttonClassName="rounded-xl text-[0.76rem]" className="mt-1.5" onChange={onChange} options={[{ label: "Yes", value: "yes" }, { label: "Mostly", value: "mostly" }, { label: "No", value: "no" }]} placeholder="Select answer" value={value} />
     </label>
   );
 }

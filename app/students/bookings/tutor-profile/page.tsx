@@ -8,7 +8,6 @@ import {
   CalendarDays,
   Check,
   CheckCircle2,
-  ChevronDown,
   ChevronLeft,
   ChevronRight,
   CircleDollarSign,
@@ -22,6 +21,7 @@ import { Avatar } from "../../../../components/ui/Avatar";
 import { Button } from "../../../../components/ui/Button";
 import { Card } from "../../../../components/ui/Card";
 import ResponsiveSheet from "../../../../components/ui/ResponsiveSheet";
+import { SelectMenu } from "../../../../components/ui/SelectMenu";
 
 const guidelineItems = [
   "Communication outside the platform is at your own risk.",
@@ -488,19 +488,7 @@ function BookingField({
   return (
     <label className="block">
       <span className="mb-1.5 block text-[0.82rem] font-semibold text-[#3f4760]">{label}</span>
-      <div className="relative">
-        <select
-          className="h-11 w-full appearance-none rounded-[10px] border border-[#d7dce8] bg-white px-3 pr-9 text-[0.84rem] text-[#55607a] outline-none focus:border-[#5f64d8]"
-          onChange={(event) => onChange(event.target.value)}
-          value={value}
-        >
-          <option value="">{placeholder}</option>
-          {options.map((option) => (
-            <option key={option} value={option}>{option}</option>
-          ))}
-        </select>
-        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#a3abba]" />
-      </div>
+      <SelectMenu ariaLabel={label} buttonClassName="rounded-[10px] text-[0.84rem]" onChange={onChange} options={options.map((option) => ({ label: option, value: option }))} placeholder={placeholder} value={value} />
       {hint ? <span className="mt-1 block text-[0.67rem] text-[#8b93a8]">{hint}</span> : null}
     </label>
   );

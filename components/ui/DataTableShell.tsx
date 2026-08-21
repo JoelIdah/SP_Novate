@@ -6,6 +6,7 @@ type DataTableShellProps = {
   children: ReactNode;
   className?: string;
   viewportClassName?: string;
+  onReachEnd?: () => void;
 };
 
 /**
@@ -18,6 +19,7 @@ export function DataTableShell({
   children,
   className = "",
   viewportClassName = "",
+  onReachEnd,
 }: DataTableShellProps) {
   const shellRef = useRef<HTMLDivElement | null>(null);
   const [tableViewportHeight, setTableViewportHeight] = useState<number>();
@@ -65,6 +67,10 @@ export function DataTableShell({
     <div className={`mb-5 hidden overflow-hidden rounded-xl border border-ui-border bg-white md:block ${className}`} ref={shellRef}>
       <div
         className={`overflow-auto overscroll-contain [scrollbar-gutter:stable] [&_thead]:sticky [&_thead]:top-0 [&_thead]:z-10 ${viewportClassName}`}
+        onScroll={onReachEnd ? (event) => {
+          const viewport = event.currentTarget;
+          if (viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight <= 96) onReachEnd();
+        } : undefined}
         style={{ maxHeight: tableViewportHeight === undefined ? "55dvh" : `${tableViewportHeight}px` }}
       >
         {children}

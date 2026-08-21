@@ -12,6 +12,7 @@ import {
   Menu,
   MessageCircle,
   Repeat2,
+  Settings,
   X,
 } from "lucide-react";
 import { useSessionUser } from "../auth/authSession";
@@ -62,7 +63,7 @@ const roleConfig = {
   items: Array<{ label: NavLabel; href: string; icon: typeof Home }>;
 }>;
 
-export function DashboardNavbar({ role, active = "Home" }: { role: DashboardRole; active?: NavLabel }) {
+export function DashboardNavbar({ role, active = "Home" }: { role: DashboardRole; active?: NavLabel | "Settings" }) {
   const router = useRouter();
   const config = roleConfig[role];
   const sessionUser = useSessionUser();
@@ -155,13 +156,13 @@ export function DashboardNavbar({ role, active = "Home" }: { role: DashboardRole
             {switchLabel}
           </button>
 
-          <div aria-label={`Signed in as ${profileName}`} className="hidden min-h-10 max-w-[12rem] items-center gap-2 border-l border-[#e1e5ed] pl-3 xl:flex">
+          <Link aria-label={role === "tutor" ? `Open settings for ${profileName}` : `Signed in as ${profileName}`} className={`hidden min-h-10 max-w-[12rem] items-center gap-2 rounded-lg border-l border-[#e1e5ed] py-1 pl-3 pr-2 xl:flex ${active === "Settings" ? "bg-brand-primary-soft" : "hover:bg-[#f7f8fb]"}`} href={role === "tutor" ? "/tutor/settings" : config.homeHref}>
             <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-primary text-sm font-semibold text-white">{profileInitial}</span>
             <span className="min-w-0 text-left leading-tight">
               <span className="block truncate text-xs font-semibold text-[#303755]">{profileName}</span>
               <span className="mt-0.5 block text-[0.65rem] font-medium text-[#8a91a1]">{role === "tutor" ? "Tutor account" : "Student account"}</span>
             </span>
-          </div>
+          </Link>
         </div>
       </div>
 
@@ -202,6 +203,15 @@ export function DashboardNavbar({ role, active = "Home" }: { role: DashboardRole
                   </Link>
                 );
               })}
+              {role === "tutor" ? <Link
+                aria-current={active === "Settings" ? "page" : undefined}
+                className={`flex min-h-11 items-center gap-3 rounded-lg border px-3 text-sm font-semibold ${active === "Settings" ? "border-[#d8daf8] bg-brand-primary-soft text-brand-accent" : "border-brand-line bg-white text-[#5f6678]"}`}
+                href="/tutor/settings"
+                onClick={closeMenu}
+              >
+                <Settings className="h-4 w-4" />
+                Settings
+              </Link> : null}
             </nav>
             <button
               className="mt-3 min-h-11 w-full rounded-lg border border-[#d8daf8] bg-brand-primary-soft px-3 text-left text-sm font-semibold text-brand-accent"

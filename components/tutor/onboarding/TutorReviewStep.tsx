@@ -18,7 +18,7 @@ type ReviewPersonal = {
   experience: string;
 };
 
-type ReviewIdentity = { shareCode: string; dbsNumber: string; idType: string; file: File | null };
+type ReviewIdentity = { shareCode: string; dbsNumber: string; idType: string; files: File[] };
 type ReviewCompensation = { bankName: string; accountName: string; firstName: string; lastName: string; accountNumber: string; sortCode: string };
 
 function ReviewField({ label, value }: { label: string; value: string }) {
@@ -68,7 +68,7 @@ export function TutorReviewStep({
         </ReviewCard>
 
         <ReviewCard icon={FileCheck2} onEdit={() => onEdit("identity")} title="Identification verification">
-          <div className="grid grid-cols-2 gap-x-5 gap-y-2.5">{uk ? <><ReviewField label="Employer share code" value={identity.shareCode} /><ReviewField label="DBS certificate number" value={identity.dbsNumber} /></> : null}<ReviewField label="ID type" value={identity.idType} /><ReviewField label="ID document" value={identity.file?.name ?? ""} /></div>
+          <div className="grid grid-cols-2 gap-x-5 gap-y-2.5">{uk ? <><ReviewField label="Employer share code" value={identity.shareCode} /><ReviewField label="DBS certificate number" value={identity.dbsNumber} /></> : null}<ReviewField label="ID type" value={identity.idType} /><ReviewField label="ID documents" value={identity.files.map((file) => file.name).join(", ")} /></div>
         </ReviewCard>
 
         <ReviewCard icon={CircleDollarSign} onEdit={() => onEdit("compensation")} title="Compensation details">

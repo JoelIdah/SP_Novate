@@ -15,8 +15,9 @@ import {
   type CountryCode,
 } from "libphonenumber-js";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
+import { apiFetch } from "../../auth/apiClient";
 import { getAccessToken, useSessionUser } from "../../auth/authSession";
 import { OnboardingNavbar } from "../../signup/OnboardingNavbar";
 import { StepTwoAddressConfirm } from "../../signup/profile-setup/StepTwoAddressConfirm";
@@ -45,6 +46,7 @@ type PersonalForm = {
   experience: string;
 };
 type CompensationForm = {
+  bankCode: string;
   bankName: string;
   accountName: string;
   firstName: string;
@@ -52,6 +54,7 @@ type CompensationForm = {
   accountNumber: string;
   sortCode: string;
 };
+type NigerianBank = { code: string; name: string; slug?: string };
 
 const stages = [
   { id: "personal", label: "Personal information", icon: UserRound },
@@ -69,6 +72,18 @@ const phoneCountries = getCountries()
     iso,
   }))
   .sort((a, b) => a.country.localeCompare(b.country));
+const identificationTypeValues: Record<string, string> = {
+  NIN: "national_id",
+  Passport: "passport",
+  "Voter's card": "voters_card",
+  "Driver's licence": "drivers_license",
+};
+const acceptedIdentityFileTypes = new Set([
+  "application/pdf",
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+]);
 
 function FieldLabel({
   children,
@@ -89,17 +104,38 @@ function FieldLabel({
   );
 }
 
+function InlineFieldError({
+  children,
+  show,
+}: {
+  children: React.ReactNode;
+  show: boolean;
+}) {
+  return show ? (
+    <span
+      className="mt-1 block text-xs font-medium text-brand-danger"
+      role="alert"
+    >
+      {children}
+    </span>
+  ) : null;
+}
+
 function SelectField({
   ariaInvalid,
   onChange,
   options,
   placeholder,
+  searchable = false,
+  searchPlaceholder,
   value,
 }: {
   ariaInvalid?: boolean;
   onChange: (value: string) => void;
   options: readonly { label: string; value: string }[];
   placeholder: string;
+  searchable?: boolean;
+  searchPlaceholder?: string;
   value: string;
 }) {
   return (
@@ -109,6 +145,8 @@ function SelectField({
       onChange={onChange}
       options={options}
       placeholder={placeholder}
+      searchable={searchable}
+      searchPlaceholder={searchPlaceholder}
       value={value}
     />
   );
@@ -190,9 +228,14 @@ export default function TutorOnboardingFlow() {
   const [shareCode, setShareCode] = useState("");
   const [dbsNumber, setDbsNumber] = useState("");
   const [idType, setIdType] = useState("");
-  const [idFile, setIdFile] = useState<File | null>(null);
+  const [idFiles, setIdFiles] = useState<File[]>([]);
   const [fileError, setFileError] = useState("");
+  const [identitySubmitting, setIdentitySubmitting] = useState(false);
+  const [identityApiError, setIdentityApiError] = useState("");
+  const [submittedIdentitySignature, setSubmittedIdentitySignature] =
+    useState("");
   const [compensation, setCompensation] = useState<CompensationForm>({
+    bankCode: "",
     bankName: "",
     accountName: "",
     firstName: "",
@@ -200,6 +243,18 @@ export default function TutorOnboardingFlow() {
     accountNumber: "",
     sortCode: "",
   });
+  const [banks, setBanks] = useState<NigerianBank[]>([]);
+  const [banksLoading, setBanksLoading] = useState(false);
+  const [banksError, setBanksError] = useState("");
+  const [banksRetry, setBanksRetry] = useState(0);
+  const banksRequestInFlight = useRef(false);
+  const [accountResolving, setAccountResolving] = useState(false);
+  const [accountResolveError, setAccountResolveError] = useState("");
+  const [verifiedAccountSignature, setVerifiedAccountSignature] = useState("");
+  const [compensationSubmitting, setCompensationSubmitting] = useState(false);
+  const [compensationApiError, setCompensationApiError] = useState("");
+  const [submittedCompensationSignature, setSubmittedCompensationSignature] =
+    useState("");
   const [locationSummary, setLocationSummary] =
     useState<TutorLocationSummary | null>(null);
 
@@ -216,11 +271,12 @@ export default function TutorOnboardingFlow() {
       personalForm.phoneNumber.trim(),
       phoneCountry,
     )?.formatInternational() ?? personalForm.phoneNumber;
+  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
   const personalComplete = Boolean(
     firstName.trim() &&
     lastName.trim() &&
     personalForm.dateOfBirth &&
-    email.trim() &&
+    emailValid &&
     phoneValid &&
     personalForm.country &&
     personalForm.occupation.trim() &&
@@ -229,9 +285,17 @@ export default function TutorOnboardingFlow() {
   );
   const identityComplete = Boolean(
     idType &&
-    idFile &&
+    idFiles.length > 0 &&
+    idFiles.length <= 5 &&
     (personalForm.country !== "GB" || (shareCode.trim() && dbsNumber.trim())),
   );
+  const identitySignature = JSON.stringify({
+    country: personalForm.country,
+    dbsNumber: dbsNumber.trim(),
+    files: idFiles.map((file) => [file.name, file.size, file.lastModified]),
+    idType,
+    shareCode: shareCode.trim(),
+  });
   const compensationComplete =
     personalForm.country === "GB"
       ? Boolean(
@@ -241,10 +305,17 @@ export default function TutorOnboardingFlow() {
           compensation.sortCode.replace(/\D/g, "").length === 6,
         )
       : Boolean(
+          compensation.bankCode.trim() &&
           compensation.bankName.trim() &&
           compensation.accountName.trim() &&
-          compensation.accountNumber.replace(/\D/g, "").length === 10,
+          compensation.accountNumber.replace(/\D/g, "").length === 10 &&
+          verifiedAccountSignature ===
+            `${compensation.bankCode}:${compensation.accountNumber}`,
         );
+  const compensationSignature = JSON.stringify({
+    ...compensation,
+    country: personalForm.country,
+  });
   const displayName = firstName || "there";
 
   const markCompleted = (item: SetupStage) =>
@@ -260,16 +331,21 @@ export default function TutorOnboardingFlow() {
     field: K,
     value: PersonalForm[K],
   ) => setPersonalForm((current) => ({ ...current, [field]: value }));
-  const updateCompensation = (field: keyof CompensationForm, value: string) =>
+  const updateCompensation = (field: keyof CompensationForm, value: string) => {
+    setCompensationApiError("");
     setCompensation((current) => ({ ...current, [field]: value }));
+  };
   const changeCountry = (country: OperatingCountry) => {
     if (country !== personalForm.country) {
       setShareCode("");
       setDbsNumber("");
       setIdType("");
-      setIdFile(null);
+      setIdFiles([]);
       setFileError("");
+      setIdentityApiError("");
+      setSubmittedIdentitySignature("");
       setCompensation({
+        bankCode: "",
         bankName: "",
         accountName: "",
         firstName: "",
@@ -277,6 +353,10 @@ export default function TutorOnboardingFlow() {
         accountNumber: "",
         sortCode: "",
       });
+      setVerifiedAccountSignature("");
+      setAccountResolveError("");
+      setCompensationApiError("");
+      setSubmittedCompensationSignature("");
     }
     updatePersonal("country", country);
   };
@@ -287,20 +367,34 @@ export default function TutorOnboardingFlow() {
     setReturnToReview(false);
   });
 
-  const handleFile = (file?: File) => {
+  const handleFiles = (selectedFiles?: FileList | null) => {
     setFileError("");
-    if (!file) return;
-    if (!["application/pdf", "image/jpeg", "image/png"].includes(file.type)) {
-      setIdFile(null);
-      setFileError("Upload a PDF, JPG, or PNG document.");
+    setIdentityApiError("");
+    if (!selectedFiles?.length) return;
+    const incoming = Array.from(selectedFiles);
+    const invalidFile = incoming.find(
+      (file) => !acceptedIdentityFileTypes.has(file.type),
+    );
+    if (invalidFile) {
+      setFileError(
+        `${invalidFile.name} is not supported. Upload JPG, PNG, WEBP, or PDF files.`,
+      );
       return;
     }
-    if (file.size > 5 * 1024 * 1024) {
-      setIdFile(null);
-      setFileError("The document must be 5 MB or smaller.");
+    const combined = [...idFiles, ...incoming].filter(
+      (file, index, files) =>
+        files.findIndex(
+          (candidate) =>
+            candidate.name === file.name &&
+            candidate.size === file.size &&
+            candidate.lastModified === file.lastModified,
+        ) === index,
+    );
+    if (combined.length > 5) {
+      setFileError("You can upload a maximum of 5 identity documents.");
       return;
     }
-    setIdFile(file);
+    setIdFiles(combined);
   };
   const startSetup = () => {
     if (!getAccessToken()) router.push("/login");
@@ -312,9 +406,7 @@ export default function TutorOnboardingFlow() {
     setValidationVisible(false);
     goNext("personal", "identity");
   };
-  const continueIdentity = () => {
-    setIdentityValidationVisible(true);
-    if (!identityComplete) return;
+  const advanceFromIdentity = () => {
     if (personalForm.country === "GB")
       setCompensation((current) => ({
         ...current,
@@ -324,9 +416,204 @@ export default function TutorOnboardingFlow() {
     setIdentityValidationVisible(false);
     goNext("identity", "compensation");
   };
-  const continueCompensation = () => {
+  const continueIdentity = async () => {
+    setIdentityValidationVisible(true);
+    setIdentityApiError("");
+    if (!identityComplete) return;
+    if (submittedIdentitySignature === identitySignature) {
+      advanceFromIdentity();
+      return;
+    }
+    setIdentitySubmitting(true);
+    try {
+      const formData = new FormData();
+      formData.append(
+        "country",
+        personalForm.country === "GB" ? "uk" : "nigeria",
+      );
+      formData.append(
+        "id_type",
+        identificationTypeValues[idType] ??
+          idType.toLowerCase().replace(/[^a-z0-9]+/g, "_"),
+      );
+      if (personalForm.country === "GB") {
+        formData.append("employer_share_code", shareCode.trim());
+        formData.append("dbs_certificate_number", dbsNumber.trim());
+      }
+      idFiles.forEach((file) => formData.append("documents", file));
+      const response = await apiFetch("/v1/tutor/set-up/identification", {
+        method: "POST",
+        body: formData,
+      });
+      if (response.status === 413) {
+        setFileError(response.statusText || "Request Entity Too Large");
+        return;
+      }
+      const result = (await response.json().catch(() => null)) as {
+        message?: string;
+      } | null;
+      if (!response.ok)
+        throw new Error(
+          result?.message ?? "Could not submit identity verification.",
+        );
+      setSubmittedIdentitySignature(identitySignature);
+      advanceFromIdentity();
+    } catch (caught) {
+      setIdentityApiError(
+        caught instanceof Error
+          ? caught.message
+          : "Could not submit identity verification.",
+      );
+    } finally {
+      setIdentitySubmitting(false);
+    }
+  };
+  useEffect(() => {
+    if (
+      stage !== "compensation" ||
+      personalForm.country !== "NG" ||
+      banks.length > 0 ||
+      banksRequestInFlight.current
+    )
+      return;
+    banksRequestInFlight.current = true;
+    setBanksLoading(true);
+    setBanksError("");
+    void apiFetch("/v1/tutor/set-up/compensation/nigeria/banks")
+      .then(async (response) => {
+        const result = (await response.json().catch(() => null)) as {
+          data?: NigerianBank[];
+          message?: string;
+        } | null;
+        if (!response.ok)
+          throw new Error(result?.message ?? "Could not load Nigerian banks.");
+        const uniqueBanks = Array.from(
+          new Map(
+            (result?.data ?? []).map((bank) => [bank.code, bank]),
+          ).values(),
+        );
+        setBanks(uniqueBanks);
+      })
+      .catch((caught) => {
+        setBanksError(
+          caught instanceof Error
+            ? caught.message
+            : "Could not load Nigerian banks.",
+        );
+      })
+      .finally(() => {
+        banksRequestInFlight.current = false;
+        setBanksLoading(false);
+      });
+  }, [banks.length, banksRetry, personalForm.country, stage]);
+
+  const selectBank = (bankCode: string) => {
+    const bank = banks.find((candidate) => candidate.code === bankCode);
+    setCompensation((current) => ({
+      ...current,
+      accountName: "",
+      bankCode,
+      bankName: bank?.name ?? "",
+    }));
+    setVerifiedAccountSignature("");
+    setAccountResolveError("");
+    setCompensationApiError("");
+  };
+  const changeNigerianAccountNumber = (value: string) => {
+    setCompensation((current) => ({
+      ...current,
+      accountName: "",
+      accountNumber: value.replace(/\D/g, "").slice(0, 10),
+    }));
+    setVerifiedAccountSignature("");
+    setAccountResolveError("");
+    setCompensationApiError("");
+  };
+  const resolveNigerianAccount = async () => {
+    const accountNumber = compensation.accountNumber.replace(/\D/g, "");
     setCompensationValidationVisible(true);
+    setAccountResolveError("");
+    if (!compensation.bankCode || accountNumber.length !== 10) return;
+    setAccountResolving(true);
+    try {
+      const params = new URLSearchParams({
+        account_number: accountNumber,
+        bank_code: compensation.bankCode,
+      });
+      const response = await apiFetch(
+        `/v1/tutor/set-up/compensation/nigeria/resolve-account?${params}`,
+      );
+      const result = (await response.json().catch(() => null)) as {
+        data?: { account_name?: string };
+        message?: string;
+      } | null;
+      if (!response.ok || !result?.data?.account_name)
+        throw new Error(result?.message ?? "Could not verify this account.");
+      setCompensation((current) => ({
+        ...current,
+        accountName: result.data?.account_name ?? "",
+      }));
+      setVerifiedAccountSignature(`${compensation.bankCode}:${accountNumber}`);
+    } catch (caught) {
+      setAccountResolveError(
+        caught instanceof Error
+          ? caught.message
+          : "Could not verify this account.",
+      );
+    } finally {
+      setAccountResolving(false);
+    }
+  };
+  const continueCompensation = async () => {
+    setCompensationValidationVisible(true);
+    setCompensationApiError("");
     if (!compensationComplete) return;
+    if (submittedCompensationSignature === compensationSignature) {
+      setCompensationValidationVisible(false);
+      goNext("compensation", "location");
+      return;
+    }
+    setCompensationSubmitting(true);
+    try {
+      const payload =
+        personalForm.country === "GB"
+          ? {
+              account_number: compensation.accountNumber.trim(),
+              country: "uk",
+              first_name: compensation.firstName.trim(),
+              last_name: compensation.lastName.trim(),
+              sort_code: compensation.sortCode.replace(/\D/g, ""),
+            }
+          : {
+              account_name: compensation.accountName,
+              account_number: compensation.accountNumber,
+              bank_code: compensation.bankCode,
+              bank_name: compensation.bankName,
+              country: "nigeria",
+            };
+      const response = await apiFetch("/v1/tutor/set-up/compensation", {
+        body: JSON.stringify(payload),
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
+      });
+      const result = (await response.json().catch(() => null)) as {
+        message?: string;
+      } | null;
+      if (!response.ok)
+        throw new Error(
+          result?.message ?? "Could not save compensation details.",
+        );
+      setSubmittedCompensationSignature(compensationSignature);
+    } catch (caught) {
+      setCompensationApiError(
+        caught instanceof Error
+          ? caught.message
+          : "Could not save compensation details.",
+      );
+      return;
+    } finally {
+      setCompensationSubmitting(false);
+    }
     setCompensationValidationVisible(false);
     goNext("compensation", "location");
   };
@@ -388,7 +675,7 @@ export default function TutorOnboardingFlow() {
           <TutorReviewStep
             compensation={compensation}
             confirmed={reviewConfirmed}
-            identity={{ shareCode, dbsNumber, idType, file: idFile }}
+            identity={{ shareCode, dbsNumber, idType, files: idFiles }}
             location={locationSummary}
             onConfirmedChange={(value) => {
               setReviewConfirmed(value);
@@ -432,6 +719,11 @@ export default function TutorOnboardingFlow() {
                         }
                         value={firstName}
                       />
+                      <InlineFieldError
+                        show={validationVisible && !firstName.trim()}
+                      >
+                        Enter your first name.
+                      </InlineFieldError>
                     </label>
                     <label>
                       <FieldLabel>Last name</FieldLabel>
@@ -443,6 +735,11 @@ export default function TutorOnboardingFlow() {
                         }
                         value={lastName}
                       />
+                      <InlineFieldError
+                        show={validationVisible && !lastName.trim()}
+                      >
+                        Enter your last name.
+                      </InlineFieldError>
                     </label>
                     <label>
                       <FieldLabel optional>Other name</FieldLabel>
@@ -467,10 +764,16 @@ export default function TutorOnboardingFlow() {
                         type="date"
                         value={personalForm.dateOfBirth}
                       />
+                      <InlineFieldError
+                        show={validationVisible && !personalForm.dateOfBirth}
+                      >
+                        Select your date of birth.
+                      </InlineFieldError>
                     </label>
                     <label>
                       <FieldLabel>Email</FieldLabel>
                       <input
+                        aria-invalid={validationVisible && !emailValid}
                         className={`${fieldClassName} ${sessionUser?.email ? "cursor-not-allowed bg-[#f5f7fb]" : ""}`}
                         onChange={(e) =>
                           updatePersonal("email", e.target.value)
@@ -479,6 +782,9 @@ export default function TutorOnboardingFlow() {
                         type="email"
                         value={email}
                       />
+                      <InlineFieldError show={validationVisible && !emailValid}>
+                        Enter a valid email address.
+                      </InlineFieldError>
                     </label>
                     <label>
                       <FieldLabel>Phone number</FieldLabel>
@@ -509,6 +815,10 @@ export default function TutorOnboardingFlow() {
                           value={personalForm.phoneNumber}
                         />
                       </span>
+                      <InlineFieldError show={validationVisible && !phoneValid}>
+                        Enter a valid phone number for the selected country
+                        code.
+                      </InlineFieldError>
                     </label>
                     <label className="sm:col-span-2">
                       <FieldLabel>
@@ -526,31 +836,62 @@ export default function TutorOnboardingFlow() {
                         placeholder="Select country"
                         value={personalForm.country}
                       />
+                      <InlineFieldError
+                        show={validationVisible && !personalForm.country}
+                      >
+                        Select the country where you will provide tutoring.
+                      </InlineFieldError>
                     </label>
                     <label>
                       <FieldLabel>Occupation</FieldLabel>
                       <input
+                        aria-invalid={
+                          validationVisible && !personalForm.occupation.trim()
+                        }
                         className={fieldClassName}
                         onChange={(e) =>
                           updatePersonal("occupation", e.target.value)
                         }
                         value={personalForm.occupation}
                       />
+                      <InlineFieldError
+                        show={
+                          validationVisible && !personalForm.occupation.trim()
+                        }
+                      >
+                        Enter your occupation.
+                      </InlineFieldError>
                     </label>
                     <label>
                       <FieldLabel>Highest qualification</FieldLabel>
                       <input
+                        aria-invalid={
+                          validationVisible &&
+                          !personalForm.qualification.trim()
+                        }
                         className={fieldClassName}
                         onChange={(e) =>
                           updatePersonal("qualification", e.target.value)
                         }
                         value={personalForm.qualification}
                       />
+                      <InlineFieldError
+                        show={
+                          validationVisible &&
+                          !personalForm.qualification.trim()
+                        }
+                      >
+                        Enter your highest qualification.
+                      </InlineFieldError>
                     </label>
                     <label className="sm:col-span-2">
                       <FieldLabel>Teaching or tutoring experience</FieldLabel>
                       <textarea
-                        className="mt-1.5 h-20 w-full resize-none rounded-lg border border-[#d8dde8] px-3.5 py-2.5 text-sm outline-none"
+                        aria-invalid={
+                          validationVisible &&
+                          personalForm.experience.trim().length < 10
+                        }
+                        className="mt-1.5 h-20 w-full resize-none rounded-lg border border-[#d8dde8] px-3.5 py-2.5 text-sm outline-none aria-[invalid=true]:border-brand-danger"
                         maxLength={500}
                         onChange={(e) =>
                           updatePersonal("experience", e.target.value)
@@ -562,13 +903,17 @@ export default function TutorOnboardingFlow() {
                         <span>Bio must be at least 10 characters</span>
                         <span>{personalForm.experience.length}/500</span>
                       </span>
+                      <InlineFieldError
+                        show={
+                          validationVisible &&
+                          personalForm.experience.trim().length < 10
+                        }
+                      >
+                        Describe your tutoring experience using at least 10
+                        characters.
+                      </InlineFieldError>
                     </label>
                   </div>
-                  {validationVisible && !personalComplete ? (
-                    <p className="mt-3 text-sm font-medium text-brand-danger">
-                      Complete all required fields with valid information.
-                    </p>
-                  ) : null}
                 </>
               ) : stage === "identity" ? (
                 <>
@@ -591,6 +936,11 @@ export default function TutorOnboardingFlow() {
                           placeholder="Enter employer share code"
                           value={shareCode}
                         />
+                        <InlineFieldError
+                          show={identityValidationVisible && !shareCode.trim()}
+                        >
+                          Enter your employer share code.
+                        </InlineFieldError>
                         <span className="mt-1 block text-xs text-[#8a93a7]">
                           Generate your share code from the UK government
                           website to confirm your right to work.
@@ -610,6 +960,11 @@ export default function TutorOnboardingFlow() {
                           placeholder="Enter DBS certificate number"
                           value={dbsNumber}
                         />
+                        <InlineFieldError
+                          show={identityValidationVisible && !dbsNumber.trim()}
+                        >
+                          Enter your DBS certificate number.
+                        </InlineFieldError>
                         <span className="mt-1 block text-xs text-[#8a93a7]">
                           Provide your Disclosure and Barring Service (DBS)
                           certificate number for background verification.
@@ -638,6 +993,11 @@ export default function TutorOnboardingFlow() {
                         placeholder="Select ID type"
                         value={idType}
                       />
+                      <InlineFieldError
+                        show={identityValidationVisible && !idType}
+                      >
+                        Select an identification type.
+                      </InlineFieldError>
                       <span className="mt-1 block text-xs text-[#8a93a7]">
                         Accepted:{" "}
                         {personalForm.country === "GB"
@@ -646,44 +1006,72 @@ export default function TutorOnboardingFlow() {
                       </span>
                     </label>
                     <label>
-                      <FieldLabel>Upload ID document</FieldLabel>
+                      <FieldLabel>Upload ID documents</FieldLabel>
                       <span
-                        className={`mt-1.5 flex min-h-28 cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed bg-[#fbfcff] ${identityValidationVisible && !idFile ? "border-brand-danger" : "border-[#cfd5e2]"}`}
+                        className={`mt-1.5 flex min-h-28 cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed bg-[#fbfcff] ${identityValidationVisible && idFiles.length === 0 ? "border-brand-danger" : "border-[#cfd5e2]"}`}
                       >
                         <UploadCloud className="h-6 w-6 text-[#5652d2]" />
                         <span className="mt-2 text-sm font-semibold text-[#5652d2]">
                           Click to upload or drag and drop
                         </span>
                         <span className="text-xs text-[#9299a9]">
-                          PDF, JPG or PNG — maximum 5 MB
+                          Upload 1–5 JPG, PNG, WEBP, or PDF files
                         </span>
                         <input
-                          accept=".pdf,.jpg,.jpeg,.png"
+                          accept=".pdf,.jpg,.jpeg,.png,.webp"
                           className="sr-only"
-                          onChange={(e) => handleFile(e.target.files?.[0])}
+                          multiple
+                          onChange={(event) => {
+                            handleFiles(event.target.files);
+                            event.target.value = "";
+                          }}
                           type="file"
                         />
                       </span>
+                      <InlineFieldError
+                        show={identityValidationVisible && idFiles.length === 0}
+                      >
+                        Upload at least one identity document.
+                      </InlineFieldError>
                     </label>
                     {fileError ? (
                       <p className="text-sm text-brand-danger">{fileError}</p>
                     ) : null}
-                    {idFile ? (
-                      <div className="flex justify-between rounded-xl border border-[#d9d7fb] bg-[#faf9ff] px-4 py-3 text-sm">
-                        <span>{idFile.name}</span>
-                        <button
-                          className="font-semibold text-brand-danger"
-                          onClick={() => setIdFile(null)}
-                          type="button"
-                        >
-                          Remove
-                        </button>
+                    {idFiles.length ? (
+                      <div className="space-y-2">
+                        {idFiles.map((file) => (
+                          <div
+                            className="flex items-center justify-between gap-3 rounded-xl border border-[#d9d7fb] bg-[#faf9ff] px-4 py-3 text-sm"
+                            key={`${file.name}-${file.size}-${file.lastModified}`}
+                          >
+                            <span className="min-w-0 truncate">
+                              {file.name}
+                            </span>
+                            <button
+                              className="shrink-0 font-semibold text-brand-danger"
+                              onClick={() => {
+                                setIdFiles((current) =>
+                                  current.filter(
+                                    (candidate) => candidate !== file,
+                                  ),
+                                );
+                                setIdentityApiError("");
+                              }}
+                              type="button"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        ))}
                       </div>
                     ) : null}
                   </div>
-                  {identityValidationVisible && !identityComplete ? (
-                    <p className="mt-3 text-sm font-medium text-brand-danger">
-                      Complete all identification requirements.
+                  {identityApiError ? (
+                    <p
+                      className="mt-3 rounded-lg border border-[#f0d6b5] bg-[#fff9f1] px-3 py-2 text-sm font-medium text-[#8b5a20]"
+                      role="alert"
+                    >
+                      {identityApiError}
                     </p>
                   ) : null}
                 </>
@@ -708,6 +1096,14 @@ export default function TutorOnboardingFlow() {
                             }
                             value={compensation.firstName}
                           />
+                          <InlineFieldError
+                            show={
+                              compensationValidationVisible &&
+                              !compensation.firstName.trim()
+                            }
+                          >
+                            Enter the account holder&apos;s first name.
+                          </InlineFieldError>
                         </label>
                         <label>
                           <FieldLabel>Last name</FieldLabel>
@@ -722,10 +1118,22 @@ export default function TutorOnboardingFlow() {
                             }
                             value={compensation.lastName}
                           />
+                          <InlineFieldError
+                            show={
+                              compensationValidationVisible &&
+                              !compensation.lastName.trim()
+                            }
+                          >
+                            Enter the account holder&apos;s last name.
+                          </InlineFieldError>
                         </label>
                         <label>
                           <FieldLabel>Account number</FieldLabel>
                           <input
+                            aria-invalid={
+                              compensationValidationVisible &&
+                              compensation.accountNumber.trim().length < 8
+                            }
                             className={fieldClassName}
                             inputMode="numeric"
                             onChange={(e) =>
@@ -736,10 +1144,23 @@ export default function TutorOnboardingFlow() {
                             }
                             value={compensation.accountNumber}
                           />
+                          <InlineFieldError
+                            show={
+                              compensationValidationVisible &&
+                              compensation.accountNumber.trim().length < 8
+                            }
+                          >
+                            Enter an account number with at least 8 digits.
+                          </InlineFieldError>
                         </label>
                         <label>
                           <FieldLabel>Sort code</FieldLabel>
                           <input
+                            aria-invalid={
+                              compensationValidationVisible &&
+                              compensation.sortCode.replace(/\D/g, "")
+                                .length !== 6
+                            }
                             className={fieldClassName}
                             inputMode="numeric"
                             onChange={(e) =>
@@ -748,51 +1169,145 @@ export default function TutorOnboardingFlow() {
                             placeholder="00-00-00"
                             value={compensation.sortCode}
                           />
+                          <InlineFieldError
+                            show={
+                              compensationValidationVisible &&
+                              compensation.sortCode.replace(/\D/g, "")
+                                .length !== 6
+                            }
+                          >
+                            Enter a valid 6-digit sort code.
+                          </InlineFieldError>
                         </label>
                       </>
                     ) : (
                       <>
-                        <label>
+                        <div>
                           <FieldLabel>Bank name</FieldLabel>
-                          <input
-                            className={fieldClassName}
-                            onChange={(e) =>
-                              updateCompensation("bankName", e.target.value)
+                          <SelectField
+                            ariaInvalid={
+                              compensationValidationVisible &&
+                              !compensation.bankCode
                             }
-                            value={compensation.bankName}
+                            onChange={selectBank}
+                            options={banks.map((bank) => ({
+                              label: bank.name,
+                              value: bank.code,
+                            }))}
+                            placeholder={
+                              banksLoading ? "Loading banks..." : "Select bank"
+                            }
+                            searchable
+                            searchPlaceholder="Search banks"
+                            value={compensation.bankCode}
                           />
-                        </label>
+                          <InlineFieldError
+                            show={
+                              compensationValidationVisible &&
+                              !compensation.bankCode
+                            }
+                          >
+                            Select your bank.
+                          </InlineFieldError>
+                          {banksError ? (
+                            <div
+                              className="mt-1 flex items-center gap-2 text-xs font-medium text-brand-danger"
+                              role="alert"
+                            >
+                              <span>{banksError}</span>
+                              <button
+                                className="font-bold underline underline-offset-2"
+                                onClick={() =>
+                                  setBanksRetry((value) => value + 1)
+                                }
+                                type="button"
+                              >
+                                Try again
+                              </button>
+                            </div>
+                          ) : null}
+                        </div>
                         <label>
                           <FieldLabel>Account number</FieldLabel>
                           <input
+                            aria-invalid={
+                              compensationValidationVisible &&
+                              compensation.accountNumber.replace(/\D/g, "")
+                                .length !== 10
+                            }
                             className={fieldClassName}
                             inputMode="numeric"
                             maxLength={10}
                             onChange={(e) =>
-                              updateCompensation(
-                                "accountNumber",
-                                e.target.value.replace(/\D/g, ""),
-                              )
+                              changeNigerianAccountNumber(e.target.value)
                             }
+                            placeholder="10-digit account number"
                             value={compensation.accountNumber}
                           />
+                          <InlineFieldError
+                            show={
+                              compensationValidationVisible &&
+                              compensation.accountNumber.replace(/\D/g, "")
+                                .length !== 10
+                            }
+                          >
+                            Enter a valid 10-digit account number.
+                          </InlineFieldError>
                         </label>
+                        <div className="sm:col-span-2">
+                          <button
+                            className="h-10 rounded-full border border-brand-primary px-5 text-sm font-semibold text-brand-primary transition hover:bg-brand-primary-soft disabled:cursor-not-allowed disabled:border-[#c8cad5] disabled:text-[#9ca1b2]"
+                            disabled={
+                              accountResolving ||
+                              !compensation.bankCode ||
+                              compensation.accountNumber.length !== 10
+                            }
+                            onClick={() => void resolveNigerianAccount()}
+                            type="button"
+                          >
+                            {accountResolving
+                              ? "Verifying..."
+                              : "Verify account"}
+                          </button>
+                          {accountResolveError ? (
+                            <p
+                              className="mt-2 text-xs font-medium text-brand-danger"
+                              role="alert"
+                            >
+                              {accountResolveError}
+                            </p>
+                          ) : null}
+                        </div>
                         <label className="sm:col-span-2">
                           <FieldLabel>Account holder name</FieldLabel>
                           <input
-                            className={fieldClassName}
-                            onChange={(e) =>
-                              updateCompensation("accountName", e.target.value)
+                            aria-invalid={
+                              compensationValidationVisible &&
+                              !compensation.accountName.trim()
                             }
+                            className={`${fieldClassName} bg-[#f5f6f9]`}
+                            placeholder="Verified account name will appear here"
+                            readOnly
                             value={compensation.accountName}
                           />
+                          <InlineFieldError
+                            show={
+                              compensationValidationVisible &&
+                              !compensation.accountName.trim()
+                            }
+                          >
+                            Verify the bank account to continue.
+                          </InlineFieldError>
                         </label>
                       </>
                     )}
                   </div>
-                  {compensationValidationVisible && !compensationComplete ? (
-                    <p className="mt-3 text-sm font-medium text-brand-danger">
-                      Enter valid payment details before continuing.
+                  {compensationApiError ? (
+                    <p
+                      className="mt-3 rounded-lg border border-[#f0d6b5] bg-[#fff9f1] px-3 py-2 text-sm font-medium text-[#8b5a20]"
+                      role="alert"
+                    >
+                      {compensationApiError}
                     </p>
                   ) : null}
                 </>
@@ -869,19 +1384,21 @@ export default function TutorOnboardingFlow() {
                 </button>
               ) : stage === "identity" ? (
                 <button
-                  className="h-11 rounded-full bg-brand-primary px-6 text-sm font-semibold text-white"
-                  onClick={continueIdentity}
+                  className="h-11 rounded-full bg-brand-primary px-6 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-[#b8b6cf]"
+                  disabled={identitySubmitting}
+                  onClick={() => void continueIdentity()}
                   type="button"
                 >
-                  Continue
+                  {identitySubmitting ? "Submitting..." : "Continue"}
                 </button>
               ) : stage === "compensation" ? (
                 <button
-                  className="h-11 rounded-full bg-brand-primary px-6 text-sm font-semibold text-white"
-                  onClick={continueCompensation}
+                  className="h-11 rounded-full bg-brand-primary px-6 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-[#b8b6cf]"
+                  disabled={compensationSubmitting}
+                  onClick={() => void continueCompensation()}
                   type="button"
                 >
-                  Continue
+                  {compensationSubmitting ? "Saving..." : "Continue"}
                 </button>
               ) : stage === "location" ? (
                 location.view === "prompt" ? (

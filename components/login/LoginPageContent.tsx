@@ -25,24 +25,18 @@ import type { SocialProvider } from "../signup/social/types";
 import { AuthShell } from "../signup/AuthShell";
 import { DIRECT_ONBOARDING_ENABLED } from "../../config/featureFlags";
 import { saveProfileSetupUser } from "../signup/profileSetupSession";
-import { setAuthSession } from "../auth/authSession";
-
-type LoginUser = {
-  role?: "student" | "tutor";
-  email?: string;
-  first_name?: string;
-  last_name?: string;
-  profile_photo?: string;
-  public_id?: string;
-  is_profile_setup?: boolean;
-};
+import { setAuthSession, setProfileSetupToken } from "../auth/authSession";
+import {
+  fetchAuthenticatedProfile,
+  type AuthenticatedProfile,
+} from "../auth/profileApi";
+import { resolveProfileSetupRequired } from "../auth/profileSetupStatus";
 
 type LoginResponse = {
   message?: string;
   data?: {
     profile_setup_required?: boolean;
     token?: string;
-    user?: LoginUser;
   };
 };
 
@@ -54,12 +48,15 @@ export function LoginPageContent() {
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [socialError, setSocialError] = useState("");
-  const [activeSocialProvider, setActiveSocialProvider] = useState<SocialProvider | null>(null);
+  const [activeSocialProvider, setActiveSocialProvider] =
+    useState<SocialProvider | null>(null);
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [redirectError, setRedirectError] = useState("");
   const isDirectOnboardingDisabled = !DIRECT_ONBOARDING_ENABLED;
-  const signupHref = searchParams.toString() ? `/signup?${searchParams.toString()}` : "/signup";
+  const signupHref = searchParams.toString()
+    ? `/signup?${searchParams.toString()}`
+    : "/signup";
   const notice = searchParams.get("notice");
   const statusNotice =
     notice === "account_exists"
@@ -83,7 +80,8 @@ export function LoginPageContent() {
 
     try {
       const parsed = new URL(candidate);
-      if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return null;
+      if (parsed.protocol !== "http:" && parsed.protocol !== "https:")
+        return null;
       const allowedOrigins = getAllowedReturnOrigins();
       if (!allowedOrigins.includes(parsed.origin)) return null;
       return parsed.toString();
@@ -117,12 +115,15 @@ export function LoginPageContent() {
       binary += String.fromCharCode(bytes[i]);
     }
 
-    return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+    return btoa(binary)
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=+$/g, "");
   };
 
   const redirectToReturnTarget = (
     token: string,
-    user?: LoginUser
+    user: AuthenticatedProfile,
   ) => {
     const requestedReturnTo = searchParams.get("returnTo");
     const allowedOrigins = getAllowedReturnOrigins();
@@ -152,17 +153,18 @@ export function LoginPageContent() {
     target.searchParams.set("next", nextPath);
     target.searchParams.set("state", state!);
 
-    if (user) {
-      const userPayload = {
-        role: user.role ?? "",
-        email: user.email ?? "",
-        first_name: user.first_name ?? "",
-        last_name: user.last_name ?? "",
-        profile_photo: user.profile_photo ?? "",
-        public_id: user.public_id ?? "",
-      };
-      target.searchParams.set("user", encodeBase64Url(JSON.stringify(userPayload)));
-    }
+    const userPayload = {
+      role: user.role,
+      email: user.email,
+      first_name: user.first_name,
+      last_name: user.last_name,
+      profile_photo: user.profile_photo,
+      public_id: user.public_id,
+    };
+    target.searchParams.set(
+      "user",
+      encodeBase64Url(JSON.stringify(userPayload)),
+    );
 
     window.location.href = target.toString();
     return true;
@@ -182,24 +184,25 @@ export function LoginPageContent() {
     return query ? `/profile-setup?${query}` : "/profile-setup";
   };
 
-  const storeProfileSetupSession = (token?: string, user?: LoginUser) => {
-    if (token) {
-      setAuthSession(token, user);
-    }
+  const storeProfileSetupSession = (
+    token: string,
+    user: AuthenticatedProfile,
+  ) => {
+    setProfileSetupToken(token);
 
-    if (user) {
-      saveProfileSetupUser({
-        email: user.email,
-        firstName: user.first_name,
-        lastName: user.last_name,
-      });
-    }
+    saveProfileSetupUser({
+      email: user.email,
+      firstName: user.first_name,
+      lastName: user.last_name,
+    });
   };
 
   const handleSocialAuth = async (provider: SocialProvider, token: string) => {
     const cleanToken = token.trim();
     if (!cleanToken) {
-      setSocialError(`Missing ${provider} token. Authenticate with the ${provider} SDK first.`);
+      setSocialError(
+        `Missing ${provider} token. Authenticate with the ${provider} SDK first.`,
+      );
       return;
     }
 
@@ -216,23 +219,26 @@ export function LoginPageContent() {
       }
 
       if (!result.token?.trim()) {
-        setSocialError("Authentication completed, but the server did not return an access token. Please try again.");
+        setSocialError(
+          "Authentication completed, but the server did not return an access token. Please try again.",
+        );
         return;
       }
       const accessToken = result.token.trim();
+      const profile = await fetchAuthenticatedProfile(accessToken);
 
       if (result.profileSetupRequired) {
-        if (redirectToReturnTarget(accessToken, result.user)) {
+        if (redirectToReturnTarget(accessToken, profile)) {
           return;
         }
 
-        storeProfileSetupSession(accessToken, result.user);
+        storeProfileSetupSession(accessToken, profile);
         router.push(buildProfileSetupHref());
         return;
       }
 
-      setAuthSession(accessToken, result.user);
-      if (redirectToReturnTarget(accessToken, result.user)) {
+      setAuthSession(accessToken, profile);
+      if (redirectToReturnTarget(accessToken, profile)) {
         return;
       }
 
@@ -241,6 +247,12 @@ export function LoginPageContent() {
         return;
       }
       router.push("/students/dashboard");
+    } catch (error) {
+      setSocialError(
+        error instanceof Error
+          ? error.message
+          : "Authentication failed. Please try again.",
+      );
     } finally {
       setActiveSocialProvider(null);
     }
@@ -273,16 +285,19 @@ export function LoginPageContent() {
       let response: Response;
 
       try {
-        response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/v1/auth/login`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
+        response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/v1/auth/login`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              email: email.trim(),
+              password,
+            }),
           },
-          body: JSON.stringify({
-            email: email.trim(),
-            password,
-          }),
-        });
+        );
       } catch {
         setPasswordError("Could not reach login service. Please try again.");
         return;
@@ -313,27 +328,40 @@ export function LoginPageContent() {
       }
 
       const token = data?.data?.token?.trim();
-      const user = data?.data?.user;
       if (!token?.trim()) {
-        setPasswordError("Login completed, but the server did not return an access token. Please try again.");
+        setPasswordError(
+          "Login completed, but the server did not return an access token. Please try again.",
+        );
         return;
       }
 
-      const profileSetupRequired =
-        data?.data?.profile_setup_required === true ||
-        user?.is_profile_setup === false;
+      let profileSetupRequired: boolean;
+      let profile: AuthenticatedProfile;
+      try {
+        profileSetupRequired = resolveProfileSetupRequired({
+          profileSetupRequired: data?.data?.profile_setup_required,
+        });
+        profile = await fetchAuthenticatedProfile(token);
+      } catch (error) {
+        setPasswordError(
+          error instanceof Error
+            ? error.message
+            : "Could not complete login. Please try again.",
+        );
+        return;
+      }
 
-      if (redirectToReturnTarget(token, user)) {
+      if (redirectToReturnTarget(token, profile)) {
         return;
       }
 
       if (profileSetupRequired) {
-        storeProfileSetupSession(token, user);
+        storeProfileSetupSession(token, profile);
         router.push(buildProfileSetupHref());
         return;
       }
 
-      setAuthSession(token, user);
+      setAuthSession(token, profile);
 
       if (isDirectOnboardingDisabled) {
         redirectToComingSoon();
@@ -352,7 +380,9 @@ export function LoginPageContent() {
         <AuthCardHeader showPrompt={false} title="Log in to your account" />
 
         <AuthForm className="login-auth-form" onSubmit={handleSubmit}>
-          <p className="text-center text-[0.78em] font-medium text-[#8d95a8]">Welcome back! Please enter your details.</p>
+          <p className="text-center text-[0.78em] font-medium text-[#8d95a8]">
+            Welcome back! Please enter your details.
+          </p>
           {statusNotice ? (
             <p className="mt-[0.75em] rounded-[0.65em] border border-[#b9d8c8] bg-[#f1fbf6] px-[0.9em] py-[0.7em] text-center text-[0.72em] font-medium text-[#247f57]">
               {statusNotice}
@@ -384,17 +414,25 @@ export function LoginPageContent() {
             />
             <div
               className={`overflow-hidden transition-all duration-200 ease-out ${
-                socialError ? "mt-[0.25em] max-h-[1.6em] opacity-100" : "max-h-0 opacity-0"
+                socialError
+                  ? "mt-[0.25em] max-h-[1.6em] opacity-100"
+                  : "max-h-0 opacity-0"
               }`}
             >
-              <p className="text-[0.7em] font-medium text-[#d04b4b]">{socialError}</p>
+              <p className="text-[0.7em] font-medium text-[#d04b4b]">
+                {socialError}
+              </p>
             </div>
             <div
               className={`overflow-hidden transition-all duration-200 ease-out ${
-                redirectError ? "mt-[0.25em] max-h-[2.4em] opacity-100" : "max-h-0 opacity-0"
+                redirectError
+                  ? "mt-[0.25em] max-h-[2.4em] opacity-100"
+                  : "max-h-0 opacity-0"
               }`}
             >
-              <p className="text-[0.7em] font-medium text-[#d04b4b]">{redirectError}</p>
+              <p className="text-[0.7em] font-medium text-[#d04b4b]">
+                {redirectError}
+              </p>
             </div>
           </div>
 
@@ -436,19 +474,30 @@ export function LoginPageContent() {
 
             <Link
               className="inline-block text-[0.72em] font-semibold text-[#6f8fb5] hover:text-[#17679f]"
-              href={email.trim() ? `/forgot-password?email=${encodeURIComponent(email.trim())}` : "/forgot-password"}
+              href={
+                email.trim()
+                  ? `/forgot-password?email=${encodeURIComponent(email.trim())}`
+                  : "/forgot-password"
+              }
             >
               Forgot your password?
             </Link>
           </div>
 
-          <AuthPrimaryButton className="mt-[0.95em]" disabled={isSubmitting} type="submit">
+          <AuthPrimaryButton
+            className="mt-[0.95em]"
+            disabled={isSubmitting}
+            type="submit"
+          >
             {isSubmitting ? "Continuing..." : "Continue with email"}
           </AuthPrimaryButton>
 
           <p className="mt-[0.95em] text-center text-[0.78em] font-medium text-[#8d95a8]">
             Don&apos;t have an account?{" "}
-            <Link href={signupHref} className="font-semibold text-[#2187d3] transition-colors hover:text-[#17679f]">
+            <Link
+              href={signupHref}
+              className="font-semibold text-[#2187d3] transition-colors hover:text-[#17679f]"
+            >
               Sign up
             </Link>
           </p>
@@ -457,7 +506,3 @@ export function LoginPageContent() {
     </AuthShell>
   );
 }
-
-
-
-

@@ -2,15 +2,29 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import { getAccessToken } from "../auth/authSession";
+import {
+  getAccessToken,
+  getProfileSetupToken,
+  setAuthSession,
+} from "../auth/authSession";
+import { fetchAuthenticatedProfile } from "../auth/profileApi";
 import { OnboardingNavbar } from "./OnboardingNavbar";
+import {
+  markProfileDetailsSubmitted,
+  useProfileDetailsSubmitted,
+} from "./profileSetupSession";
 import { SetupSuccessView } from "./profile-setup/SetupSuccessView";
-import { StepTwoAddressConfirm, type LocationAddressForm, type LocationCoordinates } from "./profile-setup/StepTwoAddressConfirm";
+import {
+  StepTwoAddressConfirm,
+  type LocationAddressForm,
+  type LocationCoordinates,
+} from "./profile-setup/StepTwoAddressConfirm";
 import { StepOneProfileForm } from "./profile-setup/StepOneProfileForm";
 import { StepTwoLocationPrompt } from "./profile-setup/StepTwoLocationPrompt";
 import type { SetupMode, SetupStepId } from "./types";
 import {
   initialProfileForm,
+  formatPhoneNumberE164,
   isStepOneValid,
   type ProfileFormState,
 } from "./utils";
@@ -38,6 +52,12 @@ type LocationUpdateResponse = {
     longitude?: number;
   } | null;
 };
+type ProfileSetupResponse = {
+  message?: string;
+  data?: {
+    token?: string;
+  };
+};
 
 const emptyAddressForm: LocationAddressForm = {
   address: "",
@@ -48,17 +68,27 @@ const emptyAddressForm: LocationAddressForm = {
 };
 
 function isAddressComplete(address: LocationAddressForm): boolean {
-  return Boolean(address.address.trim() && address.country.trim() && address.state.trim() && address.city.trim());
+  return Boolean(
+    address.address.trim() &&
+    address.country.trim() &&
+    address.state.trim() &&
+    address.city.trim(),
+  );
 }
 
 function firstNonEmpty(...values: Array<string | undefined>): string {
   return values.find((value) => value?.trim())?.trim() ?? "";
 }
 
-function readCoordinates(data?: LocationUpdateResponse["data"], fallback?: LocationCoordinates): LocationCoordinates | null {
+function readCoordinates(
+  data?: LocationUpdateResponse["data"],
+  fallback?: LocationCoordinates,
+): LocationCoordinates | null {
   const latitude = data?.latitude ?? fallback?.latitude;
   const longitude = data?.longitude ?? fallback?.longitude;
-  return typeof latitude === "number" && typeof longitude === "number" ? { latitude, longitude } : null;
+  return typeof latitude === "number" && typeof longitude === "number"
+    ? { latitude, longitude }
+    : null;
 }
 const steps: Array<{ id: SetupStep; label: string }> = [
   { id: "personal", label: "Profile setup" },
@@ -84,6 +114,7 @@ export function ProfileSetupStep({
 }) {
   const initialStep = toSetupStep(initialStepId);
   const [activeStep, setActiveStep] = useState<SetupStep>(initialStep);
+  const profileDetailsSubmitted = useProfileDetailsSubmitted();
   const [setupComplete, setSetupComplete] = useState(initialMode === "success");
   const [profileForm, setProfileForm] = useState<ProfileFormState>(() => {
     return {
@@ -98,32 +129,48 @@ export function ProfileSetupStep({
   const [resolvingMapLocation, setResolvingMapLocation] = useState(false);
   const [savingLocation, setSavingLocation] = useState(false);
   const [locationView, setLocationView] = useState<LocationView>("prompt");
-  const [locationSource, setLocationSource] = useState<LocationSource>("manual");
+  const [locationSource, setLocationSource] =
+    useState<LocationSource>("manual");
   const [locationError, setLocationError] = useState("");
-  const [profileValidationVisible, setProfileValidationVisible] = useState(false);
-  const [addressForm, setAddressForm] = useState<LocationAddressForm>(emptyAddressForm);
-  const [mapCoordinates, setMapCoordinates] = useState<LocationCoordinates | null>(null);
+  const [profileValidationVisible, setProfileValidationVisible] =
+    useState(false);
+  const [profileSubmitting, setProfileSubmitting] = useState(false);
+  const [profileApiError, setProfileApiError] = useState("");
+  const [addressForm, setAddressForm] =
+    useState<LocationAddressForm>(emptyAddressForm);
+  const [mapCoordinates, setMapCoordinates] =
+    useState<LocationCoordinates | null>(null);
   const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null);
   const [selectedPlaceId, setSelectedPlaceId] = useState("");
   const [placeQuery, setPlaceQuery] = useState("");
-  const [placePredictions, setPlacePredictions] = useState<PlacePrediction[]>([]);
+  const [placePredictions, setPlacePredictions] = useState<PlacePrediction[]>(
+    [],
+  );
   const locationRequestIdRef = useRef(0);
-  const placeSearchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const placeSearchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   const placeSearchAbortRef = useRef<AbortController | null>(null);
 
-  const activeStepIndex = activeStep === "location" ? 1 : 0;
+  const displayedStep: SetupStep = profileDetailsSubmitted
+    ? "location"
+    : activeStep;
+  const activeStepIndex = displayedStep === "location" ? 1 : 0;
   const profileValid = isStepOneValid(profileForm);
   const addressComplete = isAddressComplete(addressForm);
-  const greetingName = profileForm.firstName.trim() || initialProfile?.firstName?.trim() || "there";
+  const greetingName =
+    profileForm.firstName.trim() ||
+    initialProfile?.firstName?.trim() ||
+    "there";
   const userEmail = profileForm.email.trim();
 
   useEffect(() => {
     if (!onStateChange) return;
     onStateChange({
       mode: setupComplete ? "success" : "form",
-      stepId: activeStep,
+      stepId: displayedStep,
     });
-  }, [activeStep, onStateChange, setupComplete]);
+  }, [displayedStep, onStateChange, setupComplete]);
 
   useEffect(() => {
     return () => {
@@ -136,6 +183,7 @@ export function ProfileSetupStep({
   }, []);
 
   const updateProfileField = (field: keyof ProfileFormState, value: string) => {
+    setProfileApiError("");
     setProfileForm((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -149,25 +197,34 @@ export function ProfileSetupStep({
   ): LocationAddressForm => ({
     address: firstNonEmpty(data?.address, fallback?.address),
     country: firstNonEmpty(data?.country, fallback?.country),
-    postcode: firstNonEmpty(data?.postcode, data?.postal_code, fallback?.postcode),
+    postcode: firstNonEmpty(
+      data?.postcode,
+      data?.postal_code,
+      fallback?.postcode,
+    ),
     state: firstNonEmpty(data?.state, fallback?.state),
     city: firstNonEmpty(data?.city, fallback?.city),
   });
 
-  const submitLocationUpdate = async (payload: Record<string, string | number>) => {
+  const submitLocationUpdate = async (
+    payload: Record<string, string | number>,
+  ) => {
     const token = getLocationToken();
     if (!token) {
       throw new Error("Missing auth token. Please sign in again.");
     }
 
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/v1/user/locations/update`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_BASE_URL}/v1/user/locations/update`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
       },
-      body: JSON.stringify(payload),
-    });
+    );
 
     const raw = await response.text();
     let data: LocationUpdateResponse | null = null;
@@ -186,25 +243,31 @@ export function ProfileSetupStep({
     return data ?? { message: "Location saved.", data: null };
   };
 
-  const fetchPlaceDetails = async (placeId: string): Promise<LocationUpdateResponse["data"]> => {
+  const fetchPlaceDetails = async (
+    placeId: string,
+  ): Promise<LocationUpdateResponse["data"]> => {
     const response = await fetch("/api/places/details", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ placeId }),
     });
     const result = (await response.json()) as LocationUpdateResponse;
-    if (!response.ok) throw new Error(result.message ?? "Could not retrieve address details.");
+    if (!response.ok)
+      throw new Error(result.message ?? "Could not retrieve address details.");
     return result.data ?? null;
   };
 
-  const fetchGpsAddress = async (coordinates: LocationCoordinates): Promise<LocationUpdateResponse["data"]> => {
+  const fetchGpsAddress = async (
+    coordinates: LocationCoordinates,
+  ): Promise<LocationUpdateResponse["data"]> => {
     const response = await fetch("/api/places/reverse-geocode", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(coordinates),
     });
     const result = (await response.json()) as LocationUpdateResponse;
-    if (!response.ok) throw new Error(result.message ?? "Could not retrieve your GPS address.");
+    if (!response.ok)
+      throw new Error(result.message ?? "Could not retrieve your GPS address.");
     return result.data ?? null;
   };
 
@@ -216,12 +279,17 @@ export function ProfileSetupStep({
     });
     const result = (await response.json()) as LocationUpdateResponse;
     if (!response.ok || !result.data?.placeId) {
-      throw new Error(result.message ?? "Could not verify the entered address.");
+      throw new Error(
+        result.message ?? "Could not verify the entered address.",
+      );
     }
     return result.data.placeId;
   };
 
-  const updateAddressField = (field: keyof LocationAddressForm, value: string) => {
+  const updateAddressField = (
+    field: keyof LocationAddressForm,
+    value: string,
+  ) => {
     setAddressForm((current) => ({ ...current, [field]: value }));
     setLocationSource("manual");
     setSelectedPlaceId("");
@@ -260,7 +328,9 @@ export function ProfileSetupStep({
 
   const handleAllowLocation = () => {
     if (typeof window === "undefined" || !navigator.geolocation) {
-      openAddressSearch("Location is not supported on this browser. Search for your address instead.");
+      openAddressSearch(
+        "Location is not supported on this browser. Search for your address instead.",
+      );
       return;
     }
 
@@ -279,7 +349,9 @@ export function ProfileSetupStep({
           const lon = position.coords.longitude;
           const accuracy = position.coords.accuracy;
           if (!Number.isFinite(accuracy) || accuracy > 50) {
-            openAddressSearch("Your location wasn't precise enough. Search for your address instead.");
+            openAddressSearch(
+              "Your location wasn't precise enough. Search for your address instead.",
+            );
             return;
           }
           const coordinates = { latitude: lat, longitude: lon };
@@ -289,7 +361,9 @@ export function ProfileSetupStep({
             address: `Lat ${lat.toFixed(5)}, Lng ${lon.toFixed(5)}`,
           });
           if (!isAddressComplete(resolvedAddress)) {
-            openAddressSearch("We found your location but couldn't identify a complete address. Search for it below.");
+            openAddressSearch(
+              "We found your location but couldn't identify a complete address. Search for it below.",
+            );
             return;
           }
           setLocationSource("gps");
@@ -301,16 +375,22 @@ export function ProfileSetupStep({
           setLocationError("");
         } catch (error) {
           if (locationRequestIdRef.current !== requestId) return;
-          openAddressSearch(error instanceof Error ? error.message : "We couldn't retrieve an address for your location. Search for it instead.");
+          openAddressSearch(
+            error instanceof Error
+              ? error.message
+              : "We couldn't retrieve an address for your location. Search for it instead.",
+          );
         } finally {
-          if (locationRequestIdRef.current === requestId) setRequestingLocation(false);
+          if (locationRequestIdRef.current === requestId)
+            setRequestingLocation(false);
         }
       },
       (error) => {
         if (locationRequestIdRef.current !== requestId) return;
-        const message = error.code === error.PERMISSION_DENIED
-          ? "Location permission was denied. Search for your address instead."
-          : "We couldn't get your location. Search for your address instead.";
+        const message =
+          error.code === error.PERMISSION_DENIED
+            ? "Location permission was denied. Search for your address instead."
+            : "We couldn't get your location. Search for your address instead.";
         openAddressSearch(message);
       },
       {
@@ -321,18 +401,73 @@ export function ProfileSetupStep({
     );
   };
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     setProfileValidationVisible(true);
+    setProfileApiError("");
     if (!profileValid) {
       window.requestAnimationFrame(() => {
         document.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
       });
       return;
     }
+    const profileSetupToken = getProfileSetupToken();
+    if (!profileSetupToken) {
+      setProfileApiError(
+        "Your profile setup session is missing or expired. Please sign in again.",
+      );
+      return;
+    }
 
-    setActiveStep("location");
-    setLocationView("prompt");
-    setProfileValidationVisible(false);
+    setProfileSubmitting(true);
+    try {
+      const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.trim();
+      if (!apiBaseUrl) throw new Error("The API base URL is not configured.");
+      const response = await fetch(
+        `${apiBaseUrl.replace(/\/$/, "")}/v1/profile/setup`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${profileSetupToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            bio: profileForm.bio.trim() || undefined,
+            email: profileForm.email.trim(),
+            first_name: profileForm.firstName.trim(),
+            last_name: profileForm.lastName.trim(),
+            other_names: profileForm.otherName.trim() || undefined,
+            phone_number: formatPhoneNumberE164(profileForm) || undefined,
+          }),
+        },
+      );
+      const result = (await response
+        .json()
+        .catch(() => null)) as ProfileSetupResponse | null;
+      if (!response.ok) {
+        throw new Error(result?.message ?? "Could not complete profile setup.");
+      }
+      const accessToken = result?.data?.token?.trim();
+      if (!accessToken) {
+        throw new Error(
+          "Profile setup succeeded, but the server did not return an access token.",
+        );
+      }
+
+      const profile = await fetchAuthenticatedProfile(accessToken);
+      setAuthSession(accessToken, profile);
+      markProfileDetailsSubmitted();
+      setActiveStep("location");
+      setLocationView("prompt");
+      setProfileValidationVisible(false);
+    } catch (error) {
+      setProfileApiError(
+        error instanceof Error
+          ? error.message
+          : "Could not complete profile setup.",
+      );
+    } finally {
+      setProfileSubmitting(false);
+    }
   };
 
   const handleSkipLocation = () => {
@@ -372,7 +507,11 @@ export function ProfileSetupStep({
       await submitLocationUpdate(payload);
       setSetupComplete(true);
     } catch (error) {
-      setLocationError(error instanceof Error ? error.message : "Could not save the reviewed address.");
+      setLocationError(
+        error instanceof Error
+          ? error.message
+          : "Could not save the reviewed address.",
+      );
     } finally {
       setSavingLocation(false);
     }
@@ -410,7 +549,10 @@ export function ProfileSetupStep({
   const handlePlaceQueryChange = (value: string) => {
     setSelectedPlaceId("");
     setGpsAccuracy(null);
-    if (value !== placeQuery && Object.values(addressForm).some((field) => field.trim())) {
+    if (
+      value !== placeQuery &&
+      Object.values(addressForm).some((field) => field.trim())
+    ) {
       setAddressForm(emptyAddressForm);
       setMapCoordinates(null);
     }
@@ -452,8 +594,13 @@ export function ProfileSetupStep({
 
         setPlacePredictions(data.predictions ?? []);
       } catch (error) {
-        if (error instanceof DOMException && error.name === "AbortError") return;
-        setLocationError(error instanceof Error ? error.message : "Could not search addresses.");
+        if (error instanceof DOMException && error.name === "AbortError")
+          return;
+        setLocationError(
+          error instanceof Error
+            ? error.message
+            : "Could not search addresses.",
+        );
       } finally {
         if (placeSearchAbortRef.current === controller) {
           placeSearchAbortRef.current = null;
@@ -467,7 +614,9 @@ export function ProfileSetupStep({
     setRequestingPlaceSearch(true);
     setLocationError("");
     try {
-      const selectedPlace = placePredictions.find((prediction) => prediction.placeId === placeId);
+      const selectedPlace = placePredictions.find(
+        (prediction) => prediction.placeId === placeId,
+      );
       const details = await fetchPlaceDetails(placeId);
       const detailsAddress = readAddressFromResponse(details, {
         address: selectedPlace?.description ?? placeQuery,
@@ -482,7 +631,11 @@ export function ProfileSetupStep({
       setLocationView(isAddressComplete(detailsAddress) ? "review" : "edit");
       setLocationError("");
     } catch (error) {
-      setLocationError(error instanceof Error ? error.message : "Could not retrieve the selected address.");
+      setLocationError(
+        error instanceof Error
+          ? error.message
+          : "Could not retrieve the selected address.",
+      );
     } finally {
       setRequestingPlaceSearch(false);
     }
@@ -496,7 +649,9 @@ export function ProfileSetupStep({
       const resolvedAddress = readAddressFromResponse(result);
       const placeId = result?.placeId?.trim() ?? "";
       if (!isAddressComplete(resolvedAddress) || !placeId) {
-        throw new Error("We couldn't verify an address at that map position. Try a nearby point.");
+        throw new Error(
+          "We couldn't verify an address at that map position. Try a nearby point.",
+        );
       }
 
       setAddressForm(resolvedAddress);
@@ -507,7 +662,11 @@ export function ProfileSetupStep({
       setPlaceQuery(resolvedAddress.address);
       return true;
     } catch (error) {
-      setLocationError(error instanceof Error ? error.message : "Could not update the map location.");
+      setLocationError(
+        error instanceof Error
+          ? error.message
+          : "Could not update the map location.",
+      );
       return false;
     } finally {
       setResolvingMapLocation(false);
@@ -523,43 +682,43 @@ export function ProfileSetupStep({
 
       <section className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-4 py-3 sm:px-6 sm:py-5">
         <div className="flex min-h-full w-full items-center justify-center">
-            {setupComplete ? (
-              <SetupSuccessView dashboardHref={dashboardHref} />
-            ) : activeStep === "personal" ? (
-              <StepOneProfileForm
-                emailLocked={Boolean(initialProfile?.email?.trim())}
-                greetingName={greetingName}
-                onProfileFieldChange={updateProfileField}
-                profileForm={profileForm}
-                validationVisible={profileValidationVisible}
-              />
-            ) : (
-              <div className="w-full text-center">
-                {locationView === "prompt" ? (
-                  <StepTwoLocationPrompt
-                    locationError={locationError}
-                    onAllowLocation={handleAllowLocation}
-                    onEnterAddress={() => openAddressSearch()}
-                    requestingLocation={requestingLocation}
-                  />
-                ) : (
-                  <StepTwoAddressConfirm
-                    addressForm={addressForm}
-                    coordinates={mapCoordinates}
-                    locationError={locationError}
-                    mode={locationView}
-                    onAddressFieldChange={updateAddressField}
-                    onPlaceQueryChange={handlePlaceQueryChange}
-                    onSelectPlace={handleSelectPlace}
-                    placePredictions={placePredictions}
-                    placeQuery={placeQuery}
-                    resolvingMapLocation={resolvingMapLocation}
-                    requestingPlaceSearch={requestingPlaceSearch}
-                    onMapLocationChange={handleMapLocationChange}
-                  />
-                )}
-              </div>
-            )}
+          {setupComplete ? (
+            <SetupSuccessView dashboardHref={dashboardHref} />
+          ) : displayedStep === "personal" ? (
+            <StepOneProfileForm
+              emailLocked={Boolean(initialProfile?.email?.trim())}
+              greetingName={greetingName}
+              onProfileFieldChange={updateProfileField}
+              profileForm={profileForm}
+              validationVisible={profileValidationVisible}
+            />
+          ) : (
+            <div className="w-full text-center">
+              {locationView === "prompt" ? (
+                <StepTwoLocationPrompt
+                  locationError={locationError}
+                  onAllowLocation={handleAllowLocation}
+                  onEnterAddress={() => openAddressSearch()}
+                  requestingLocation={requestingLocation}
+                />
+              ) : (
+                <StepTwoAddressConfirm
+                  addressForm={addressForm}
+                  coordinates={mapCoordinates}
+                  locationError={locationError}
+                  mode={locationView}
+                  onAddressFieldChange={updateAddressField}
+                  onPlaceQueryChange={handlePlaceQueryChange}
+                  onSelectPlace={handleSelectPlace}
+                  placePredictions={placePredictions}
+                  placeQuery={placeQuery}
+                  resolvingMapLocation={resolvingMapLocation}
+                  requestingPlaceSearch={requestingPlaceSearch}
+                  onMapLocationChange={handleMapLocationChange}
+                />
+              )}
+            </div>
+          )}
         </div>
       </section>
 
@@ -567,10 +726,16 @@ export function ProfileSetupStep({
         <footer className="shrink-0 border-t border-[#e5e8f2] bg-white px-4 py-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] sm:px-[var(--dashboard-gutter)]">
           <div className="mx-auto flex w-full max-w-[var(--dashboard-max-width)] flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex min-w-0 items-center gap-2 text-xs text-[#30384f]">
-              <span className="shrink-0 rounded-full border border-[#6d63ee] bg-white px-2 py-1 font-semibold text-[#5b4ded]">Step {activeStepIndex + 1}/2</span>
-              <span aria-hidden className="text-[#7c8498]">›</span>
-              <span className="truncate font-semibold">{currentStep.label}</span>
-              {activeStep === "location" ? (
+              <span className="shrink-0 rounded-full border border-[#6d63ee] bg-white px-2 py-1 font-semibold text-[#5b4ded]">
+                Step {activeStepIndex + 1}/2
+              </span>
+              <span aria-hidden className="text-[#7c8498]">
+                ›
+              </span>
+              <span className="truncate font-semibold">
+                {currentStep.label}
+              </span>
+              {displayedStep === "location" && locationView !== "prompt" ? (
                 <button
                   className="ml-1 shrink-0 font-semibold text-brand-accent underline-offset-4 hover:underline"
                   onClick={handleLocationBack}
@@ -578,41 +743,104 @@ export function ProfileSetupStep({
                 >
                   ← <span className="sm:hidden">Back</span>
                   <span className="hidden sm:inline">
-                    {locationView === "prompt"
-                      ? "Back to profile details"
-                      : locationView === "search"
-                        ? "Back to location options"
-                        : locationView === "edit"
-                          ? "Back to address review"
-                          : locationSource === "search"
-                            ? "Back to address search"
-                            : "Back to location options"}
+                    {locationView === "search"
+                      ? "Back to location options"
+                      : locationView === "edit"
+                        ? "Back to address review"
+                        : locationSource === "search"
+                          ? "Back to address search"
+                          : "Back to location options"}
                   </span>
                 </button>
               ) : null}
             </div>
 
-            {activeStep === "personal" ? (
+            {displayedStep === "personal" ? (
+              <div className="flex w-full flex-col gap-2 sm:w-auto sm:items-end">
+                {profileApiError ? (
+                  <p
+                    className="max-w-md text-sm font-medium text-brand-danger"
+                    role="alert"
+                  >
+                    {profileApiError}
+                  </p>
+                ) : null}
+                <div className="grid grid-cols-2 gap-2 sm:flex sm:shrink-0 sm:justify-end">
+                  <button
+                    className="h-11 rounded-full border border-[#d8dde8] bg-white px-5 text-sm font-semibold text-[#3f4759] hover:bg-[#f8f9fb]"
+                    disabled={profileSubmitting}
+                    onClick={onBack}
+                    type="button"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="h-11 rounded-full bg-brand-primary px-6 text-sm font-semibold text-white hover:bg-[#1c175f] disabled:cursor-not-allowed disabled:bg-[#b8b6cf]"
+                    disabled={profileSubmitting}
+                    onClick={() => void handleContinue()}
+                    type="button"
+                  >
+                    {profileSubmitting ? "Saving..." : "Continue"}
+                  </button>
+                </div>
+              </div>
+            ) : locationView === "prompt" ? (
               <div className="grid grid-cols-2 gap-2 sm:flex sm:shrink-0 sm:justify-end">
-                <button className="h-11 rounded-full border border-[#d8dde8] bg-white px-5 text-sm font-semibold text-[#3f4759] hover:bg-[#f8f9fb]" onClick={onBack} type="button">Cancel</button>
-                <button className="h-11 rounded-full bg-brand-primary px-6 text-sm font-semibold text-white hover:bg-[#1c175f]" onClick={handleContinue} type="button">Continue</button>
+                <button
+                  className="h-11 rounded-full border border-[#d8dde8] bg-white px-5 text-sm font-semibold text-[#3f4759] hover:bg-[#f8f9fb]"
+                  onClick={handleSkipLocation}
+                  type="button"
+                >
+                  Skip
+                </button>
+                <button
+                  className="h-11 rounded-full bg-brand-primary px-6 text-sm font-semibold text-white disabled:bg-[#b8b6cf]"
+                  disabled
+                  type="button"
+                >
+                  Finish setup
+                </button>
+              </div>
+            ) : locationView === "search" ? (
+              <div className="flex shrink-0 justify-end">
+                <button
+                  className="h-11 rounded-full border border-[#d8dde8] bg-white px-5 text-sm font-semibold text-[#3f4759] hover:bg-[#f8f9fb]"
+                  onClick={handleSkipLocation}
+                  type="button"
+                >
+                  Skip
+                </button>
               </div>
             ) : (
-              locationView === "prompt" ? (
-                <div className="grid grid-cols-2 gap-2 sm:flex sm:shrink-0 sm:justify-end">
-                  <button className="h-11 rounded-full border border-[#d8dde8] bg-white px-5 text-sm font-semibold text-[#3f4759] hover:bg-[#f8f9fb]" onClick={handleSkipLocation} type="button">Skip</button>
-                  <button className="h-11 rounded-full bg-brand-primary px-6 text-sm font-semibold text-white disabled:bg-[#b8b6cf]" disabled type="button">Finish setup</button>
-                </div>
-              ) : locationView === "search" ? (
-                <div className="flex shrink-0 justify-end">
-                  <button className="h-11 rounded-full border border-[#d8dde8] bg-white px-5 text-sm font-semibold text-[#3f4759] hover:bg-[#f8f9fb]" onClick={handleSkipLocation} type="button">Skip</button>
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-2 sm:flex sm:shrink-0 sm:justify-end">
-                  <button className="h-11 rounded-full border border-[#d8dde8] bg-white px-4 text-xs font-semibold text-[#3f4759] hover:bg-[#f8f9fb] sm:px-5 sm:text-sm" onClick={locationView === "edit" ? handleLocationBack : handleEditAddress} type="button">{locationView === "edit" ? "Cancel" : "No, this is not my address"}</button>
-                  <button className="h-11 rounded-full bg-brand-primary px-5 text-sm font-semibold text-white disabled:bg-[#b8b6cf]" disabled={!addressComplete || savingLocation || resolvingMapLocation} onClick={() => void handleFinishSetup()} type="button">{resolvingMapLocation ? "Checking..." : savingLocation ? "Saving..." : "Yes, this is my address"}</button>
-                </div>
-              )
+              <div className="grid grid-cols-2 gap-2 sm:flex sm:shrink-0 sm:justify-end">
+                <button
+                  className="h-11 rounded-full border border-[#d8dde8] bg-white px-4 text-xs font-semibold text-[#3f4759] hover:bg-[#f8f9fb] sm:px-5 sm:text-sm"
+                  onClick={
+                    locationView === "edit"
+                      ? handleLocationBack
+                      : handleEditAddress
+                  }
+                  type="button"
+                >
+                  {locationView === "edit"
+                    ? "Cancel"
+                    : "No, this is not my address"}
+                </button>
+                <button
+                  className="h-11 rounded-full bg-brand-primary px-5 text-sm font-semibold text-white disabled:bg-[#b8b6cf]"
+                  disabled={
+                    !addressComplete || savingLocation || resolvingMapLocation
+                  }
+                  onClick={() => void handleFinishSetup()}
+                  type="button"
+                >
+                  {resolvingMapLocation
+                    ? "Checking..."
+                    : savingLocation
+                      ? "Saving..."
+                      : "Yes, this is my address"}
+                </button>
+              </div>
             )}
           </div>
         </footer>

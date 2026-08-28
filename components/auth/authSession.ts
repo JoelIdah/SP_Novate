@@ -21,6 +21,7 @@ type ApiSessionUser = {
 };
 
 const ACCESS_TOKEN_KEY = "sp_access_token";
+const PROFILE_SETUP_TOKEN_KEY = "sp_profile_setup_token";
 const SESSION_USER_KEY = "sp_session_user";
 const SESSION_EVENT = "sp-auth-session";
 const emptyUser: SessionUser | null = null;
@@ -32,22 +33,52 @@ export function getAccessToken() {
   return localStorage.getItem(ACCESS_TOKEN_KEY)?.trim() ?? "";
 }
 
+export function getProfileSetupToken() {
+  if (typeof window === "undefined") return "";
+  return sessionStorage.getItem(PROFILE_SETUP_TOKEN_KEY)?.trim() ?? "";
+}
+
+export function setProfileSetupToken(token: string) {
+  if (typeof window === "undefined") return;
+  const cleanToken = token.trim();
+  if (!cleanToken) return;
+
+  localStorage.removeItem(ACCESS_TOKEN_KEY);
+  localStorage.removeItem(SESSION_USER_KEY);
+  localStorage.removeItem(PROFILE_SETUP_TOKEN_KEY);
+  sessionStorage.setItem(PROFILE_SETUP_TOKEN_KEY, cleanToken);
+  cachedRaw = null;
+  cachedUser = null;
+  window.dispatchEvent(new Event(SESSION_EVENT));
+}
+
+export function clearProfileSetupToken() {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem(PROFILE_SETUP_TOKEN_KEY);
+  sessionStorage.removeItem(PROFILE_SETUP_TOKEN_KEY);
+  window.dispatchEvent(new Event(SESSION_EVENT));
+}
+
 export function setAuthSession(token: string, user?: ApiSessionUser) {
   if (typeof window === "undefined") return;
   const cleanToken = token.trim();
   if (!cleanToken) return;
 
   localStorage.setItem(ACCESS_TOKEN_KEY, cleanToken);
-  localStorage.removeItem("sp_profile_setup_token");
+  localStorage.removeItem(PROFILE_SETUP_TOKEN_KEY);
+  sessionStorage.removeItem(PROFILE_SETUP_TOKEN_KEY);
   if (user) {
-    localStorage.setItem(SESSION_USER_KEY, JSON.stringify({
-      email: user.email?.trim() ?? "",
-      firstName: user.first_name?.trim() ?? "",
-      lastName: user.last_name?.trim() ?? "",
-      profilePhoto: user.profile_photo?.trim() ?? "",
-      publicId: user.public_id?.trim() ?? "",
-      role: user.role ?? "",
-    } satisfies SessionUser));
+    localStorage.setItem(
+      SESSION_USER_KEY,
+      JSON.stringify({
+        email: user.email?.trim() ?? "",
+        firstName: user.first_name?.trim() ?? "",
+        lastName: user.last_name?.trim() ?? "",
+        profilePhoto: user.profile_photo?.trim() ?? "",
+        publicId: user.public_id?.trim() ?? "",
+        role: user.role ?? "",
+      } satisfies SessionUser),
+    );
   } else {
     localStorage.removeItem(SESSION_USER_KEY);
     cachedUser = null;
@@ -60,7 +91,8 @@ export function clearAuthSession() {
   if (typeof window === "undefined") return;
   localStorage.removeItem(ACCESS_TOKEN_KEY);
   localStorage.removeItem(SESSION_USER_KEY);
-  localStorage.removeItem("sp_profile_setup_token");
+  localStorage.removeItem(PROFILE_SETUP_TOKEN_KEY);
+  sessionStorage.removeItem(PROFILE_SETUP_TOKEN_KEY);
   cachedRaw = null;
   cachedUser = null;
   window.dispatchEvent(new Event(SESSION_EVENT));
@@ -84,7 +116,7 @@ function readSessionUser(): SessionUser | null {
   return cachedUser;
 }
 
-function subscribe(onStoreChange: () => void) {
+export function subscribeAuthSession(onStoreChange: () => void) {
   window.addEventListener(SESSION_EVENT, onStoreChange);
   window.addEventListener("storage", onStoreChange);
   return () => {
@@ -94,5 +126,9 @@ function subscribe(onStoreChange: () => void) {
 }
 
 export function useSessionUser() {
-  return useSyncExternalStore(subscribe, readSessionUser, () => emptyUser);
+  return useSyncExternalStore(
+    subscribeAuthSession,
+    readSessionUser,
+    () => emptyUser,
+  );
 }

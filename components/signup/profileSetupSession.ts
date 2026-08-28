@@ -10,6 +10,7 @@ export type ProfileSetupUser = {
 
 const PROFILE_SETUP_USER_KEY = "sp_profile_setup_user";
 const PROFILE_SETUP_ACTIVE_KEY = "sp_profile_setup_active";
+const PROFILE_DETAILS_SUBMITTED_KEY = "sp_profile_details_submitted";
 export const PROFILE_SETUP_SESSION_EVENT = "sp-profile-setup-user";
 const emptyProfileSetupUser: ProfileSetupUser = {};
 let cachedProfileSetupUserRaw: string | null = null;
@@ -51,6 +52,7 @@ export function saveProfileSetupUser(user?: ProfileSetupUser) {
   if (typeof window === "undefined") return;
 
   window.sessionStorage.setItem(PROFILE_SETUP_ACTIVE_KEY, "true");
+  window.sessionStorage.removeItem(PROFILE_DETAILS_SUBMITTED_KEY);
   if (!user) {
     window.dispatchEvent(new Event(PROFILE_SETUP_SESSION_EVENT));
     return;
@@ -67,6 +69,27 @@ export function saveProfileSetupUser(user?: ProfileSetupUser) {
   window.dispatchEvent(new Event(PROFILE_SETUP_SESSION_EVENT));
 }
 
+export function markProfileDetailsSubmitted() {
+  if (typeof window === "undefined") return;
+  window.sessionStorage.setItem(PROFILE_DETAILS_SUBMITTED_KEY, "true");
+  window.dispatchEvent(new Event(PROFILE_SETUP_SESSION_EVENT));
+}
+
+export function areProfileDetailsSubmitted() {
+  if (typeof window === "undefined") return false;
+  return (
+    window.sessionStorage.getItem(PROFILE_DETAILS_SUBMITTED_KEY) === "true"
+  );
+}
+
+export function useProfileDetailsSubmitted() {
+  return useSyncExternalStore(
+    subscribeProfileSetupSession,
+    areProfileDetailsSubmitted,
+    () => false,
+  );
+}
+
 export function isProfileSetupActive(): boolean {
   if (typeof window === "undefined") return false;
   return window.sessionStorage.getItem(PROFILE_SETUP_ACTIVE_KEY) === "true";
@@ -76,6 +99,7 @@ export function clearProfileSetupSession() {
   if (typeof window === "undefined") return;
   window.sessionStorage.removeItem(PROFILE_SETUP_ACTIVE_KEY);
   window.sessionStorage.removeItem(PROFILE_SETUP_USER_KEY);
+  window.sessionStorage.removeItem(PROFILE_DETAILS_SUBMITTED_KEY);
   cachedProfileSetupUserRaw = null;
   cachedProfileSetupUser = emptyProfileSetupUser;
   window.dispatchEvent(new Event(PROFILE_SETUP_SESSION_EVENT));

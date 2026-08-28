@@ -39,13 +39,14 @@ export function StepOneProfileForm({ emailLocked = false, greetingName, profileF
   const typeaheadBufferRef = useRef("");
   const typeaheadResetRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const selectedCountry = countryCodes.find((country) => country.iso === profileForm.phoneCountry);
-  const phoneStarted = profileForm.phoneNumber.trim().length > 0;
-  const phoneInvalid = (phoneStarted || validationVisible) && !isPhoneNumberValid(profileForm);
+  const phoneStarted = Boolean(
+    profileForm.phoneCountry || profileForm.phoneNumber.trim(),
+  );
+  const countryMissing = !profileForm.phoneCountry;
+  const phoneInvalid = phoneStarted && !isPhoneNumberValid(profileForm);
   const emailInvalid = validationVisible && !isEmailValid(profileForm.email);
   const firstNameMissing = validationVisible && !profileForm.firstName.trim();
   const lastNameMissing = validationVisible && !profileForm.lastName.trim();
-  const bioLength = profileForm.bio.trim().length;
-  const bioInvalid = validationVisible && bioLength < 10;
 
   const resetTypeaheadSoon = () => {
     if (typeaheadResetRef.current) {
@@ -115,7 +116,7 @@ export function StepOneProfileForm({ emailLocked = false, greetingName, profileF
         </div>
 
         <label className="mt-3 block">
-          <FieldLabel required>Phone number</FieldLabel>
+          <FieldLabel optional>Phone number</FieldLabel>
           <div
             className={`profile-setup-phone-shell relative mt-1.5 flex h-11 w-full items-center rounded-lg border bg-white px-4 text-sm font-semibold text-[#4f5980] ${phoneInvalid ? "border-brand-danger" : "border-[#d8dde8]"}`}
             onBlur={(event) => {
@@ -139,7 +140,7 @@ export function StepOneProfileForm({ emailLocked = false, greetingName, profileF
               </svg>
             </button>
             <span className="text-[#c5cada]">|</span>
-            <input aria-describedby={phoneInvalid ? "phone-error" : undefined} aria-invalid={phoneInvalid} aria-label="Phone number" autoComplete="tel-national" className="ml-3 min-w-0 flex-1 bg-transparent text-[#4f5980] outline-none" onChange={(e) => onProfileFieldChange("phoneNumber", e.target.value)} placeholder="Phone number" ref={phoneInputRef} required type="tel" value={profileForm.phoneNumber} />
+            <input aria-describedby={phoneInvalid ? "phone-error" : undefined} aria-invalid={phoneInvalid} aria-label="Phone number" autoComplete="tel-national" className="ml-3 min-w-0 flex-1 bg-transparent text-[#4f5980] outline-none" onChange={(e) => onProfileFieldChange("phoneNumber", e.target.value)} placeholder="Phone number" ref={phoneInputRef} type="tel" value={profileForm.phoneNumber} />
             {countryMenuOpen ? (
               <div className="absolute left-0 top-[calc(100%+0.35rem)] z-20 max-h-52 w-72 overflow-y-auto rounded-[0.65rem] border border-[#d8dde8] bg-white py-1 shadow-[0_14px_34px_rgba(23,30,63,0.16)]" onKeyDown={handleCountryKeyDown}>
                 {countryCodes.map((country) => (
@@ -171,18 +172,16 @@ export function StepOneProfileForm({ emailLocked = false, greetingName, profileF
           </div>
           {phoneInvalid ? (
             <span className="mt-1 block text-xs font-medium text-brand-danger" id="phone-error" role="alert">
-              Enter a valid phone number for {selectedCountry?.country ?? "the selected country"}.
+              {countryMissing
+                ? "Select a country code."
+                : `Enter a valid phone number for ${selectedCountry?.country ?? "the selected country"}.`}
             </span>
           ) : null}
         </label>
 
         <label className="mt-3 block">
-          <FieldLabel required>Bio</FieldLabel>
-          <textarea aria-describedby={bioInvalid ? "bio-error bio-count" : "bio-count"} aria-invalid={bioInvalid} className={`profile-setup-field mt-1.5 h-24 w-full resize-none rounded-lg border bg-white px-4 py-3 text-sm font-semibold text-[#4f5980] outline-none ${bioInvalid ? "border-brand-danger" : "border-[#d8dde8]"}`} maxLength={500} onChange={(e) => onProfileFieldChange("bio", e.target.value)} placeholder="Tell tutors what you would like to learn..." value={profileForm.bio} />
-          <span className="mt-1.5 flex items-center justify-between gap-3 text-xs text-[#8d96aa]" id="bio-count">
-            <span>{bioInvalid ? <span className="font-medium text-brand-danger" id="bio-error" role="alert">Write at least 10 characters.</span> : "Minimum 10 characters"}</span>
-            <span>{profileForm.bio.length}/500</span>
-          </span>
+          <FieldLabel optional>Bio</FieldLabel>
+          <textarea className="profile-setup-field mt-1.5 h-24 w-full resize-none rounded-lg border border-[#d8dde8] bg-white px-4 py-3 text-sm font-semibold text-[#4f5980] outline-none" onChange={(e) => onProfileFieldChange("bio", e.target.value)} placeholder="Tell tutors what you would like to learn..." value={profileForm.bio} />
         </label>
 
       </form>

@@ -22,22 +22,24 @@ import { socialAuthApi } from "./social/socialAuthApi";
 import type { SocialProvider } from "./social/types";
 import { DIRECT_ONBOARDING_ENABLED } from "../../config/featureFlags";
 import { saveProfileSetupUser } from "./profileSetupSession";
-import { PRIVACY_POLICY_HREF, TERMS_OF_USE_HREF } from "../../config/legalLinks";
-import { setAuthSession } from "../auth/authSession";
-
-type SsoUser = {
-  role?: "student" | "tutor";
-  email?: string;
-  first_name?: string;
-  last_name?: string;
-  profile_photo?: string;
-  public_id?: string;
-};
+import {
+  PRIVACY_POLICY_HREF,
+  TERMS_OF_USE_HREF,
+} from "../../config/legalLinks";
+import { setAuthSession, setProfileSetupToken } from "../auth/authSession";
+import {
+  fetchAuthenticatedProfile,
+  type AuthenticatedProfile,
+} from "../auth/profileApi";
 
 export function AccountStep({
   onContinue,
 }: {
-  onContinue: (payload: { email: string; firstName: string; lastName: string }) => void;
+  onContinue: (payload: {
+    email: string;
+    firstName: string;
+    lastName: string;
+  }) => void;
 }) {
   const [email, setEmail] = useState("");
   const [firstName, setFirstName] = useState("");
@@ -47,7 +49,8 @@ export function AccountStep({
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [activeSocialProvider, setActiveSocialProvider] = useState<SocialProvider | null>(null);
+  const [activeSocialProvider, setActiveSocialProvider] =
+    useState<SocialProvider | null>(null);
   const [socialError, setSocialError] = useState("");
   const [emailError, setEmailError] = useState("");
   const [firstNameError, setFirstNameError] = useState("");
@@ -82,7 +85,8 @@ export function AccountStep({
 
     try {
       const parsed = new URL(candidate);
-      if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return null;
+      if (parsed.protocol !== "http:" && parsed.protocol !== "https:")
+        return null;
       const allowedOrigins = getAllowedReturnOrigins();
       if (!allowedOrigins.includes(parsed.origin)) return null;
       return parsed.toString();
@@ -116,10 +120,16 @@ export function AccountStep({
       binary += String.fromCharCode(bytes[i]);
     }
 
-    return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+    return btoa(binary)
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=+$/g, "");
   };
 
-  const redirectToReturnTarget = (token: string, user?: SsoUser) => {
+  const redirectToReturnTarget = (
+    token: string,
+    user: AuthenticatedProfile,
+  ) => {
     const returnTo = resolveSafeReturnTo();
     const state = resolveState();
 
@@ -130,17 +140,18 @@ export function AccountStep({
     target.searchParams.set("next", resolveSafeNextPath());
     target.searchParams.set("state", state);
 
-    if (user) {
-      const userPayload = {
-        role: user.role ?? "",
-        email: user.email ?? "",
-        first_name: user.first_name ?? "",
-        last_name: user.last_name ?? "",
-        profile_photo: user.profile_photo ?? "",
-        public_id: user.public_id ?? "",
-      };
-      target.searchParams.set("user", encodeBase64Url(JSON.stringify(userPayload)));
-    }
+    const userPayload = {
+      role: user.role,
+      email: user.email,
+      first_name: user.first_name,
+      last_name: user.last_name,
+      profile_photo: user.profile_photo,
+      public_id: user.public_id,
+    };
+    target.searchParams.set(
+      "user",
+      encodeBase64Url(JSON.stringify(userPayload)),
+    );
 
     window.location.href = target.toString();
     return true;
@@ -175,18 +186,17 @@ export function AccountStep({
     setSuccessMessage(message);
   };
 
-  const storeProfileSetupSession = (token?: string, user?: SsoUser) => {
-    if (token) {
-      setAuthSession(token, user);
-    }
+  const storeProfileSetupSession = (
+    token: string,
+    user: AuthenticatedProfile,
+  ) => {
+    setProfileSetupToken(token);
 
-    if (user) {
-      saveProfileSetupUser({
-        email: user.email,
-        firstName: user.first_name,
-        lastName: user.last_name,
-      });
-    }
+    saveProfileSetupUser({
+      email: user.email,
+      firstName: user.first_name,
+      lastName: user.last_name,
+    });
   };
 
   const handleSocialAuth = async (provider: SocialProvider, token: string) => {
@@ -194,7 +204,9 @@ export function AccountStep({
     if (!cleanToken) {
       setSuccessMessage("");
       setEmailError("");
-      setSocialError(`Missing ${provider} token. Authenticate with the ${provider} SDK first.`);
+      setSocialError(
+        `Missing ${provider} token. Authenticate with the ${provider} SDK first.`,
+      );
       return;
     }
 
@@ -216,17 +228,20 @@ export function AccountStep({
       }
 
       if (!result.token?.trim()) {
-        setSocialError("Authentication completed, but the server did not return an access token. Please try again.");
+        setSocialError(
+          "Authentication completed, but the server did not return an access token. Please try again.",
+        );
         return;
       }
       const accessToken = result.token.trim();
+      const profile = await fetchAuthenticatedProfile(accessToken);
 
       if (result.profileSetupRequired) {
-        if (redirectToReturnTarget(accessToken, result.user)) {
+        if (redirectToReturnTarget(accessToken, profile)) {
           return;
         }
 
-        storeProfileSetupSession(accessToken, result.user);
+        storeProfileSetupSession(accessToken, profile);
         const params = new URLSearchParams(searchParams.toString());
         params.delete("view");
         params.delete("stage");
@@ -240,8 +255,8 @@ export function AccountStep({
         return;
       }
 
-      setAuthSession(accessToken, result.user);
-      if (redirectToReturnTarget(accessToken, result.user)) {
+      setAuthSession(accessToken, profile);
+      if (redirectToReturnTarget(accessToken, profile)) {
         return;
       }
       if (isDirectOnboardingDisabled) {
@@ -249,6 +264,12 @@ export function AccountStep({
         return;
       }
       router.push("/students/dashboard");
+    } catch (error) {
+      setSocialError(
+        error instanceof Error
+          ? error.message
+          : "Authentication failed. Please try again.",
+      );
     } finally {
       setActiveSocialProvider(null);
     }
@@ -345,19 +366,22 @@ export function AccountStep({
       let response: Response;
 
       try {
-        response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/v1/auth/signup`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
+        response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/v1/auth/signup`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              email: email.trim(),
+              first_name: firstName.trim(),
+              last_name: lastName.trim(),
+              password,
+              confirm_password: confirmPassword,
+            }),
           },
-          body: JSON.stringify({
-            email: email.trim(),
-            first_name: firstName.trim(),
-            last_name: lastName.trim(),
-            password,
-            confirm_password: confirmPassword,
-          }),
-        });
+        );
       } catch {
         setFirstNameError("Could not reach signup service. Please try again.");
         return;
@@ -402,7 +426,11 @@ export function AccountStep({
       }
 
       handleAuthSuccess(data?.message ?? "Verification email sent.");
-      onContinue({ email: email.trim(), firstName: firstName.trim(), lastName: lastName.trim() });
+      onContinue({
+        email: email.trim(),
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -418,7 +446,9 @@ export function AccountStep({
       />
       <div
         className={`overflow-hidden transition-all duration-200 ease-out ${
-          socialError ? "mt-[0.35em] max-h-[1.6em] opacity-100" : "max-h-0 opacity-0"
+          socialError
+            ? "mt-[0.35em] max-h-[1.6em] opacity-100"
+            : "max-h-0 opacity-0"
         }`}
       >
         <p className="text-[0.7em] font-medium text-[#d04b4b]">{socialError}</p>
@@ -529,7 +559,11 @@ export function AccountStep({
               value={confirmPassword}
             />
             <button
-              aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+              aria-label={
+                showConfirmPassword
+                  ? "Hide confirm password"
+                  : "Show confirm password"
+              }
               className="text-[#7b84a0] hover:text-[#2187d3]"
               onClick={() => setShowConfirmPassword((v) => !v)}
               type="button"
@@ -541,9 +575,17 @@ export function AccountStep({
         </label>
       </div>
 
-      {successMessage ? <p className="mt-[0.6em] text-[0.72em] font-medium text-[#247f57]">{successMessage}</p> : null}
+      {successMessage ? (
+        <p className="mt-[0.6em] text-[0.72em] font-medium text-[#247f57]">
+          {successMessage}
+        </p>
+      ) : null}
 
-      <AuthPrimaryButton className="mt-[0.9em]" disabled={isSubmitting} type="submit">
+      <AuthPrimaryButton
+        className="mt-[0.9em]"
+        disabled={isSubmitting}
+        type="submit"
+      >
         {isSubmitting ? "Creating account..." : "Create an account"}
       </AuthPrimaryButton>
 
@@ -570,7 +612,3 @@ export function AccountStep({
     </AuthForm>
   );
 }
-
-
-
-

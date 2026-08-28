@@ -5,7 +5,7 @@ export type ProfileFormState = {
   lastName: string;
   firstName: string;
   otherName: string;
-  phoneCountry: CountryCode;
+  phoneCountry: CountryCode | "";
   countryCode: string;
   phoneNumber: string;
   bio: string;
@@ -18,21 +18,22 @@ export const initialProfileForm: ProfileFormState = {
   lastName: "",
   firstName: "",
   otherName: "",
-  phoneCountry: "NG",
-  countryCode: "+234",
+  phoneCountry: "",
+  countryCode: "",
   phoneNumber: "",
   bio: "",
 };
 
 export function isPhoneNumberValid(form: Pick<ProfileFormState, "phoneCountry" | "phoneNumber">): boolean {
   const rawPhone = form.phoneNumber.trim();
-  if (!rawPhone) return false;
+  if (!rawPhone || !form.phoneCountry) return false;
 
   const phone = parsePhoneNumberFromString(rawPhone, form.phoneCountry);
   return phone?.isValid() ?? false;
 }
 
 export function formatPhoneNumberE164(form: Pick<ProfileFormState, "phoneCountry" | "phoneNumber">): string {
+  if (!form.phoneCountry) return "";
   const phone = parsePhoneNumberFromString(form.phoneNumber.trim(), form.phoneCountry);
   return phone?.isValid() ? phone.number : "";
 }
@@ -42,17 +43,18 @@ export function isEmailValid(value: string): boolean {
 }
 
 export function isStepOneValid(form: ProfileFormState): boolean {
-  const bioValid = form.bio.trim().length >= 10;
-  const countryCodeValid = form.countryCode.trim().length > 0;
-  const phoneValid = isPhoneNumberValid(form);
+  const phoneStarted = Boolean(
+    form.phoneCountry ||
+      form.countryCode.trim() ||
+      form.phoneNumber.trim(),
+  );
+  const phoneValid = !phoneStarted || isPhoneNumberValid(form);
 
   return (
     isEmailValid(form.email) &&
     form.lastName.trim().length > 0 &&
     form.firstName.trim().length > 0 &&
-    countryCodeValid &&
-    phoneValid &&
-    bioValid
+    phoneValid
   );
 }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { AccountStep } from "./AccountStep";
@@ -8,7 +8,8 @@ import { AuthCardHeader } from "./AuthCardHeader";
 import { AuthCard } from "./AuthPrimitives";
 import { AuthShell } from "./AuthShell";
 import { OtpStep } from "./OtpStep";
-import { clearProfileSetupSession, isProfileSetupActive, subscribeProfileSetupSession, useProfileSetupUser } from "./profileSetupSession";
+import { clearProfileSetupToken, getAccessToken, getProfileSetupToken, subscribeAuthSession } from "../auth/authSession";
+import { areProfileDetailsSubmitted, clearProfileSetupSession, isProfileSetupActive, subscribeProfileSetupSession, useProfileSetupUser } from "./profileSetupSession";
 import { StudentFlow } from "./student/StudentFlow";
 import type { SetupMode, SetupStepId, SignUpFlowStage, SignUpView } from "./types";
 
@@ -76,6 +77,24 @@ function useProfileSetupActive(): boolean {
   );
 }
 
+function useProfileSetupRouteReady(forceProfileSetup: boolean): boolean {
+  return useSyncExternalStore(
+    (onStoreChange) => {
+      const unsubscribeAuth = subscribeAuthSession(onStoreChange);
+      const unsubscribeProfile = subscribeProfileSetupSession(onStoreChange);
+      return () => {
+        unsubscribeAuth();
+        unsubscribeProfile();
+      };
+    },
+    () =>
+      !forceProfileSetup ||
+      Boolean(getProfileSetupToken()) ||
+      (Boolean(getAccessToken()) && areProfileDetailsSubmitted()),
+    () => !forceProfileSetup,
+  );
+}
+
 export function SignUpFlow({ forceProfileSetup = false }: { forceProfileSetup?: boolean }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -85,11 +104,27 @@ export function SignUpFlow({ forceProfileSetup = false }: { forceProfileSetup?: 
   const profileSetupActive = useProfileSetupActive();
   const profileSetupUser = useProfileSetupUser();
   const [accountProfile, setAccountProfile] = useState<AccountProfile>({});
+  const profileSetupRouteReady = useProfileSetupRouteReady(forceProfileSetup);
   const setupProfile = {
     email: accountProfile.email ?? profileSetupUser.email,
     firstName: accountProfile.firstName ?? profileSetupUser.firstName,
     lastName: accountProfile.lastName ?? profileSetupUser.lastName,
   };
+
+  useEffect(() => {
+    if (!forceProfileSetup) return;
+
+    if (getProfileSetupToken()) return;
+
+    if (getAccessToken()) {
+      if (!areProfileDetailsSubmitted()) {
+        router.replace("/students/dashboard");
+      }
+      return;
+    }
+
+    router.replace("/login");
+  }, [forceProfileSetup, router]);
 
   const getAllowedReturnOrigins = (): string[] =>
     (process.env.NEXT_PUBLIC_SPMEET_ALLOWED_CALLBACK_ORIGINS ?? "")
@@ -215,6 +250,8 @@ export function SignUpFlow({ forceProfileSetup = false }: { forceProfileSetup?: 
 
   const showProfileSetup = forceProfileSetup || profileSetupActive || urlState.view === "flow";
 
+  if (forceProfileSetup && !profileSetupRouteReady) return null;
+
   if (showProfileSetup) {
     return (
       <StudentFlow
@@ -229,6 +266,7 @@ export function SignUpFlow({ forceProfileSetup = false }: { forceProfileSetup?: 
         }}
         onStageChange={(stage) => {
           if ((forceProfileSetup || profileSetupActive) && stage === "overview") {
+            clearProfileSetupToken();
             clearProfileSetupSession();
             router.push("/login");
             return;

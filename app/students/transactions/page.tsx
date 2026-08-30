@@ -1,5 +1,5 @@
-import TransactionsPage from "../../../components/transactions/TransactionsPage";
+import StudentTransactionsPage from "../../../components/transactions/StudentTransactionsPage";
 
 export default function StudentsTransactionsRoute() {
-  return <TransactionsPage />;
+  return <StudentTransactionsPage />;
 }

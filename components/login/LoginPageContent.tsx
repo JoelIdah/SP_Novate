@@ -31,6 +31,7 @@ import {
   type AuthenticatedProfile,
 } from "../auth/profileApi";
 import { resolveProfileSetupRequired } from "../auth/profileSetupStatus";
+import { submitSsoReturn } from "../auth/ssoReturn";
 
 type LoginResponse = {
   message?: string;
@@ -70,35 +71,6 @@ export function LoginPageContent() {
     router.push("/coming-soon");
   };
 
-  const getAllowedReturnOrigins = (): string[] =>
-    (process.env.NEXT_PUBLIC_SPMEET_ALLOWED_CALLBACK_ORIGINS ?? "")
-      .split(",")
-      .map((value) => value.trim())
-      .filter(Boolean);
-
-  const resolveSafeReturnTo = (): string | null => {
-    const candidate = searchParams.get("returnTo")?.trim();
-    if (!candidate) return null;
-
-    try {
-      const parsed = new URL(candidate);
-      if (parsed.protocol !== "http:" && parsed.protocol !== "https:")
-        return null;
-      const allowedOrigins = getAllowedReturnOrigins();
-      if (!allowedOrigins.includes(parsed.origin)) return null;
-      return parsed.toString();
-    } catch {
-      return null;
-    }
-  };
-
-  const resolveState = (): string | null => {
-    const candidate = searchParams.get("state");
-    if (!candidate) return null;
-    const trimmed = candidate.trim();
-    return trimmed.length > 0 ? trimmed : null;
-  };
-
   const resolveSafeNextPath = (): string => {
     const candidate = searchParams.get("next");
     if (!candidate) return "/";
@@ -109,67 +81,12 @@ export function LoginPageContent() {
     return trimmed;
   };
 
-  const encodeBase64Url = (value: string): string => {
-    const bytes = new TextEncoder().encode(value);
-    let binary = "";
-
-    for (let i = 0; i < bytes.length; i += 1) {
-      binary += String.fromCharCode(bytes[i]);
+  const redirectToReturnTarget = (token: string) => {
+    const result = submitSsoReturn({ searchParams, token });
+    if (result.status === "error") {
+      setRedirectError(result.message);
     }
-
-    return btoa(binary)
-      .replace(/\+/g, "-")
-      .replace(/\//g, "_")
-      .replace(/=+$/g, "");
-  };
-
-  const redirectToReturnTarget = (
-    token: string,
-    user: AuthenticatedProfile,
-  ) => {
-    const requestedReturnTo = searchParams.get("returnTo");
-    const allowedOrigins = getAllowedReturnOrigins();
-    const returnTo = resolveSafeReturnTo();
-    const state = resolveState();
-
-    if (requestedReturnTo && allowedOrigins.length === 0) {
-      setRedirectError("SSO callback origins are not configured.");
-      return false;
-    }
-
-    if (requestedReturnTo && !returnTo) {
-      setRedirectError("Untrusted or invalid callback URL.");
-      return false;
-    }
-
-    if (requestedReturnTo && !state) {
-      setRedirectError("Missing SSO state. Please retry login from SPMeet.");
-      return false;
-    }
-
-    if (!returnTo) return false;
-
-    const nextPath = resolveSafeNextPath();
-    const target = new URL(returnTo);
-    target.searchParams.set("token", token);
-    target.searchParams.set("next", nextPath);
-    target.searchParams.set("state", state!);
-
-    const userPayload = {
-      role: user.role,
-      email: user.email,
-      first_name: user.first_name,
-      last_name: user.last_name,
-      profile_photo: user.profile_photo,
-      public_id: user.public_id,
-    };
-    target.searchParams.set(
-      "user",
-      encodeBase64Url(JSON.stringify(userPayload)),
-    );
-
-    window.location.href = target.toString();
-    return true;
+    return result.status === "submitted";
   };
 
   const buildProfileSetupHref = (): string => {
@@ -230,7 +147,7 @@ export function LoginPageContent() {
       const profile = await fetchAuthenticatedProfile(accessToken);
 
       if (result.profileSetupRequired) {
-        if (redirectToReturnTarget(accessToken, profile)) {
+        if (redirectToReturnTarget(accessToken)) {
           return;
         }
 
@@ -240,7 +157,7 @@ export function LoginPageContent() {
       }
 
       setAuthSession(accessToken, profile);
-      if (redirectToReturnTarget(accessToken, profile)) {
+      if (redirectToReturnTarget(accessToken)) {
         return;
       }
 
@@ -359,7 +276,7 @@ export function LoginPageContent() {
         return;
       }
 
-      if (redirectToReturnTarget(token, profile)) {
+      if (redirectToReturnTarget(token)) {
         return;
       }
 

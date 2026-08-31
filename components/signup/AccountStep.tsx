@@ -31,6 +31,7 @@ import {
   fetchAuthenticatedProfile,
   type AuthenticatedProfile,
 } from "../auth/profileApi";
+import { submitSsoReturn } from "../auth/ssoReturn";
 
 export function AccountStep({
   onContinue,
@@ -73,88 +74,12 @@ export function AccountStep({
     return lower.includes("timeout") || lower.includes("timed out");
   };
 
-  const getAllowedReturnOrigins = (): string[] =>
-    (process.env.NEXT_PUBLIC_SPMEET_ALLOWED_CALLBACK_ORIGINS ?? "")
-      .split(",")
-      .map((value) => value.trim())
-      .filter(Boolean);
-
-  const resolveSafeReturnTo = (): string | null => {
-    const candidate = searchParams.get("returnTo")?.trim();
-    if (!candidate) return null;
-
-    try {
-      const parsed = new URL(candidate);
-      if (parsed.protocol !== "http:" && parsed.protocol !== "https:")
-        return null;
-      const allowedOrigins = getAllowedReturnOrigins();
-      if (!allowedOrigins.includes(parsed.origin)) return null;
-      return parsed.toString();
-    } catch {
-      return null;
+  const redirectToReturnTarget = (token: string) => {
+    const result = submitSsoReturn({ searchParams, token });
+    if (result.status === "error") {
+      setSocialError(result.message);
     }
-  };
-
-  const resolveState = (): string | null => {
-    const candidate = searchParams.get("state");
-    if (!candidate) return null;
-    const trimmed = candidate.trim();
-    return trimmed.length > 0 ? trimmed : null;
-  };
-
-  const resolveSafeNextPath = (): string => {
-    const candidate = searchParams.get("next");
-    if (!candidate) return "/";
-
-    const trimmed = candidate.trim();
-    if (!trimmed.startsWith("/") || trimmed.startsWith("//")) return "/";
-    if (trimmed.includes("://")) return "/";
-    return trimmed;
-  };
-
-  const encodeBase64Url = (value: string): string => {
-    const bytes = new TextEncoder().encode(value);
-    let binary = "";
-
-    for (let i = 0; i < bytes.length; i += 1) {
-      binary += String.fromCharCode(bytes[i]);
-    }
-
-    return btoa(binary)
-      .replace(/\+/g, "-")
-      .replace(/\//g, "_")
-      .replace(/=+$/g, "");
-  };
-
-  const redirectToReturnTarget = (
-    token: string,
-    user: AuthenticatedProfile,
-  ) => {
-    const returnTo = resolveSafeReturnTo();
-    const state = resolveState();
-
-    if (!returnTo || !state) return false;
-
-    const target = new URL(returnTo);
-    target.searchParams.set("token", token);
-    target.searchParams.set("next", resolveSafeNextPath());
-    target.searchParams.set("state", state);
-
-    const userPayload = {
-      role: user.role,
-      email: user.email,
-      first_name: user.first_name,
-      last_name: user.last_name,
-      profile_photo: user.profile_photo,
-      public_id: user.public_id,
-    };
-    target.searchParams.set(
-      "user",
-      encodeBase64Url(JSON.stringify(userPayload)),
-    );
-
-    window.location.href = target.toString();
-    return true;
+    return result.status === "submitted";
   };
 
   const redirectToLoginForExistingAccount = (accountEmail: string) => {
@@ -237,7 +162,7 @@ export function AccountStep({
       const profile = await fetchAuthenticatedProfile(accessToken);
 
       if (result.profileSetupRequired) {
-        if (redirectToReturnTarget(accessToken, profile)) {
+        if (redirectToReturnTarget(accessToken)) {
           return;
         }
 
@@ -256,7 +181,7 @@ export function AccountStep({
       }
 
       setAuthSession(accessToken, profile);
-      if (redirectToReturnTarget(accessToken, profile)) {
+      if (redirectToReturnTarget(accessToken)) {
         return;
       }
       if (isDirectOnboardingDisabled) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { getAccessToken, waitForAuthenticationRedirect } from "../auth/authSession";
+import { waitForAuthenticationRedirect } from "../auth/authSession";
 
 export type StudentDashboardStats = {
   ongoing: number;
@@ -14,10 +14,8 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 export async function getStudentDashboardStats(signal?: AbortSignal) {
-  const token = getAccessToken();
-  if (!token) return waitForAuthenticationRedirect();
   const response = await fetch("/api/student/dashboard", {
-    headers: { Accept: "application/json", Authorization: `Bearer ${token}` },
+    headers: { Accept: "application/json" },
     cache: "no-store",
     signal,
   });

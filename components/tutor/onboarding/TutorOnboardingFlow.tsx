@@ -17,7 +17,7 @@ import {
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
-import { getAccessToken, useSessionUser } from "../../auth/authSession";
+import { useSessionUser } from "../../auth/authSession";
 import { OnboardingNavbar } from "../../signup/OnboardingNavbar";
 import { StepTwoAddressConfirm } from "../../signup/profile-setup/StepTwoAddressConfirm";
 import { StepTwoLocationPrompt } from "../../signup/profile-setup/StepTwoLocationPrompt";
@@ -440,8 +440,7 @@ export default function TutorOnboardingFlow() {
     setIdFiles(combined);
   };
   const startSetup = () => {
-    if (!getAccessToken()) router.push("/login");
-    else setStage("personal");
+    setStage("personal");
   };
   const continuePersonal = async () => {
     setValidationVisible(true);

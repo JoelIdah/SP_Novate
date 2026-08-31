@@ -1,6 +1,6 @@
 "use client";
 
-import { getAccessToken, waitForAuthenticationRedirect } from "../auth/authSession";
+import { waitForAuthenticationRedirect } from "../auth/authSession";
 
 export type TutorSubject = {
   availability: Array<{ day: string }>;
@@ -54,11 +54,8 @@ function readMessage(value: unknown) {
 }
 
 async function getJson(path: string, signal?: AbortSignal): Promise<unknown> {
-  const token = getAccessToken();
-  if (!token) return waitForAuthenticationRedirect();
-
   const response = await fetch(path, {
-    headers: { Accept: "application/json", Authorization: `Bearer ${token}` },
+    headers: { Accept: "application/json" },
     cache: "no-store",
     signal,
   });

@@ -35,17 +35,12 @@ function isAuthenticatedProfile(value: unknown): value is AuthenticatedProfile {
   );
 }
 
-export async function fetchAuthenticatedProfile(
-  token: string,
-): Promise<AuthenticatedProfile> {
-  const cleanToken = token.trim();
-  if (!cleanToken) throw new Error("The authentication token is missing.");
-
+export async function fetchAuthenticatedProfile(): Promise<AuthenticatedProfile> {
   let response: Response;
   try {
     response = await fetch("/api/profile", {
       method: "GET",
-      headers: { Authorization: `Bearer ${cleanToken}` },
+      headers: { Accept: "application/json" },
       cache: "no-store",
     });
   } catch {

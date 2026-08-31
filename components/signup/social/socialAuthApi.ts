@@ -23,21 +23,11 @@ type SocialAuthResponseBody = {
   };
 };
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
-
 export async function socialAuthApi({ provider, token }: SocialAuthPayload): Promise<SocialAuthResult> {
-  if (!API_BASE_URL) {
-    return {
-      kind: "error",
-      message: "NEXT_PUBLIC_API_BASE_URL is not configured.",
-      status: 500,
-    };
-  }
-
   let response: Response;
 
   try {
-    response = await fetch(`${API_BASE_URL}/v1/auth/social`, {
+    response = await fetch("/api/auth/social", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -67,7 +57,6 @@ export async function socialAuthApi({ provider, token }: SocialAuthPayload): Pro
     return {
       kind: "success",
       message: data?.message ?? "Profile setup is required.",
-      token: data?.data?.token,
       user: data?.data?.user,
       profileSetupRequired: true,
     };
@@ -89,7 +78,6 @@ export async function socialAuthApi({ provider, token }: SocialAuthPayload): Pro
     return {
       kind: "success",
       message: data?.message ?? "Profile setup is required.",
-      token: data?.data?.token,
       user: data?.data?.user,
       profileSetupRequired: true,
     };
@@ -98,7 +86,6 @@ export async function socialAuthApi({ provider, token }: SocialAuthPayload): Pro
   return {
     kind: "success",
     message: data?.message ?? "Authentication successful.",
-    token: data?.data?.token,
     user: data?.data?.user,
     profileSetupRequired: false,
   };

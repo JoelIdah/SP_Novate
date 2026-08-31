@@ -26,12 +26,12 @@ import {
   PRIVACY_POLICY_HREF,
   TERMS_OF_USE_HREF,
 } from "../../config/legalLinks";
-import { setAuthSession, setProfileSetupToken } from "../auth/authSession";
+import { setAuthSession } from "../auth/authSession";
 import {
   fetchAuthenticatedProfile,
   type AuthenticatedProfile,
 } from "../auth/profileApi";
-import { submitSsoReturn } from "../auth/ssoReturn";
+import { getSsoReturnPath } from "../auth/ssoReturn";
 
 export function AccountStep({
   onContinue,
@@ -69,17 +69,16 @@ export function AccountStep({
     emailInputRef.current?.focus();
   };
 
+  const returnToSpMeet = () => {
+    const path = getSsoReturnPath(searchParams);
+    if (!path) return false;
+    window.location.assign(path);
+    return true;
+  };
+
   const isIgnorableSocialError = (message: string) => {
     const lower = message.toLowerCase();
     return lower.includes("timeout") || lower.includes("timed out");
-  };
-
-  const redirectToReturnTarget = (token: string) => {
-    const result = submitSsoReturn({ searchParams, token });
-    if (result.status === "error") {
-      setSocialError(result.message);
-    }
-    return result.status === "submitted";
   };
 
   const redirectToLoginForExistingAccount = (accountEmail: string) => {
@@ -104,19 +103,11 @@ export function AccountStep({
     );
   };
 
-  const handleAuthSuccess = (message: string, token?: string) => {
-    if (token) {
-      setAuthSession(token);
-    }
+  const handleAuthSuccess = (message: string) => {
     setSuccessMessage(message);
   };
 
-  const storeProfileSetupSession = (
-    token: string,
-    user: AuthenticatedProfile,
-  ) => {
-    setProfileSetupToken(token);
-
+  const storeProfileSetupSession = (user: AuthenticatedProfile) => {
     saveProfileSetupUser({
       email: user.email,
       firstName: user.first_name,
@@ -152,21 +143,12 @@ export function AccountStep({
         return;
       }
 
-      if (!result.token?.trim()) {
-        setSocialError(
-          "Authentication completed, but the server did not return an access token. Please try again.",
-        );
-        return;
-      }
-      const accessToken = result.token.trim();
-      const profile = await fetchAuthenticatedProfile(accessToken);
+      const profile = await fetchAuthenticatedProfile();
+
+      if (returnToSpMeet()) return;
 
       if (result.profileSetupRequired) {
-        if (redirectToReturnTarget(accessToken)) {
-          return;
-        }
-
-        storeProfileSetupSession(accessToken, profile);
+        storeProfileSetupSession(profile);
         const params = new URLSearchParams(searchParams.toString());
         params.delete("view");
         params.delete("stage");
@@ -180,10 +162,7 @@ export function AccountStep({
         return;
       }
 
-      setAuthSession(accessToken, profile);
-      if (redirectToReturnTarget(accessToken)) {
-        return;
-      }
+      setAuthSession(profile);
       if (isDirectOnboardingDisabled) {
         router.push("/coming-soon");
         return;

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import "./auth.css";
+import { LegacyAuthStorageCleanup } from "@/components/auth/LegacyAuthStorageCleanup";
 
 const openSauce = localFont({
   display: "swap",
@@ -52,7 +53,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${openSauce.variable} h-full antialiased`}>
-      <body className="min-h-full bg-brand-surface text-brand-ink">{children}</body>
+      <body className="min-h-full bg-brand-surface text-brand-ink">
+        <LegacyAuthStorageCleanup />
+        {children}
+      </body>
     </html>
   );
 }

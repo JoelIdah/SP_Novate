@@ -2,28 +2,26 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 
-import { getAccessToken, redirectToLoginForAuthentication } from "./authSession";
+import { redirectToLoginForAuthentication, setAuthSession } from "./authSession";
 
 export function ProtectedAppLayout({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    const token = getAccessToken();
-    if (!token) {
-      redirectToLoginForAuthentication();
-      return;
-    }
-
     const controller = new AbortController();
     fetch("/api/profile", {
-      headers: { Accept: "application/json", Authorization: `Bearer ${token}` },
+      headers: { Accept: "application/json" },
       cache: "no-store",
       signal: controller.signal,
     })
-      .then((response) => {
+      .then(async (response) => {
         if (response.status === 401) {
           redirectToLoginForAuthentication();
           return;
+        }
+        if (response.ok) {
+          const payload = await response.json().catch(() => null) as { data?: Parameters<typeof setAuthSession>[0] } | null;
+          setAuthSession(payload?.data);
         }
         setReady(true);
       })

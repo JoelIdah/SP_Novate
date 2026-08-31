@@ -8,7 +8,6 @@ import { AuthPrimaryButton } from "./AuthPrimitives";
 type VerifyOtpResponse = {
   message?: string;
   data?: {
-    token?: string;
     user?: {
       public_id?: string;
       email?: string;
@@ -27,11 +26,12 @@ type ResendOtpResponse = {
 
 export function OtpStep({
   email,
+  establishSession,
   onVerified,
 }: {
   email: string;
+  establishSession?: boolean;
   onVerified: (payload: {
-    token?: string;
     email: string;
     firstName: string;
     lastName: string;
@@ -57,7 +57,7 @@ export function OtpStep({
     setResendMessage("");
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/v1/auth/verify-otp`, {
+      const response = await fetch("/api/auth/verify-otp", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -65,6 +65,7 @@ export function OtpStep({
         body: JSON.stringify({
           email: email.trim(),
           token: code,
+          establish_session: establishSession === true,
         }),
       });
 
@@ -86,7 +87,6 @@ export function OtpStep({
 
       const user = data?.data?.user;
       onVerified({
-        token: data?.data?.token,
         email: user?.email ?? email.trim(),
         firstName: user?.first_name ?? "",
         lastName: user?.last_name ?? "",

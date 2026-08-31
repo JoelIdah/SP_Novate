@@ -8,11 +8,10 @@ import { AuthCardHeader } from "./AuthCardHeader";
 import { AuthCard } from "./AuthPrimitives";
 import { AuthShell } from "./AuthShell";
 import { OtpStep } from "./OtpStep";
-import { clearProfileSetupToken, getAccessToken, getProfileSetupToken, subscribeAuthSession } from "../auth/authSession";
 import { areProfileDetailsSubmitted, clearProfileSetupSession, isProfileSetupActive, subscribeProfileSetupSession, useProfileSetupUser } from "./profileSetupSession";
 import { StudentFlow } from "./student/StudentFlow";
 import type { SetupMode, SetupStepId, SignUpFlowStage, SignUpView } from "./types";
-import { submitSsoReturn } from "../auth/ssoReturn";
+import { getSsoReturnPath } from "../auth/ssoReturn";
 
 type SignUpUrlState = {
   mode: SetupMode;
@@ -73,17 +72,12 @@ function useProfileSetupActive(): boolean {
 function useProfileSetupRouteReady(forceProfileSetup: boolean): boolean {
   return useSyncExternalStore(
     (onStoreChange) => {
-      const unsubscribeAuth = subscribeAuthSession(onStoreChange);
-      const unsubscribeProfile = subscribeProfileSetupSession(onStoreChange);
-      return () => {
-        unsubscribeAuth();
-        unsubscribeProfile();
-      };
+      return subscribeProfileSetupSession(onStoreChange);
     },
     () =>
       !forceProfileSetup ||
-      Boolean(getProfileSetupToken()) ||
-      (Boolean(getAccessToken()) && areProfileDetailsSubmitted()),
+      isProfileSetupActive() ||
+      areProfileDetailsSubmitted(),
     () => !forceProfileSetup,
   );
 }
@@ -94,6 +88,7 @@ export function SignUpFlow({ forceProfileSetup = false }: { forceProfileSetup?: 
   const searchParams = useSearchParams();
 
   const urlState = useMemo(() => readUrlState(new URLSearchParams(searchParams.toString())), [searchParams]);
+  const ssoReturnPath = useMemo(() => getSsoReturnPath(searchParams), [searchParams]);
   const profileSetupActive = useProfileSetupActive();
   const profileSetupUser = useProfileSetupUser();
   const [accountProfile, setAccountProfile] = useState<AccountProfile>({});
@@ -107,21 +102,19 @@ export function SignUpFlow({ forceProfileSetup = false }: { forceProfileSetup?: 
   useEffect(() => {
     if (!forceProfileSetup) return;
 
-    if (getProfileSetupToken()) return;
-
-    if (getAccessToken()) {
-      if (!areProfileDetailsSubmitted()) {
-        router.replace("/students/dashboard");
-      }
-      return;
-    }
-
-    router.replace("/login");
+    void fetch("/api/auth/session", { cache: "no-store" })
+      .then(async (response) => {
+        const payload = await response.json().catch(() => null) as { authenticated?: boolean } | null;
+        if (!response.ok || !payload?.authenticated) {
+          router.replace("/login");
+          return;
+        }
+        if (!isProfileSetupActive() && !areProfileDetailsSubmitted()) {
+          router.replace("/students/dashboard");
+        }
+      })
+      .catch(() => router.replace("/login"));
   }, [forceProfileSetup, router]);
-
-  const redirectToReturnTarget = (token: string) => {
-    return submitSsoReturn({ searchParams, token }).status === "submitted";
-  };
 
   const redirectToLoginAfterVerification = (email: string) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -187,7 +180,6 @@ export function SignUpFlow({ forceProfileSetup = false }: { forceProfileSetup?: 
         }}
         onStageChange={(stage) => {
           if ((forceProfileSetup || profileSetupActive) && stage === "overview") {
-            clearProfileSetupToken();
             clearProfileSetupSession();
             router.push("/login");
             return;
@@ -217,6 +209,7 @@ export function SignUpFlow({ forceProfileSetup = false }: { forceProfileSetup?: 
         ) : (
           <OtpStep
             email={accountProfile.email ?? ""}
+            establishSession={Boolean(ssoReturnPath)}
             onVerified={(payload) => {
               setAccountProfile((prev) => ({
                 email: payload.email || prev.email,
@@ -224,10 +217,8 @@ export function SignUpFlow({ forceProfileSetup = false }: { forceProfileSetup?: 
                 lastName: payload.lastName || prev.lastName,
               }));
 
-              if (
-                payload.token &&
-                redirectToReturnTarget(payload.token)
-              ) {
+              if (ssoReturnPath) {
+                window.location.assign(ssoReturnPath);
                 return;
               }
 

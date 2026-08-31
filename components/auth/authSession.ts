@@ -20,53 +20,24 @@ type ApiSessionUser = {
   role?: "student" | "tutor";
 };
 
-const ACCESS_TOKEN_KEY = "sp_access_token";
-const PROFILE_SETUP_TOKEN_KEY = "sp_profile_setup_token";
 const SESSION_USER_KEY = "sp_session_user";
+const LEGACY_ACCESS_TOKEN_KEY = "sp_access_token";
+const LEGACY_PROFILE_SETUP_TOKEN_KEY = "sp_profile_setup_token";
 const SESSION_EVENT = "sp-auth-session";
 const emptyUser: SessionUser | null = null;
 let cachedRaw: string | null = null;
 let cachedUser: SessionUser | null = emptyUser;
 
-export function getAccessToken() {
-  if (typeof window === "undefined") return "";
-  return localStorage.getItem(ACCESS_TOKEN_KEY)?.trim() ?? "";
-}
-
-export function getProfileSetupToken() {
-  if (typeof window === "undefined") return "";
-  return sessionStorage.getItem(PROFILE_SETUP_TOKEN_KEY)?.trim() ?? "";
-}
-
-export function setProfileSetupToken(token: string) {
+export function clearLegacyAuthTokens() {
   if (typeof window === "undefined") return;
-  const cleanToken = token.trim();
-  if (!cleanToken) return;
-
-  localStorage.removeItem(ACCESS_TOKEN_KEY);
-  localStorage.removeItem(SESSION_USER_KEY);
-  localStorage.removeItem(PROFILE_SETUP_TOKEN_KEY);
-  sessionStorage.setItem(PROFILE_SETUP_TOKEN_KEY, cleanToken);
-  cachedRaw = null;
-  cachedUser = null;
-  window.dispatchEvent(new Event(SESSION_EVENT));
+  localStorage.removeItem(LEGACY_ACCESS_TOKEN_KEY);
+  localStorage.removeItem(LEGACY_PROFILE_SETUP_TOKEN_KEY);
+  sessionStorage.removeItem(LEGACY_PROFILE_SETUP_TOKEN_KEY);
 }
 
-export function clearProfileSetupToken() {
+export function setAuthSession(user?: ApiSessionUser) {
   if (typeof window === "undefined") return;
-  localStorage.removeItem(PROFILE_SETUP_TOKEN_KEY);
-  sessionStorage.removeItem(PROFILE_SETUP_TOKEN_KEY);
-  window.dispatchEvent(new Event(SESSION_EVENT));
-}
-
-export function setAuthSession(token: string, user?: ApiSessionUser) {
-  if (typeof window === "undefined") return;
-  const cleanToken = token.trim();
-  if (!cleanToken) return;
-
-  localStorage.setItem(ACCESS_TOKEN_KEY, cleanToken);
-  localStorage.removeItem(PROFILE_SETUP_TOKEN_KEY);
-  sessionStorage.removeItem(PROFILE_SETUP_TOKEN_KEY);
+  clearLegacyAuthTokens();
   if (user) {
     localStorage.setItem(
       SESSION_USER_KEY,
@@ -89,10 +60,8 @@ export function setAuthSession(token: string, user?: ApiSessionUser) {
 
 export function clearAuthSession() {
   if (typeof window === "undefined") return;
-  localStorage.removeItem(ACCESS_TOKEN_KEY);
+  clearLegacyAuthTokens();
   localStorage.removeItem(SESSION_USER_KEY);
-  localStorage.removeItem(PROFILE_SETUP_TOKEN_KEY);
-  sessionStorage.removeItem(PROFILE_SETUP_TOKEN_KEY);
   cachedRaw = null;
   cachedUser = null;
   window.dispatchEvent(new Event(SESSION_EVENT));
@@ -100,6 +69,7 @@ export function clearAuthSession() {
 
 export function redirectToLoginForAuthentication() {
   clearAuthSession();
+  void fetch("/api/auth/logout", { method: "POST" }).catch(() => undefined);
   if (typeof window === "undefined" || window.location.pathname === "/login") return;
   const next = `${window.location.pathname}${window.location.search}`;
   const params = new URLSearchParams({ next, notice: "session_expired" });

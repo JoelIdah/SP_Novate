@@ -3,8 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 
 import {
-  getAccessToken,
-  getProfileSetupToken,
   setAuthSession,
   waitForAuthenticationRedirect,
 } from "../auth/authSession";
@@ -55,9 +53,6 @@ type LocationUpdateResponse = {
 };
 type ProfileSetupResponse = {
   message?: string;
-  data?: {
-    token?: string;
-  };
 };
 
 const emptyAddressForm: LocationAddressForm = {
@@ -188,10 +183,6 @@ export function ProfileSetupStep({
     setProfileForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  const getLocationToken = () => {
-    return getAccessToken();
-  };
-
   const readAddressFromResponse = (
     data: LocationUpdateResponse["data"],
     fallback?: Partial<LocationAddressForm>,
@@ -210,15 +201,9 @@ export function ProfileSetupStep({
   const submitLocationUpdate = async (
     payload: Record<string, string | number>,
   ) => {
-    const token = getLocationToken();
-    if (!token) {
-      return waitForAuthenticationRedirect();
-    }
-
     const response = await fetch("/api/user/locations/update", {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify(payload),
@@ -409,21 +394,11 @@ export function ProfileSetupStep({
       });
       return;
     }
-    const profileSetupToken = getProfileSetupToken();
-    if (!profileSetupToken) {
-      await waitForAuthenticationRedirect();
-    }
-
     setProfileSubmitting(true);
     try {
-      const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.trim();
-      if (!apiBaseUrl) throw new Error("The API base URL is not configured.");
-      const response = await fetch(
-        `${apiBaseUrl.replace(/\/$/, "")}/v1/profile/setup`,
-        {
+      const response = await fetch("/api/auth/profile-setup", {
           method: "PUT",
           headers: {
-            Authorization: `Bearer ${profileSetupToken}`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
@@ -434,8 +409,7 @@ export function ProfileSetupStep({
             other_names: profileForm.otherName.trim() || undefined,
             phone_number: formatPhoneNumberE164(profileForm) || undefined,
           }),
-        },
-      );
+        });
       const result = (await response
         .json()
         .catch(() => null)) as ProfileSetupResponse | null;
@@ -443,15 +417,8 @@ export function ProfileSetupStep({
       if (!response.ok) {
         throw new Error(result?.message ?? "Could not complete profile setup.");
       }
-      const accessToken = result?.data?.token?.trim();
-      if (!accessToken) {
-        throw new Error(
-          "Profile setup succeeded, but the server did not return an access token.",
-        );
-      }
-
-      const profile = await fetchAuthenticatedProfile(accessToken);
-      setAuthSession(accessToken, profile);
+      const profile = await fetchAuthenticatedProfile();
+      setAuthSession(profile);
       markProfileDetailsSubmitted();
       setActiveStep("location");
       setLocationView("prompt");

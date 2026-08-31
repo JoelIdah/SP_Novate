@@ -1,6 +1,6 @@
 "use client";
 
-import { getAccessToken, waitForAuthenticationRedirect } from "../../auth/authSession";
+import { waitForAuthenticationRedirect } from "../../auth/authSession";
 
 export type TutorPersonalDetailsInput = {
   bio: string;
@@ -77,11 +77,8 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 async function authenticatedRequest(path: string, init: RequestInit = {}) {
-  const token = getAccessToken();
-  if (!token) return waitForAuthenticationRedirect();
   const headers = new Headers(init.headers);
   headers.set("Accept", "application/json");
-  headers.set("Authorization", `Bearer ${token}`);
   const response = await fetch(path, { ...init, headers, cache: "no-store" });
   const payload = (await response.json().catch(() => null)) as unknown;
   if (response.status === 401) return waitForAuthenticationRedirect();
@@ -95,14 +92,10 @@ async function authenticatedRequest(path: string, init: RequestInit = {}) {
 }
 
 export async function saveTutorPersonalDetails(input: TutorPersonalDetailsInput) {
-  const token = getAccessToken();
-  if (!token) return waitForAuthenticationRedirect();
-
   const response = await fetch("/api/tutor/set-up/personal-details", {
     method: "POST",
     headers: {
       Accept: "application/json",
-      Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify(input),
@@ -123,9 +116,6 @@ export async function saveTutorPersonalDetails(input: TutorPersonalDetailsInput)
 }
 
 export async function saveTutorIdentification(input: TutorIdentificationInput) {
-  const token = getAccessToken();
-  if (!token) return waitForAuthenticationRedirect();
-
   const formData = new FormData();
   formData.append("country", input.country);
   formData.append("id_type", input.id_type);
@@ -135,7 +125,7 @@ export async function saveTutorIdentification(input: TutorIdentificationInput) {
 
   const response = await fetch("/api/tutor/set-up/identification", {
     method: "POST",
-    headers: { Accept: "application/json", Authorization: `Bearer ${token}` },
+    headers: { Accept: "application/json" },
     body: formData,
     cache: "no-store",
   });

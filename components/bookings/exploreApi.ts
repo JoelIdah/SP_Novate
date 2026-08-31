@@ -1,6 +1,6 @@
 "use client";
 
-import { getAccessToken, waitForAuthenticationRedirect } from "../auth/authSession";
+import { waitForAuthenticationRedirect } from "../auth/authSession";
 
 export type StudentCategory = {
   department: string;
@@ -63,12 +63,8 @@ class ApiRequestError extends Error {
 }
 
 async function requestJson(path: string, init: RequestInit = {}): Promise<unknown> {
-  const token = getAccessToken();
-  if (!token) return waitForAuthenticationRedirect();
-
   const headers = new Headers(init.headers);
   headers.set("Accept", "application/json");
-  headers.set("Authorization", `Bearer ${token}`);
   const response = await fetch(path, {
     ...init,
     headers,

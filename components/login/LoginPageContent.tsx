@@ -25,13 +25,13 @@ import type { SocialProvider } from "../signup/social/types";
 import { AuthShell } from "../signup/AuthShell";
 import { DIRECT_ONBOARDING_ENABLED } from "../../config/featureFlags";
 import { saveProfileSetupUser } from "../signup/profileSetupSession";
-import { setAuthSession, setProfileSetupToken } from "../auth/authSession";
+import { setAuthSession } from "../auth/authSession";
 import {
   fetchAuthenticatedProfile,
   type AuthenticatedProfile,
 } from "../auth/profileApi";
 import { resolveProfileSetupRequired } from "../auth/profileSetupStatus";
-import { submitSsoReturn } from "../auth/ssoReturn";
+import { getSsoReturnPath } from "../auth/ssoReturn";
 
 type LoginResponse = {
   message?: string;
@@ -53,7 +53,6 @@ export function LoginPageContent() {
     useState<SocialProvider | null>(null);
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
-  const [redirectError, setRedirectError] = useState("");
   const isDirectOnboardingDisabled = !DIRECT_ONBOARDING_ENABLED;
   const signupHref = searchParams.toString()
     ? `/signup?${searchParams.toString()}`
@@ -81,12 +80,11 @@ export function LoginPageContent() {
     return trimmed;
   };
 
-  const redirectToReturnTarget = (token: string) => {
-    const result = submitSsoReturn({ searchParams, token });
-    if (result.status === "error") {
-      setRedirectError(result.message);
-    }
-    return result.status === "submitted";
+  const returnToSpMeet = () => {
+    const path = getSsoReturnPath(searchParams);
+    if (!path) return false;
+    window.location.assign(path);
+    return true;
   };
 
   const buildProfileSetupHref = (): string => {
@@ -103,12 +101,7 @@ export function LoginPageContent() {
     return query ? `/profile-setup?${query}` : "/profile-setup";
   };
 
-  const storeProfileSetupSession = (
-    token: string,
-    user: AuthenticatedProfile,
-  ) => {
-    setProfileSetupToken(token);
-
+  const storeProfileSetupSession = (user: AuthenticatedProfile) => {
     saveProfileSetupUser({
       email: user.email,
       firstName: user.first_name,
@@ -127,7 +120,6 @@ export function LoginPageContent() {
 
     setActiveSocialProvider(provider);
     setSocialError("");
-    setRedirectError("");
 
     try {
       const result = await socialAuthApi({ provider, token: cleanToken });
@@ -137,29 +129,17 @@ export function LoginPageContent() {
         return;
       }
 
-      if (!result.token?.trim()) {
-        setSocialError(
-          "Authentication completed, but the server did not return an access token. Please try again.",
-        );
-        return;
-      }
-      const accessToken = result.token.trim();
-      const profile = await fetchAuthenticatedProfile(accessToken);
+      const profile = await fetchAuthenticatedProfile();
+
+      if (returnToSpMeet()) return;
 
       if (result.profileSetupRequired) {
-        if (redirectToReturnTarget(accessToken)) {
-          return;
-        }
-
-        storeProfileSetupSession(accessToken, profile);
+        storeProfileSetupSession(profile);
         router.push(buildProfileSetupHref());
         return;
       }
 
-      setAuthSession(accessToken, profile);
-      if (redirectToReturnTarget(accessToken)) {
-        return;
-      }
+      setAuthSession(profile);
 
       const nextPath = resolveSafeNextPath();
       if (nextPath !== "/") {
@@ -190,7 +170,6 @@ export function LoginPageContent() {
     setEmailError("");
     setPasswordError("");
     setSocialError("");
-    setRedirectError("");
 
     if (!email.trim()) {
       setEmailError("Email is required.");
@@ -210,9 +189,7 @@ export function LoginPageContent() {
       let response: Response;
 
       try {
-        response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/v1/auth/login`,
-          {
+        response = await fetch("/api/auth/login", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -221,8 +198,7 @@ export function LoginPageContent() {
               email: email.trim(),
               password,
             }),
-          },
-        );
+          });
       } catch {
         setPasswordError("Could not reach login service. Please try again.");
         return;
@@ -252,21 +228,13 @@ export function LoginPageContent() {
         return;
       }
 
-      const token = data?.data?.token?.trim();
-      if (!token?.trim()) {
-        setPasswordError(
-          "Login completed, but the server did not return an access token. Please try again.",
-        );
-        return;
-      }
-
       let profileSetupRequired: boolean;
       let profile: AuthenticatedProfile;
       try {
         profileSetupRequired = resolveProfileSetupRequired({
           profileSetupRequired: data?.data?.profile_setup_required,
         });
-        profile = await fetchAuthenticatedProfile(token);
+        profile = await fetchAuthenticatedProfile();
       } catch (error) {
         setPasswordError(
           error instanceof Error
@@ -276,17 +244,15 @@ export function LoginPageContent() {
         return;
       }
 
-      if (redirectToReturnTarget(token)) {
-        return;
-      }
+      if (returnToSpMeet()) return;
 
       if (profileSetupRequired) {
-        storeProfileSetupSession(token, profile);
+        storeProfileSetupSession(profile);
         router.push(buildProfileSetupHref());
         return;
       }
 
-      setAuthSession(token, profile);
+      setAuthSession(profile);
 
       const nextPath = resolveSafeNextPath();
       if (nextPath !== "/") {
@@ -352,17 +318,6 @@ export function LoginPageContent() {
             >
               <p className="text-[0.7em] font-medium text-[#d04b4b]">
                 {socialError}
-              </p>
-            </div>
-            <div
-              className={`overflow-hidden transition-all duration-200 ease-out ${
-                redirectError
-                  ? "mt-[0.25em] max-h-[2.4em] opacity-100"
-                  : "max-h-0 opacity-0"
-              }`}
-            >
-              <p className="text-[0.7em] font-medium text-[#d04b4b]">
-                {redirectError}
               </p>
             </div>
           </div>

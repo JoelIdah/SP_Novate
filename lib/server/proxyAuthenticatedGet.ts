@@ -1,4 +1,10 @@
 import { NextResponse } from "next/server";
+import {
+  clearAuthCookie,
+  getApiBaseUrl,
+  isSameOriginMutation,
+  readAuthToken,
+} from "./authSession";
 
 export async function proxyAuthenticatedGet(
   request: Request,
@@ -11,15 +17,22 @@ export async function proxyAuthenticatedRequest(
   request: Request,
   backendPath: string,
 ) {
-  const authorization = request.headers.get("authorization")?.trim();
-  if (!authorization?.match(/^Bearer\s+\S+/i)) {
+  if (!isSameOriginMutation(request)) {
+    return NextResponse.json(
+      { status: "error", code: 403, error: "forbidden_origin" },
+      { status: 403 },
+    );
+  }
+
+  const token = readAuthToken(request);
+  if (!token) {
     return NextResponse.json(
       { status: "error", code: 401, error: "unauthorized" },
       { status: 401 },
     );
   }
 
-  const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.trim();
+  const apiBaseUrl = getApiBaseUrl();
   if (!apiBaseUrl) {
     return NextResponse.json(
       { status: "error", code: 500, error: "server_configuration" },
@@ -39,7 +52,7 @@ export async function proxyAuthenticatedRequest(
       method: request.method,
       headers: {
         Accept: "application/json",
-        Authorization: authorization,
+        Authorization: `Bearer ${token}`,
         ...(contentType ? { "Content-Type": contentType } : {}),
       },
       body: requestBody,
@@ -47,7 +60,7 @@ export async function proxyAuthenticatedRequest(
     });
     const body = await response.text();
 
-    return new NextResponse(body, {
+    const proxiedResponse = new NextResponse(body, {
       status: response.status,
       headers: {
         "Cache-Control": "no-store",
@@ -55,6 +68,8 @@ export async function proxyAuthenticatedRequest(
           response.headers.get("content-type") ?? "application/json",
       },
     });
+    if (response.status === 401) clearAuthCookie(proxiedResponse);
+    return proxiedResponse;
   } catch (error) {
     console.error("Backend request could not be completed", {
       backendPath,

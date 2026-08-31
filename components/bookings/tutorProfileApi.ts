@@ -1,6 +1,6 @@
 "use client";
 
-import { clearAuthSession, getAccessToken } from "../auth/authSession";
+import { getAccessToken, waitForAuthenticationRedirect } from "../auth/authSession";
 
 export type TutorSubject = {
   availability: Array<{ day: string }>;
@@ -55,7 +55,7 @@ function readMessage(value: unknown) {
 
 async function getJson(path: string, signal?: AbortSignal): Promise<unknown> {
   const token = getAccessToken();
-  if (!token) throw new Error("Your session has expired. Please sign in again.");
+  if (!token) return waitForAuthenticationRedirect();
 
   const response = await fetch(path, {
     headers: { Accept: "application/json", Authorization: `Bearer ${token}` },
@@ -63,7 +63,7 @@ async function getJson(path: string, signal?: AbortSignal): Promise<unknown> {
     signal,
   });
   const payload = (await response.json().catch(() => null)) as unknown;
-  if (response.status === 401) clearAuthSession();
+  if (response.status === 401) return waitForAuthenticationRedirect();
   if (!response.ok) throw new Error(readMessage(payload) ?? "The request could not be completed.");
   return payload;
 }

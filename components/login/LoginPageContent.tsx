@@ -63,6 +63,8 @@ export function LoginPageContent() {
       ? "This account already exists. Sign in with your password to continue."
       : notice === "email_verified"
         ? "Email verified. Sign in with your password to continue."
+        : notice === "session_expired"
+          ? "Your session expired. Sign in to continue."
         : "";
   const redirectToComingSoon = () => {
     router.push("/coming-soon");
@@ -242,6 +244,12 @@ export function LoginPageContent() {
         return;
       }
 
+      const nextPath = resolveSafeNextPath();
+      if (nextPath !== "/") {
+        router.push(nextPath);
+        return;
+      }
+
       if (isDirectOnboardingDisabled) {
         redirectToComingSoon();
         return;
@@ -362,6 +370,12 @@ export function LoginPageContent() {
       }
 
       setAuthSession(token, profile);
+
+      const nextPath = resolveSafeNextPath();
+      if (nextPath !== "/") {
+        router.push(nextPath);
+        return;
+      }
 
       if (isDirectOnboardingDisabled) {
         redirectToComingSoon();

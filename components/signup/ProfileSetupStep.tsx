@@ -6,6 +6,7 @@ import {
   getAccessToken,
   getProfileSetupToken,
   setAuthSession,
+  waitForAuthenticationRedirect,
 } from "../auth/authSession";
 import { fetchAuthenticatedProfile } from "../auth/profileApi";
 import { OnboardingNavbar } from "./OnboardingNavbar";
@@ -211,20 +212,17 @@ export function ProfileSetupStep({
   ) => {
     const token = getLocationToken();
     if (!token) {
-      throw new Error("Missing auth token. Please sign in again.");
+      return waitForAuthenticationRedirect();
     }
 
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_BASE_URL}/v1/user/locations/update`,
-      {
+    const response = await fetch("/api/user/locations/update", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify(payload),
-      },
-    );
+      });
 
     const raw = await response.text();
     let data: LocationUpdateResponse | null = null;
@@ -236,6 +234,7 @@ export function ProfileSetupStep({
       }
     }
 
+    if (response.status === 401) return waitForAuthenticationRedirect();
     if (!response.ok) {
       throw new Error(data?.message ?? "Could not save location.");
     }
@@ -412,10 +411,7 @@ export function ProfileSetupStep({
     }
     const profileSetupToken = getProfileSetupToken();
     if (!profileSetupToken) {
-      setProfileApiError(
-        "Your profile setup session is missing or expired. Please sign in again.",
-      );
-      return;
+      await waitForAuthenticationRedirect();
     }
 
     setProfileSubmitting(true);
@@ -443,6 +439,7 @@ export function ProfileSetupStep({
       const result = (await response
         .json()
         .catch(() => null)) as ProfileSetupResponse | null;
+      if (response.status === 401) await waitForAuthenticationRedirect();
       if (!response.ok) {
         throw new Error(result?.message ?? "Could not complete profile setup.");
       }

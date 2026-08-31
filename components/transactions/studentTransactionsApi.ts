@@ -1,6 +1,6 @@
 "use client";
 
-import { clearAuthSession, getAccessToken } from "../auth/authSession";
+import { getAccessToken, waitForAuthenticationRedirect } from "../auth/authSession";
 
 export type StudentTransactionStats = {
   total_finders_fee: number;
@@ -41,10 +41,10 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 async function request(path: string, signal?: AbortSignal) {
   const token = getAccessToken();
-  if (!token) throw new Error("Your session has expired. Please sign in again.");
+  if (!token) return waitForAuthenticationRedirect();
   const response = await fetch(path, { headers: { Accept: "application/json", Authorization: `Bearer ${token}` }, cache: "no-store", signal });
   const payload = (await response.json().catch(() => null)) as unknown;
-  if (response.status === 401) clearAuthSession();
+  if (response.status === 401) return waitForAuthenticationRedirect();
   if (!response.ok) {
     throw new Error(isRecord(payload) && typeof payload.message === "string" ? payload.message : "The request could not be completed.");
   }

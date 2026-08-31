@@ -1,6 +1,6 @@
 "use client";
 
-import { clearAuthSession, getAccessToken } from "../auth/authSession";
+import { getAccessToken, waitForAuthenticationRedirect } from "../auth/authSession";
 
 export type StudentCategory = {
   department: string;
@@ -64,7 +64,7 @@ class ApiRequestError extends Error {
 
 async function requestJson(path: string, init: RequestInit = {}): Promise<unknown> {
   const token = getAccessToken();
-  if (!token) throw new Error("Your session has expired. Please sign in again.");
+  if (!token) return waitForAuthenticationRedirect();
 
   const headers = new Headers(init.headers);
   headers.set("Accept", "application/json");
@@ -76,7 +76,7 @@ async function requestJson(path: string, init: RequestInit = {}): Promise<unknow
   });
   const payload = (await response.json().catch(() => null)) as unknown;
 
-  if (response.status === 401) clearAuthSession();
+  if (response.status === 401) return waitForAuthenticationRedirect();
   if (!response.ok) {
     throw new ApiRequestError(
       readApiMessage(payload) ?? "The request could not be completed.",

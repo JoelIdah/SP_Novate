@@ -1,6 +1,6 @@
 "use client";
 
-import { clearAuthSession, getAccessToken } from "../../auth/authSession";
+import { getAccessToken, waitForAuthenticationRedirect } from "../../auth/authSession";
 
 export type TutorPersonalDetailsInput = {
   bio: string;
@@ -78,13 +78,13 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 async function authenticatedRequest(path: string, init: RequestInit = {}) {
   const token = getAccessToken();
-  if (!token) throw new Error("Your session has expired. Please sign in again.");
+  if (!token) return waitForAuthenticationRedirect();
   const headers = new Headers(init.headers);
   headers.set("Accept", "application/json");
   headers.set("Authorization", `Bearer ${token}`);
   const response = await fetch(path, { ...init, headers, cache: "no-store" });
   const payload = (await response.json().catch(() => null)) as unknown;
-  if (response.status === 401) clearAuthSession();
+  if (response.status === 401) return waitForAuthenticationRedirect();
   if (!response.ok) {
     throw new Error(isRecord(payload) && typeof payload.message === "string" ? payload.message : "The request could not be completed.");
   }
@@ -96,7 +96,7 @@ async function authenticatedRequest(path: string, init: RequestInit = {}) {
 
 export async function saveTutorPersonalDetails(input: TutorPersonalDetailsInput) {
   const token = getAccessToken();
-  if (!token) throw new Error("Your session has expired. Please sign in again.");
+  if (!token) return waitForAuthenticationRedirect();
 
   const response = await fetch("/api/tutor/set-up/personal-details", {
     method: "POST",
@@ -109,7 +109,7 @@ export async function saveTutorPersonalDetails(input: TutorPersonalDetailsInput)
     cache: "no-store",
   });
   const payload = (await response.json().catch(() => null)) as unknown;
-  if (response.status === 401) clearAuthSession();
+  if (response.status === 401) return waitForAuthenticationRedirect();
   if (!response.ok) {
     throw new Error(
       isRecord(payload) && typeof payload.message === "string"
@@ -124,7 +124,7 @@ export async function saveTutorPersonalDetails(input: TutorPersonalDetailsInput)
 
 export async function saveTutorIdentification(input: TutorIdentificationInput) {
   const token = getAccessToken();
-  if (!token) throw new Error("Your session has expired. Please sign in again.");
+  if (!token) return waitForAuthenticationRedirect();
 
   const formData = new FormData();
   formData.append("country", input.country);
@@ -140,7 +140,7 @@ export async function saveTutorIdentification(input: TutorIdentificationInput) {
     cache: "no-store",
   });
   const payload = (await response.json().catch(() => null)) as unknown;
-  if (response.status === 401) clearAuthSession();
+  if (response.status === 401) return waitForAuthenticationRedirect();
   if (!response.ok) {
     throw new Error(
       isRecord(payload) && typeof payload.message === "string"

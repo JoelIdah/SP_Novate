@@ -56,6 +56,9 @@ export async function fetchAuthenticatedProfile(
     .json()
     .catch(() => null)) as ProfileResponse | null;
 
+  if (response.status === 401) {
+    throw new Error("Your sign-in could not be verified. Please sign in again.");
+  }
   if (!response.ok) {
     throw new Error(result?.message ?? "Could not retrieve your profile.");
   }

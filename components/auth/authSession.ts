@@ -98,6 +98,19 @@ export function clearAuthSession() {
   window.dispatchEvent(new Event(SESSION_EVENT));
 }
 
+export function redirectToLoginForAuthentication() {
+  clearAuthSession();
+  if (typeof window === "undefined" || window.location.pathname === "/login") return;
+  const next = `${window.location.pathname}${window.location.search}`;
+  const params = new URLSearchParams({ next, notice: "session_expired" });
+  window.location.replace(`/login?${params.toString()}`);
+}
+
+export function waitForAuthenticationRedirect(): Promise<never> {
+  redirectToLoginForAuthentication();
+  return new Promise<never>(() => undefined);
+}
+
 function readSessionUser(): SessionUser | null {
   if (typeof window === "undefined") return emptyUser;
   const raw = localStorage.getItem(SESSION_USER_KEY);

@@ -24,8 +24,74 @@ export type TutorIdentificationInput = {
   id_type: string;
 };
 
+export type NigerianBank = { code: string; name: string; slug?: string };
+
+export type TutorCompensationInput =
+  | { country: "uk"; first_name: string; last_name: string; sort_code: string; account_number: string }
+  | { country: "nigeria"; bank_name: string; bank_code: string; account_name: string; account_number: string };
+
+export type TutorOnboardingReview = {
+  compensation: null | {
+    country: string;
+    account_number: string;
+    account_name?: string;
+    bank_code?: string;
+    bank_name?: string;
+    first_name?: string;
+    last_name?: string;
+    sort_code?: string;
+  };
+  documents: Array<{ created_at: string; document_url: string; file_name: string; file_type: string; purpose: string }>;
+  identification: null | {
+    country: string;
+    id_type: string;
+    status: string;
+    employer_share_code?: string;
+    dbs_certificate_number?: string;
+  };
+  is_complete: boolean;
+  location: null | {
+    accuracy?: number;
+    address: string;
+    latitude: number;
+    longitude: number;
+    place_id?: string;
+    source: string;
+  };
+  missing_steps: string[];
+  personal_details: null | {
+    bio: string;
+    email: string;
+    first_name: string;
+    last_name: string;
+    occupation: string;
+    phone_number: string;
+    qualifications: string[];
+    other_names?: string;
+  };
+  tutor_status: string;
+};
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+async function authenticatedRequest(path: string, init: RequestInit = {}) {
+  const token = getAccessToken();
+  if (!token) throw new Error("Your session has expired. Please sign in again.");
+  const headers = new Headers(init.headers);
+  headers.set("Accept", "application/json");
+  headers.set("Authorization", `Bearer ${token}`);
+  const response = await fetch(path, { ...init, headers, cache: "no-store" });
+  const payload = (await response.json().catch(() => null)) as unknown;
+  if (response.status === 401) clearAuthSession();
+  if (!response.ok) {
+    throw new Error(isRecord(payload) && typeof payload.message === "string" ? payload.message : "The request could not be completed.");
+  }
+  if (!isRecord(payload) || payload.status !== "success" || payload.code !== 200) {
+    throw new Error("The tutor onboarding service returned an invalid response.");
+  }
+  return payload;
 }
 
 export async function saveTutorPersonalDetails(input: TutorPersonalDetailsInput) {
@@ -85,4 +151,58 @@ export async function saveTutorIdentification(input: TutorIdentificationInput) {
   if (!isRecord(payload) || payload.status !== "success" || payload.code !== 200) {
     throw new Error("The identification service returned an invalid response.");
   }
+}
+
+export async function getNigerianBanks() {
+  const payload = await authenticatedRequest("/api/tutor/set-up/compensation/nigeria/banks");
+  if (!Array.isArray(payload.data) || !payload.data.every((bank) => isRecord(bank) && typeof bank.code === "string" && typeof bank.name === "string")) {
+    throw new Error("The banks service returned invalid data.");
+  }
+  return payload.data as NigerianBank[];
+}
+
+export async function resolveNigerianBankAccount(accountNumber: string, bankCode: string) {
+  const params = new URLSearchParams({ account_number: accountNumber, bank_code: bankCode });
+  const payload = await authenticatedRequest(`/api/tutor/set-up/compensation/nigeria/resolve-account?${params}`);
+  if (!isRecord(payload.data) || typeof payload.data.account_name !== "string" || !payload.data.account_name.trim()) {
+    throw new Error("The account resolution service returned invalid data.");
+  }
+  return payload.data.account_name;
+}
+
+export async function saveTutorCompensation(input: TutorCompensationInput) {
+  const payload = await authenticatedRequest("/api/tutor/set-up/compensation", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  return typeof payload.message === "string" ? payload.message : "";
+}
+
+export async function getTutorOnboardingReview(signal?: AbortSignal) {
+  const payload = await authenticatedRequest("/api/tutor/set-up/review", { signal });
+  const data = payload.data;
+  if (!isRecord(data) || typeof data.is_complete !== "boolean" || !Array.isArray(data.missing_steps) ||
+      !data.missing_steps.every((step) => typeof step === "string") || !Array.isArray(data.documents) ||
+      typeof data.tutor_status !== "string") {
+    throw new Error("The tutor review service returned invalid data.");
+  }
+  return data as TutorOnboardingReview;
+}
+
+export async function submitTutorOnboardingConsent() {
+  const payload = await authenticatedRequest("/api/tutor/set-up/review/consent", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ consent: true }),
+  });
+  return typeof payload.message === "string" ? payload.message : "Tutor application submitted.";
+}
+
+export async function saveTutorLocation(input: Record<string, string | number>) {
+  await authenticatedRequest("/api/user/locations/update", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
 }

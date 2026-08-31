@@ -17,7 +17,6 @@ import {
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
-import { apiFetch } from "../../auth/apiClient";
 import { getAccessToken, useSessionUser } from "../../auth/authSession";
 import { OnboardingNavbar } from "../../signup/OnboardingNavbar";
 import { StepTwoAddressConfirm } from "../../signup/profile-setup/StepTwoAddressConfirm";
@@ -28,7 +27,19 @@ import {
   useTutorLocationSetup,
   type TutorLocationSummary,
 } from "./useTutorLocationSetup";
-import { saveTutorIdentification, saveTutorPersonalDetails, type TutorPersonalDetailsInput } from "./tutorOnboardingApi";
+import {
+  getNigerianBanks,
+  getTutorOnboardingReview,
+  resolveNigerianBankAccount,
+  saveTutorCompensation,
+  saveTutorIdentification,
+  saveTutorPersonalDetails,
+  submitTutorOnboardingConsent,
+  type NigerianBank,
+  type TutorCompensationInput,
+  type TutorOnboardingReview,
+  type TutorPersonalDetailsInput,
+} from "./tutorOnboardingApi";
 
 type Stage =
   "overview" | "personal" | "identity" | "compensation" | "location" | "review";
@@ -55,7 +66,6 @@ type CompensationForm = {
   accountNumber: string;
   sortCode: string;
 };
-type NigerianBank = { code: string; name: string; slug?: string };
 
 const stages = [
   { id: "personal", label: "Personal information", icon: UserRound },
@@ -208,6 +218,12 @@ export default function TutorOnboardingFlow() {
     useState(false);
   const [reviewConfirmed, setReviewConfirmed] = useState(false);
   const [submissionMessage, setSubmissionMessage] = useState("");
+  const [reviewData, setReviewData] = useState<TutorOnboardingReview | null>(null);
+  const [reviewLoading, setReviewLoading] = useState(true);
+  const [reviewError, setReviewError] = useState("");
+  const [reviewRefreshKey, setReviewRefreshKey] = useState(0);
+  const [consentSubmitting, setConsentSubmitting] = useState(false);
+  const [applicationSubmitted, setApplicationSubmitted] = useState(false);
   const [personalSubmitting, setPersonalSubmitting] = useState(false);
   const [personalApiError, setPersonalApiError] = useState("");
   const [submittedPersonalSignature, setSubmittedPersonalSignature] = useState("");
@@ -265,11 +281,6 @@ export default function TutorOnboardingFlow() {
     phoneCountry,
   );
   const phoneValid = parsedPhone?.isValid() ?? false;
-  const phoneDisplay =
-    parsePhoneNumberFromString(
-      personalForm.phoneNumber.trim(),
-      phoneCountry,
-    )?.formatInternational() ?? personalForm.phoneNumber;
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
   const personalComplete = Boolean(
     firstName.trim() &&
@@ -380,6 +391,25 @@ export default function TutorOnboardingFlow() {
     setReturnToReview(false);
   });
 
+  useEffect(() => {
+    if (stage !== "review") return;
+    const controller = new AbortController();
+    getTutorOnboardingReview(controller.signal)
+      .then((data) => {
+        setReviewData(data);
+        setReviewError("");
+      })
+      .catch((caught: unknown) => {
+        if (caught instanceof DOMException && caught.name === "AbortError") return;
+        setReviewData(null);
+        setReviewError(caught instanceof Error ? caught.message : "Tutor review could not be loaded.");
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setReviewLoading(false);
+      });
+    return () => controller.abort();
+  }, [reviewRefreshKey, stage]);
+
   const handleFiles = (selectedFiles?: FileList | null) => {
     setFileError("");
     setIdentityApiError("");
@@ -487,17 +517,11 @@ export default function TutorOnboardingFlow() {
     banksRequestInFlight.current = true;
     setBanksLoading(true);
     setBanksError("");
-    void apiFetch("/v1/tutor/set-up/compensation/nigeria/banks")
-      .then(async (response) => {
-        const result = (await response.json().catch(() => null)) as {
-          data?: NigerianBank[];
-          message?: string;
-        } | null;
-        if (!response.ok)
-          throw new Error(result?.message ?? "Could not load Nigerian banks.");
+    void getNigerianBanks()
+      .then((result) => {
         const uniqueBanks = Array.from(
           new Map(
-            (result?.data ?? []).map((bank) => [bank.code, bank]),
+            result.map((bank) => [bank.code, bank]),
           ).values(),
         );
         setBanks(uniqueBanks);
@@ -544,22 +568,10 @@ export default function TutorOnboardingFlow() {
     if (!compensation.bankCode || accountNumber.length !== 10) return;
     setAccountResolving(true);
     try {
-      const params = new URLSearchParams({
-        account_number: accountNumber,
-        bank_code: compensation.bankCode,
-      });
-      const response = await apiFetch(
-        `/v1/tutor/set-up/compensation/nigeria/resolve-account?${params}`,
-      );
-      const result = (await response.json().catch(() => null)) as {
-        data?: { account_name?: string };
-        message?: string;
-      } | null;
-      if (!response.ok || !result?.data?.account_name)
-        throw new Error(result?.message ?? "Could not verify this account.");
+      const accountName = await resolveNigerianBankAccount(accountNumber, compensation.bankCode);
       setCompensation((current) => ({
         ...current,
-        accountName: result.data?.account_name ?? "",
+        accountName,
       }));
       setVerifiedAccountSignature(`${compensation.bankCode}:${accountNumber}`);
     } catch (caught) {
@@ -583,7 +595,7 @@ export default function TutorOnboardingFlow() {
     }
     setCompensationSubmitting(true);
     try {
-      const payload =
+      const payload: TutorCompensationInput =
         personalForm.country === "GB"
           ? {
               account_number: compensation.accountNumber.trim(),
@@ -599,18 +611,7 @@ export default function TutorOnboardingFlow() {
               bank_name: compensation.bankName,
               country: "nigeria",
             };
-      const response = await apiFetch("/v1/tutor/set-up/compensation", {
-        body: JSON.stringify(payload),
-        headers: { "Content-Type": "application/json" },
-        method: "POST",
-      });
-      const result = (await response.json().catch(() => null)) as {
-        message?: string;
-      } | null;
-      if (!response.ok)
-        throw new Error(
-          result?.message ?? "Could not save compensation details.",
-        );
+      await saveTutorCompensation(payload);
       setSubmittedCompensationSignature(compensationSignature);
     } catch (caught) {
       setCompensationApiError(
@@ -627,10 +628,28 @@ export default function TutorOnboardingFlow() {
   };
   const editReview = (section: SetupStage) => {
     setReviewConfirmed(false);
+    setReviewData(null);
+    setReviewError("");
+    setReviewLoading(true);
     setReturnToReview(true);
     setStage(section);
     if (section === "location")
       location.setView(locationSummary ? "edit" : "prompt");
+  };
+  const submitReview = async () => {
+    if (!reviewConfirmed || !reviewData?.is_complete || consentSubmitting || applicationSubmitted) return;
+    setConsentSubmitting(true);
+    setSubmissionMessage("");
+    try {
+      const message = await submitTutorOnboardingConsent();
+      setSubmissionMessage(message);
+      setApplicationSubmitted(true);
+      setReviewConfirmed(false);
+    } catch (caught) {
+      setSubmissionMessage(caught instanceof Error ? caught.message : "Tutor application could not be submitted.");
+    } finally {
+      setConsentSubmitting(false);
+    }
   };
 
   const activeSetupStage =
@@ -680,29 +699,12 @@ export default function TutorOnboardingFlow() {
             </button>
           </div>
         ) : stage === "review" ? (
-          <TutorReviewStep
-            compensation={compensation}
-            confirmed={reviewConfirmed}
-            identity={{ shareCode, dbsNumber, idType, files: idFiles }}
-            location={locationSummary}
-            onConfirmedChange={(value) => {
-              setReviewConfirmed(value);
-              setSubmissionMessage("");
-            }}
-            onEdit={editReview}
-            personal={{
-              firstName,
-              lastName,
-              otherName: personalForm.otherName,
-              dateOfBirth: personalForm.dateOfBirth,
-              email,
-              phone: phoneDisplay,
-              country: personalForm.country,
-              occupation: personalForm.occupation,
-              qualification: personalForm.qualification,
-              experience: personalForm.experience,
-            }}
-          />
+          <div className="mx-auto w-full max-w-[40rem]">
+            {submissionMessage ? <p className={`mb-3 rounded-xl border px-4 py-3 text-sm font-medium ${applicationSubmitted ? "border-[#bde8d0] bg-[#effaf4] text-[#20784d]" : "border-[#f0d6b5] bg-[#fff9f1] text-[#8b5a20]"}`} role="status">{submissionMessage}</p> : null}
+            {reviewLoading ? <div className="py-16 text-center text-sm font-medium text-[#8a93a7]">Loading your saved application…</div> : null}
+            {!reviewLoading && reviewError ? <div className="flex flex-col items-center gap-3 py-16 text-center" role="alert"><p className="text-sm font-medium text-brand-danger">{reviewError}</p><button className="h-10 rounded-full bg-brand-primary px-5 text-sm font-semibold text-white" onClick={() => { setReviewLoading(true); setReviewError(""); setReviewRefreshKey((current) => current + 1); }} type="button">Try again</button></div> : null}
+            {!reviewLoading && reviewData ? <TutorReviewStep confirmed={reviewConfirmed} onConfirmedChange={(value) => { setReviewConfirmed(value); setSubmissionMessage(""); }} onEdit={editReview} review={reviewData} /> : null}
+          </div>
         ) : (
           <div className="mx-auto flex w-full max-w-[75rem] items-start justify-center gap-8 xl:gap-16">
             <StepList
@@ -1355,7 +1357,7 @@ export default function TutorOnboardingFlow() {
               {stage === "review" ? "Review" : `Step ${stageIndex + 1}/4`}
             </span>
             <div className="flex items-center gap-2">
-              {submissionMessage ? (
+              {submissionMessage && stage !== "review" ? (
                 <span className="hidden text-xs font-medium text-[#8b5a20] sm:inline">
                   {submissionMessage}
                 </span>
@@ -1453,15 +1455,11 @@ export default function TutorOnboardingFlow() {
               ) : (
                 <button
                   className="h-11 rounded-full bg-brand-primary px-6 text-sm font-semibold text-white disabled:bg-[#b8b6cf]"
-                  disabled={!reviewConfirmed}
-                  onClick={() =>
-                    setSubmissionMessage(
-                      "The tutor onboarding submission endpoint is not connected yet.",
-                    )
-                  }
+                  disabled={!reviewConfirmed || !reviewData?.is_complete || consentSubmitting || applicationSubmitted}
+                  onClick={() => void submitReview()}
                   type="button"
                 >
-                  Finish setup
+                  {applicationSubmitted ? "Application submitted" : consentSubmitting ? "Submitting..." : "Finish setup"}
                 </button>
               )}
             </div>

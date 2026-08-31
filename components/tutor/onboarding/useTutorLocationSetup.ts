@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import { apiFetch } from "../../auth/apiClient";
 import type { LocationAddressForm, LocationCoordinates } from "../../signup/profile-setup/StepTwoAddressConfirm";
+import { saveTutorLocation } from "./tutorOnboardingApi";
 
 export type TutorLocationView = "prompt" | "search" | "review" | "edit";
 export type TutorLocationSummary = {
@@ -264,9 +264,7 @@ export function useTutorLocationSetup(onConfirmed: (summary: TutorLocationSummar
         payload = { placeId: verifiedPlaceId, source: "search" };
         setPlaceId(verifiedPlaceId);
       }
-      const response = await apiFetch("/v1/user/locations/update", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-      const result = (await response.json().catch(() => null)) as { message?: string } | null;
-      if (!response.ok) throw new Error(result?.message ?? "Could not save your tutor location.");
+      await saveTutorLocation(payload);
       stopSearch();
       onConfirmed({ address, coordinates: confirmedCoordinates });
     } catch (caught) {

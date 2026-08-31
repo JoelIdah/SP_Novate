@@ -34,7 +34,7 @@ export async function proxyAuthenticatedRequest(
     const contentType = request.headers.get("content-type");
     const requestBody = request.method === "GET" || request.method === "HEAD"
       ? undefined
-      : await request.text();
+      : await request.arrayBuffer();
     const response = await fetch(backendUrl, {
       method: request.method,
       headers: {

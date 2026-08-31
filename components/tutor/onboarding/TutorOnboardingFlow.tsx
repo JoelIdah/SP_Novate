@@ -28,6 +28,7 @@ import {
   useTutorLocationSetup,
   type TutorLocationSummary,
 } from "./useTutorLocationSetup";
+import { saveTutorIdentification, saveTutorPersonalDetails, type TutorPersonalDetailsInput } from "./tutorOnboardingApi";
 
 type Stage =
   "overview" | "personal" | "identity" | "compensation" | "location" | "review";
@@ -78,12 +79,7 @@ const identificationTypeValues: Record<string, string> = {
   "Voter's card": "voters_card",
   "Driver's licence": "drivers_license",
 };
-const acceptedIdentityFileTypes = new Set([
-  "application/pdf",
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-]);
+const acceptedIdentityFileName = /\.(?:jpe?g|png|webp|pdf)$/i;
 
 function FieldLabel({
   children,
@@ -212,6 +208,9 @@ export default function TutorOnboardingFlow() {
     useState(false);
   const [reviewConfirmed, setReviewConfirmed] = useState(false);
   const [submissionMessage, setSubmissionMessage] = useState("");
+  const [personalSubmitting, setPersonalSubmitting] = useState(false);
+  const [personalApiError, setPersonalApiError] = useState("");
+  const [submittedPersonalSignature, setSubmittedPersonalSignature] = useState("");
   const [personalForm, setPersonalForm] = useState<PersonalForm>({
     firstName: null,
     lastName: null,
@@ -261,11 +260,11 @@ export default function TutorOnboardingFlow() {
   const firstName = personalForm.firstName ?? sessionUser?.firstName ?? "";
   const lastName = personalForm.lastName ?? sessionUser?.lastName ?? "";
   const email = personalForm.email ?? sessionUser?.email ?? "";
-  const phoneValid =
-    parsePhoneNumberFromString(
-      personalForm.phoneNumber.trim(),
-      phoneCountry,
-    )?.isValid() ?? false;
+  const parsedPhone = parsePhoneNumberFromString(
+    personalForm.phoneNumber.trim(),
+    phoneCountry,
+  );
+  const phoneValid = parsedPhone?.isValid() ?? false;
   const phoneDisplay =
     parsePhoneNumberFromString(
       personalForm.phoneNumber.trim(),
@@ -275,7 +274,6 @@ export default function TutorOnboardingFlow() {
   const personalComplete = Boolean(
     firstName.trim() &&
     lastName.trim() &&
-    personalForm.dateOfBirth &&
     emailValid &&
     phoneValid &&
     personalForm.country &&
@@ -283,6 +281,18 @@ export default function TutorOnboardingFlow() {
     personalForm.qualification.trim() &&
     personalForm.experience.trim().length >= 10,
   );
+  const personalPayload: TutorPersonalDetailsInput = {
+    bio: personalForm.experience.trim(),
+    country_code: `+${getCountryCallingCode(phoneCountry)}`,
+    email: email.trim(),
+    first_name: firstName.trim(),
+    last_name: lastName.trim(),
+    occupation: personalForm.occupation.trim(),
+    phone_number: parsedPhone?.nationalNumber ?? "",
+    qualifications: [personalForm.qualification.trim()],
+    ...(personalForm.otherName.trim() ? { other_names: personalForm.otherName.trim() } : {}),
+  };
+  const personalSignature = JSON.stringify(personalPayload);
   const identityComplete = Boolean(
     idType &&
     idFiles.length > 0 &&
@@ -330,7 +340,10 @@ export default function TutorOnboardingFlow() {
   const updatePersonal = <K extends keyof PersonalForm>(
     field: K,
     value: PersonalForm[K],
-  ) => setPersonalForm((current) => ({ ...current, [field]: value }));
+  ) => {
+    setPersonalApiError("");
+    setPersonalForm((current) => ({ ...current, [field]: value }));
+  };
   const updateCompensation = (field: keyof CompensationForm, value: string) => {
     setCompensationApiError("");
     setCompensation((current) => ({ ...current, [field]: value }));
@@ -373,7 +386,7 @@ export default function TutorOnboardingFlow() {
     if (!selectedFiles?.length) return;
     const incoming = Array.from(selectedFiles);
     const invalidFile = incoming.find(
-      (file) => !acceptedIdentityFileTypes.has(file.type),
+      (file) => !acceptedIdentityFileName.test(file.name),
     );
     if (invalidFile) {
       setFileError(
@@ -400,9 +413,25 @@ export default function TutorOnboardingFlow() {
     if (!getAccessToken()) router.push("/login");
     else setStage("personal");
   };
-  const continuePersonal = () => {
+  const continuePersonal = async () => {
     setValidationVisible(true);
+    setPersonalApiError("");
     if (!personalComplete) return;
+    if (submittedPersonalSignature === personalSignature) {
+      setValidationVisible(false);
+      goNext("personal", "identity");
+      return;
+    }
+    setPersonalSubmitting(true);
+    try {
+      await saveTutorPersonalDetails(personalPayload);
+      setSubmittedPersonalSignature(personalSignature);
+    } catch (caught) {
+      setPersonalApiError(caught instanceof Error ? caught.message : "Personal details could not be saved.");
+      return;
+    } finally {
+      setPersonalSubmitting(false);
+    }
     setValidationVisible(false);
     goNext("personal", "identity");
   };
@@ -426,36 +455,15 @@ export default function TutorOnboardingFlow() {
     }
     setIdentitySubmitting(true);
     try {
-      const formData = new FormData();
-      formData.append(
-        "country",
-        personalForm.country === "GB" ? "uk" : "nigeria",
-      );
-      formData.append(
-        "id_type",
-        identificationTypeValues[idType] ??
-          idType.toLowerCase().replace(/[^a-z0-9]+/g, "_"),
-      );
-      if (personalForm.country === "GB") {
-        formData.append("employer_share_code", shareCode.trim());
-        formData.append("dbs_certificate_number", dbsNumber.trim());
-      }
-      idFiles.forEach((file) => formData.append("documents", file));
-      const response = await apiFetch("/v1/tutor/set-up/identification", {
-        method: "POST",
-        body: formData,
+      await saveTutorIdentification({
+        country: personalForm.country === "GB" ? "uk" : "nigeria",
+        id_type: identificationTypeValues[idType] ?? idType.toLowerCase().replace(/[^a-z0-9]+/g, "_"),
+        documents: idFiles,
+        ...(personalForm.country === "GB" ? {
+          employer_share_code: shareCode.trim(),
+          dbs_certificate_number: dbsNumber.trim(),
+        } : {}),
       });
-      if (response.status === 413) {
-        setFileError(response.statusText || "Request Entity Too Large");
-        return;
-      }
-      const result = (await response.json().catch(() => null)) as {
-        message?: string;
-      } | null;
-      if (!response.ok)
-        throw new Error(
-          result?.message ?? "Could not submit identity verification.",
-        );
       setSubmittedIdentitySignature(identitySignature);
       advanceFromIdentity();
     } catch (caught) {
@@ -708,6 +716,7 @@ export default function TutorOnboardingFlow() {
                   <h1 className="text-xl font-bold text-[#252c3c]">
                     Personal information
                   </h1>
+                  {personalApiError ? <p className="mt-3 rounded-lg border border-[#f0d6b5] bg-[#fff9f1] px-3 py-2 text-sm font-medium text-[#8b5a20]" role="alert">{personalApiError}</p> : null}
                   <div className="mt-4 grid grid-cols-1 gap-x-4 gap-y-2.5 sm:grid-cols-2">
                     <label>
                       <FieldLabel>First name</FieldLabel>
@@ -752,11 +761,8 @@ export default function TutorOnboardingFlow() {
                       />
                     </label>
                     <label>
-                      <FieldLabel>Date of birth</FieldLabel>
+                      <FieldLabel optional>Date of birth</FieldLabel>
                       <input
-                        aria-invalid={
-                          validationVisible && !personalForm.dateOfBirth
-                        }
                         className={fieldClassName}
                         onChange={(e) =>
                           updatePersonal("dateOfBirth", e.target.value)
@@ -764,11 +770,6 @@ export default function TutorOnboardingFlow() {
                         type="date"
                         value={personalForm.dateOfBirth}
                       />
-                      <InlineFieldError
-                        show={validationVisible && !personalForm.dateOfBirth}
-                      >
-                        Select your date of birth.
-                      </InlineFieldError>
                     </label>
                     <label>
                       <FieldLabel>Email</FieldLabel>
@@ -796,7 +797,10 @@ export default function TutorOnboardingFlow() {
                           buttonClassName="!h-[2.65rem] !rounded-r-none !border-0 !bg-[#f7f8fc] !px-2.5 !text-xs !shadow-none focus:!ring-0"
                           className="w-[8rem] shrink-0"
                           onChange={(value) =>
-                            setPhoneCountry(value as CountryCode)
+                            {
+                              setPersonalApiError("");
+                              setPhoneCountry(value as CountryCode);
+                            }
                           }
                           options={phoneCountries.map((country) => ({
                             label: `${country.iso} ${country.callingCode} - ${country.country}`,
@@ -1376,11 +1380,12 @@ export default function TutorOnboardingFlow() {
               </button>
               {stage === "personal" ? (
                 <button
-                  className="h-11 rounded-full bg-brand-primary px-6 text-sm font-semibold text-white"
-                  onClick={continuePersonal}
+                  className="h-11 rounded-full bg-brand-primary px-6 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-[#b8b6cf]"
+                  disabled={personalSubmitting}
+                  onClick={() => void continuePersonal()}
                   type="button"
                 >
-                  Continue
+                  {personalSubmitting ? "Saving..." : "Continue"}
                 </button>
               ) : stage === "identity" ? (
                 <button

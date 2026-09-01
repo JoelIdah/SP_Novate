@@ -1,6 +1,6 @@
 "use client";
 
-import { waitForAuthenticationRedirect } from "../auth/authSession";
+import { isRecord, requestJson } from "../auth/request";
 
 export type StudentTransactionStats = {
   total_finders_fee: number;
@@ -35,17 +35,8 @@ function hasNumbers(value: Record<string, unknown>, keys: string[]) {
   return keys.every((key) => typeof value[key] === "number");
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
-}
-
 async function request(path: string, signal?: AbortSignal) {
-  const response = await fetch(path, { headers: { Accept: "application/json" }, cache: "no-store", signal });
-  const payload = (await response.json().catch(() => null)) as unknown;
-  if (response.status === 401) return waitForAuthenticationRedirect();
-  if (!response.ok) {
-    throw new Error(isRecord(payload) && typeof payload.message === "string" ? payload.message : "The request could not be completed.");
-  }
+  const payload = await requestJson(path, { signal });
   if (!isRecord(payload) || payload.status !== "success" || payload.code !== 200 || !("data" in payload)) {
     throw new Error("The transaction service returned an invalid response.");
   }

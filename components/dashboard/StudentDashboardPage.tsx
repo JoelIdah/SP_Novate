@@ -11,8 +11,8 @@ import {
   StudentDashboardMessagesSection,
   StudentDashboardResourcesSection,
 } from "./StudentDashboardSections";
-import { getStudentDashboardStats, type StudentDashboardStats } from "./studentDashboardApi";
-import { getBookings, type BookingListItem } from "../bookings/bookingApi";
+import { getStudentDashboardStats, type StudentDashboardStats } from "./studentDashboard";
+import { getBookings, type BookingListItem } from "../bookings/bookings";
 
 export default function StudentDashboardPage() {
   const [stats, setStats] = useState<StudentDashboardStats | null>(null);

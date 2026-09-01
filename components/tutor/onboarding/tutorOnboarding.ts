@@ -1,6 +1,6 @@
 "use client";
 
-import { waitForAuthenticationRedirect } from "../../auth/authSession";
+import { isRecord, requestJson } from "../../auth/request";
 
 export type TutorPersonalDetailsInput = {
   bio: string;
@@ -72,19 +72,8 @@ export type TutorOnboardingReview = {
   tutor_status: string;
 };
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
-}
-
-async function authenticatedRequest(path: string, init: RequestInit = {}) {
-  const headers = new Headers(init.headers);
-  headers.set("Accept", "application/json");
-  const response = await fetch(path, { ...init, headers, cache: "no-store" });
-  const payload = (await response.json().catch(() => null)) as unknown;
-  if (response.status === 401) return waitForAuthenticationRedirect();
-  if (!response.ok) {
-    throw new Error(isRecord(payload) && typeof payload.message === "string" ? payload.message : "The request could not be completed.");
-  }
+async function onboardingRequest(path: string, init: RequestInit = {}) {
+  const payload = await requestJson(path, init);
   if (!isRecord(payload) || payload.status !== "success" || payload.code !== 200) {
     throw new Error("The tutor onboarding service returned an invalid response.");
   }
@@ -92,24 +81,13 @@ async function authenticatedRequest(path: string, init: RequestInit = {}) {
 }
 
 export async function saveTutorPersonalDetails(input: TutorPersonalDetailsInput) {
-  const response = await fetch("/api/tutor/set-up/personal-details", {
+  const payload = await requestJson("/api/tutor/set-up/personal-details", {
     method: "POST",
     headers: {
-      Accept: "application/json",
       "Content-Type": "application/json",
     },
     body: JSON.stringify(input),
-    cache: "no-store",
   });
-  const payload = (await response.json().catch(() => null)) as unknown;
-  if (response.status === 401) return waitForAuthenticationRedirect();
-  if (!response.ok) {
-    throw new Error(
-      isRecord(payload) && typeof payload.message === "string"
-        ? payload.message
-        : "Personal details could not be saved.",
-    );
-  }
   if (!isRecord(payload) || payload.status !== "success" || payload.code !== 200) {
     throw new Error("The personal details service returned an invalid response.");
   }
@@ -123,28 +101,17 @@ export async function saveTutorIdentification(input: TutorIdentificationInput) {
   if (input.dbs_certificate_number) formData.append("dbs_certificate_number", input.dbs_certificate_number);
   input.documents.forEach((document) => formData.append("documents", document));
 
-  const response = await fetch("/api/tutor/set-up/identification", {
+  const payload = await requestJson("/api/tutor/set-up/identification", {
     method: "POST",
-    headers: { Accept: "application/json" },
     body: formData,
-    cache: "no-store",
   });
-  const payload = (await response.json().catch(() => null)) as unknown;
-  if (response.status === 401) return waitForAuthenticationRedirect();
-  if (!response.ok) {
-    throw new Error(
-      isRecord(payload) && typeof payload.message === "string"
-        ? payload.message
-        : "Identification could not be submitted.",
-    );
-  }
   if (!isRecord(payload) || payload.status !== "success" || payload.code !== 200) {
     throw new Error("The identification service returned an invalid response.");
   }
 }
 
 export async function getNigerianBanks() {
-  const payload = await authenticatedRequest("/api/tutor/set-up/compensation/nigeria/banks");
+  const payload = await onboardingRequest("/api/tutor/set-up/compensation/nigeria/banks");
   if (!Array.isArray(payload.data) || !payload.data.every((bank) => isRecord(bank) && typeof bank.code === "string" && typeof bank.name === "string")) {
     throw new Error("The banks service returned invalid data.");
   }
@@ -153,7 +120,7 @@ export async function getNigerianBanks() {
 
 export async function resolveNigerianBankAccount(accountNumber: string, bankCode: string) {
   const params = new URLSearchParams({ account_number: accountNumber, bank_code: bankCode });
-  const payload = await authenticatedRequest(`/api/tutor/set-up/compensation/nigeria/resolve-account?${params}`);
+  const payload = await onboardingRequest(`/api/tutor/set-up/compensation/nigeria/resolve-account?${params}`);
   if (!isRecord(payload.data) || typeof payload.data.account_name !== "string" || !payload.data.account_name.trim()) {
     throw new Error("The account resolution service returned invalid data.");
   }
@@ -161,7 +128,7 @@ export async function resolveNigerianBankAccount(accountNumber: string, bankCode
 }
 
 export async function saveTutorCompensation(input: TutorCompensationInput) {
-  const payload = await authenticatedRequest("/api/tutor/set-up/compensation", {
+  const payload = await onboardingRequest("/api/tutor/set-up/compensation", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
@@ -170,7 +137,7 @@ export async function saveTutorCompensation(input: TutorCompensationInput) {
 }
 
 export async function getTutorOnboardingReview(signal?: AbortSignal) {
-  const payload = await authenticatedRequest("/api/tutor/set-up/review", { signal });
+  const payload = await onboardingRequest("/api/tutor/set-up/review", { signal });
   const data = payload.data;
   if (!isRecord(data) || typeof data.is_complete !== "boolean" || !Array.isArray(data.missing_steps) ||
       !data.missing_steps.every((step) => typeof step === "string") || !Array.isArray(data.documents) ||
@@ -181,7 +148,7 @@ export async function getTutorOnboardingReview(signal?: AbortSignal) {
 }
 
 export async function submitTutorOnboardingConsent() {
-  const payload = await authenticatedRequest("/api/tutor/set-up/review/consent", {
+  const payload = await onboardingRequest("/api/tutor/set-up/review/consent", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ consent: true }),
@@ -190,7 +157,7 @@ export async function submitTutorOnboardingConsent() {
 }
 
 export async function saveTutorLocation(input: Record<string, string | number>) {
-  await authenticatedRequest("/api/user/locations/update", {
+  await onboardingRequest("/api/user/locations/update", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),

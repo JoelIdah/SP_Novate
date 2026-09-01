@@ -8,7 +8,7 @@ import { Check, CheckCircle2, ChevronLeft, HelpCircle, Hourglass, MapPin, Star, 
 import {
   cancelBooking, getBookingDetails, rateBooking,
   type BookingDetails, type BookingStatus, type RatingInput,
-} from "../../../../../components/bookings/bookingApi";
+} from "../../../../../components/bookings/bookings";
 import { Avatar } from "../../../../../components/ui/Avatar";
 import { SelectMenu } from "../../../../../components/ui/SelectMenu";
 

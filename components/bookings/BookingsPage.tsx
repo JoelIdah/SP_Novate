@@ -11,8 +11,9 @@ import { Avatar } from "../ui/Avatar";
 import { Card } from "../ui/Card";
 import ResponsiveSheet from "../ui/ResponsiveSheet";
 import { DataTableShell } from "../ui/DataTableShell";
+import { Notice } from "../ui/Notice";
 import { SelectMenu } from "../ui/SelectMenu";
-import { getBookings, type BookingListItem, type BookingStatus } from "./bookingApi";
+import { getBookings, type BookingListItem, type BookingStatus } from "./bookings";
 import {
   getCategories,
   getTutors,
@@ -20,8 +21,8 @@ import {
   isServiceUnavailableError,
   updateCurrentLocation,
   type StudentCategory,
-  type TutorApiItem,
-} from "./exploreApi";
+  type TutorSearchResult,
+} from "./tutorSearch";
 
 type TutorCard = {
   publicId: string;
@@ -49,7 +50,7 @@ function bookingStatusColor(status: BookingStatus) {
   return "bg-[#e7c754]";
 }
 
-function mapTutor(item: TutorApiItem): TutorCard {
+function mapTutor(item: TutorSearchResult): TutorCard {
   const name = item.name.trim();
   const nameParts = name.split(/\s+/).filter(Boolean);
   const titleParts = [item.occupation.trim(), item.qualifications.join(", ")].filter(Boolean);
@@ -364,7 +365,7 @@ export default function BookingsPage({ initialView = "explore", notice }: { init
 
         {view === "explore" ? (
           <div className="hidden rounded-2xl border border-[#e4e8f3] bg-[#f7f9fd] p-[1em] md:block">
-          {categoriesError ? <p className="mb-3 rounded-lg border border-[#f0d6b5] bg-[#fff9f1] px-3 py-2 text-xs font-medium text-[#8b5a20]" role="alert">{categoriesError}</p> : null}
+          {categoriesError ? <Notice className="mb-3 text-xs" role="alert">{categoriesError}</Notice> : null}
           <div className="grid gap-[0.7em] md:grid-cols-2 xl:grid-cols-4">
             <FilterSelect disabled={categoriesLoading || subjectOptions.length === 0} label="What do you want to learn" onSelect={selectSubject} options={subjectOptions} placeholder={categoriesLoading ? "Loading subjects..." : "Select subject"} value={subject} />
             <FilterSelect disabled={categoriesLoading || categoryOptions.length === 0} label="What is the field category?" onSelect={selectCategory} options={categoryOptions} placeholder={categoriesLoading ? "Loading categories..." : "Select category"} value={category} />
@@ -585,7 +586,7 @@ export default function BookingsPage({ initialView = "explore", notice }: { init
               <button className="text-[0.75em] font-semibold text-[#7c8498]" onClick={resetDraftFilters} type="button">Reset</button>
             </div>
             <div className="grid gap-3 overflow-y-auto pb-3">
-              {categoriesError ? <p className="rounded-lg border border-[#f0d6b5] bg-[#fff9f1] px-3 py-2 text-xs font-medium text-[#8b5a20]" role="alert">{categoriesError}</p> : null}
+              {categoriesError ? <Notice className="text-xs" role="alert">{categoriesError}</Notice> : null}
               <FilterSelect disabled={categoriesLoading || draftSubjectOptions.length === 0} label="What do you want to learn" onSelect={setDraftSubject} options={draftSubjectOptions} placeholder={categoriesLoading ? "Loading subjects..." : "Select subject"} value={draftSubject} />
               <FilterSelect disabled={categoriesLoading || categoryOptions.length === 0} label="What is the field category?" onSelect={selectDraftCategory} options={categoryOptions} placeholder={categoriesLoading ? "Loading categories..." : "Select category"} value={draftCategory} />
               <FilterSelect label="Available days" onSelect={setDraftDays} options={["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]} placeholder="Select a day" value={draftDays} />

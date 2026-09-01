@@ -17,7 +17,7 @@ import {
   type StudentTransaction,
   type StudentTransactionDetails,
   type StudentTransactionStats,
-} from "./studentTransactionsApi";
+} from "./studentTransactions";
 
 const PAGE_SIZE = 20;
 const statusOptions = [

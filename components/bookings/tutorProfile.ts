@@ -1,6 +1,6 @@
 "use client";
 
-import { waitForAuthenticationRedirect } from "../auth/authSession";
+import { isRecord, requestJson } from "../auth/request";
 
 export type TutorSubject = {
   availability: Array<{ day: string }>;
@@ -44,26 +44,6 @@ export type TutorResources = {
   link: TutorResource[];
   video: TutorResource[];
 };
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
-}
-
-function readMessage(value: unknown) {
-  return isRecord(value) && typeof value.message === "string" ? value.message : undefined;
-}
-
-async function getJson(path: string, signal?: AbortSignal): Promise<unknown> {
-  const response = await fetch(path, {
-    headers: { Accept: "application/json" },
-    cache: "no-store",
-    signal,
-  });
-  const payload = (await response.json().catch(() => null)) as unknown;
-  if (response.status === 401) return waitForAuthenticationRedirect();
-  if (!response.ok) throw new Error(readMessage(payload) ?? "The request could not be completed.");
-  return payload;
-}
 
 function readSuccessData(payload: unknown, service: string) {
   if (!isRecord(payload) || payload.status !== "success" || payload.code !== 200 || !("data" in payload)) {
@@ -136,13 +116,13 @@ function parseResources(payload: unknown): TutorResources {
 }
 
 export async function getTutorProfile(tutorId: string, signal?: AbortSignal) {
-  return parseProfile(await getJson(`/api/student/tutors/${encodeURIComponent(tutorId)}`, signal));
+  return parseProfile(await requestJson(`/api/student/tutors/${encodeURIComponent(tutorId)}`, { signal }));
 }
 
 export async function getTutorRatings(tutorId: string, signal?: AbortSignal) {
-  return parseRatings(await getJson(`/api/student/tutors/${encodeURIComponent(tutorId)}/ratings`, signal));
+  return parseRatings(await requestJson(`/api/student/tutors/${encodeURIComponent(tutorId)}/ratings`, { signal }));
 }
 
 export async function getTutorResources(tutorId: string, signal?: AbortSignal) {
-  return parseResources(await getJson(`/api/student/tutors/${encodeURIComponent(tutorId)}/resources`, signal));
+  return parseResources(await requestJson(`/api/student/tutors/${encodeURIComponent(tutorId)}/resources`, { signal }));
 }

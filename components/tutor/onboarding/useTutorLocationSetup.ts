@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import type { LocationAddressForm, LocationCoordinates } from "../../signup/profile-setup/StepTwoAddressConfirm";
-import { saveTutorLocation } from "./tutorOnboardingApi";
+import { saveTutorLocation } from "./tutorOnboarding";
 
 export type TutorLocationView = "prompt" | "search" | "review" | "edit";
 export type TutorLocationSummary = {

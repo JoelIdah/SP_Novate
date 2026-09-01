@@ -5,6 +5,7 @@ import { MapPin } from "lucide-react";
 import { useRef, useState } from "react";
 
 import { FieldLabel } from "./FieldLabel";
+import { Notice } from "../../ui/Notice";
 import { LocationTargetIcon } from "./icons";
 
 export type LocationAddressForm = { address: string; country: string; postcode: string; state: string; city: string };
@@ -135,7 +136,7 @@ export function StepTwoAddressConfirm({ addressForm, coordinates, mode, location
               {placePredictions.map((prediction) => <button className="block w-full px-4 py-3 text-left text-xs font-semibold text-[#4f5980] hover:bg-[#f5f7fb]" key={prediction.placeId} onClick={() => onSelectPlace(prediction.placeId)} type="button">{prediction.description}</button>)}
             </div>
           ) : null}
-          {locationError ? <p className="mt-3 rounded-lg border border-[#f0d6b5] bg-[#fff9f1] px-3 py-2 text-xs font-medium leading-relaxed text-[#8b5a20]" role="status">{locationError}</p> : null}
+          {locationError ? <Notice className="mt-3 text-xs">{locationError}</Notice> : null}
         </div>
       </section>
     );
@@ -151,7 +152,7 @@ export function StepTwoAddressConfirm({ addressForm, coordinates, mode, location
           <p className="mb-3 mt-1 text-sm font-semibold leading-relaxed text-[#35405a]">{addressForm.address}</p>
           <LocationMap address={addressForm.address} coordinates={coordinates} onLocationChange={onMapLocationChange} resolving={resolvingMapLocation} />
         </div>
-        {locationError ? <p className="mt-3 rounded-lg border border-[#f0d6b5] bg-[#fff9f1] px-3 py-2 text-xs font-medium leading-relaxed text-[#8b5a20]" role="alert">{locationError}</p> : null}
+        {locationError ? <Notice className="mt-3 text-xs" role="alert">{locationError}</Notice> : null}
       </section>
     );
   }
@@ -168,7 +169,7 @@ export function StepTwoAddressConfirm({ addressForm, coordinates, mode, location
         <label><FieldLabel required>State</FieldLabel><input className={fieldClassName} onChange={(event) => onAddressFieldChange("state", event.target.value)} placeholder="State" type="text" value={addressForm.state} /></label>
         <label><FieldLabel required>City</FieldLabel><input className={fieldClassName} onChange={(event) => onAddressFieldChange("city", event.target.value)} placeholder="City" type="text" value={addressForm.city} /></label>
       </div>
-      {locationError ? <p className="mt-3 rounded-lg border border-[#f0d6b5] bg-[#fff9f1] px-3 py-2 text-xs font-medium leading-relaxed text-[#8b5a20]" role="alert">{locationError}</p> : null}
+      {locationError ? <Notice className="mt-3 text-xs" role="alert">{locationError}</Notice> : null}
     </section>
   );
 }

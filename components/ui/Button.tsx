@@ -9,16 +9,16 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 };
 
 const variantClasses: Record<ButtonVariant, string> = {
-  primary: "border-brand-primary bg-brand-primary text-white hover:bg-[#1c175f]",
-  secondary: "border-ui-border bg-white text-ui-body hover:bg-[#f7f8fb]",
+  primary: "border-transparent bg-brand-primary text-white hover:bg-[#1c175f]",
+  secondary: "border-[#d8dde8] bg-white text-[#3f4759] hover:bg-[#f8f9fb]",
   ghost: "border-transparent bg-transparent text-ui-body hover:bg-brand-primary-soft",
-  danger: "border-brand-danger bg-brand-danger text-white hover:opacity-90",
+  danger: "border-transparent bg-brand-danger text-white hover:opacity-90",
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
   sm: "min-h-8 px-3 text-xs",
   md: "min-h-10 px-4 text-sm",
-  lg: "min-h-11 px-5 text-sm",
+  lg: "h-11 px-5 text-sm",
 };
 
 export function Button({ variant, size = "md", className = "", type = "button", ...props }: ButtonProps) {

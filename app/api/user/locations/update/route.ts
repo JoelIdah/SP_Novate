@@ -1,5 +1,5 @@
-import { forwardAuthenticatedRequest } from "@/lib/server/apiRequest";
+import { forwardWithSession } from "@/lib/server/backend";
 
 export async function POST(request: Request) {
-  return forwardAuthenticatedRequest(request, "/v1/user/locations/update");
+  return forwardWithSession(request, "/v1/user/locations/update");
 }

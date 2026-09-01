@@ -21,6 +21,7 @@ import { useSessionUser } from "../../auth/authSession";
 import { OnboardingNavbar } from "../../signup/OnboardingNavbar";
 import { StepTwoAddressConfirm } from "../../signup/profile-setup/StepTwoAddressConfirm";
 import { StepTwoLocationPrompt } from "../../signup/profile-setup/StepTwoLocationPrompt";
+import { Notice } from "../../ui/Notice";
 import { SelectMenu } from "../../ui/SelectMenu";
 import { TutorReviewStep } from "./TutorReviewStep";
 import {
@@ -39,7 +40,7 @@ import {
   type TutorCompensationInput,
   type TutorOnboardingReview,
   type TutorPersonalDetailsInput,
-} from "./tutorOnboardingApi";
+} from "./tutorOnboarding";
 
 type Stage =
   "overview" | "personal" | "identity" | "compensation" | "location" | "review";
@@ -225,7 +226,7 @@ export default function TutorOnboardingFlow() {
   const [consentSubmitting, setConsentSubmitting] = useState(false);
   const [applicationSubmitted, setApplicationSubmitted] = useState(false);
   const [personalSubmitting, setPersonalSubmitting] = useState(false);
-  const [personalApiError, setPersonalApiError] = useState("");
+  const [personalSaveError, setPersonalSaveError] = useState("");
   const [submittedPersonalSignature, setSubmittedPersonalSignature] = useState("");
   const [personalForm, setPersonalForm] = useState<PersonalForm>({
     firstName: null,
@@ -246,7 +247,7 @@ export default function TutorOnboardingFlow() {
   const [idFiles, setIdFiles] = useState<File[]>([]);
   const [fileError, setFileError] = useState("");
   const [identitySubmitting, setIdentitySubmitting] = useState(false);
-  const [identityApiError, setIdentityApiError] = useState("");
+  const [identitySaveError, setIdentitySaveError] = useState("");
   const [submittedIdentitySignature, setSubmittedIdentitySignature] =
     useState("");
   const [compensation, setCompensation] = useState<CompensationForm>({
@@ -267,7 +268,7 @@ export default function TutorOnboardingFlow() {
   const [accountResolveError, setAccountResolveError] = useState("");
   const [verifiedAccountSignature, setVerifiedAccountSignature] = useState("");
   const [compensationSubmitting, setCompensationSubmitting] = useState(false);
-  const [compensationApiError, setCompensationApiError] = useState("");
+  const [compensationSaveError, setCompensationSaveError] = useState("");
   const [submittedCompensationSignature, setSubmittedCompensationSignature] =
     useState("");
   const [locationSummary, setLocationSummary] =
@@ -352,11 +353,11 @@ export default function TutorOnboardingFlow() {
     field: K,
     value: PersonalForm[K],
   ) => {
-    setPersonalApiError("");
+    setPersonalSaveError("");
     setPersonalForm((current) => ({ ...current, [field]: value }));
   };
   const updateCompensation = (field: keyof CompensationForm, value: string) => {
-    setCompensationApiError("");
+    setCompensationSaveError("");
     setCompensation((current) => ({ ...current, [field]: value }));
   };
   const changeCountry = (country: OperatingCountry) => {
@@ -366,7 +367,7 @@ export default function TutorOnboardingFlow() {
       setIdType("");
       setIdFiles([]);
       setFileError("");
-      setIdentityApiError("");
+      setIdentitySaveError("");
       setSubmittedIdentitySignature("");
       setCompensation({
         bankCode: "",
@@ -379,7 +380,7 @@ export default function TutorOnboardingFlow() {
       });
       setVerifiedAccountSignature("");
       setAccountResolveError("");
-      setCompensationApiError("");
+      setCompensationSaveError("");
       setSubmittedCompensationSignature("");
     }
     updatePersonal("country", country);
@@ -412,7 +413,7 @@ export default function TutorOnboardingFlow() {
 
   const handleFiles = (selectedFiles?: FileList | null) => {
     setFileError("");
-    setIdentityApiError("");
+    setIdentitySaveError("");
     if (!selectedFiles?.length) return;
     const incoming = Array.from(selectedFiles);
     const invalidFile = incoming.find(
@@ -444,7 +445,7 @@ export default function TutorOnboardingFlow() {
   };
   const continuePersonal = async () => {
     setValidationVisible(true);
-    setPersonalApiError("");
+    setPersonalSaveError("");
     if (!personalComplete) return;
     if (submittedPersonalSignature === personalSignature) {
       setValidationVisible(false);
@@ -456,7 +457,7 @@ export default function TutorOnboardingFlow() {
       await saveTutorPersonalDetails(personalPayload);
       setSubmittedPersonalSignature(personalSignature);
     } catch (caught) {
-      setPersonalApiError(caught instanceof Error ? caught.message : "Personal details could not be saved.");
+      setPersonalSaveError(caught instanceof Error ? caught.message : "Personal details could not be saved.");
       return;
     } finally {
       setPersonalSubmitting(false);
@@ -476,7 +477,7 @@ export default function TutorOnboardingFlow() {
   };
   const continueIdentity = async () => {
     setIdentityValidationVisible(true);
-    setIdentityApiError("");
+    setIdentitySaveError("");
     if (!identityComplete) return;
     if (submittedIdentitySignature === identitySignature) {
       advanceFromIdentity();
@@ -496,7 +497,7 @@ export default function TutorOnboardingFlow() {
       setSubmittedIdentitySignature(identitySignature);
       advanceFromIdentity();
     } catch (caught) {
-      setIdentityApiError(
+      setIdentitySaveError(
         caught instanceof Error
           ? caught.message
           : "Could not submit identity verification.",
@@ -548,7 +549,7 @@ export default function TutorOnboardingFlow() {
     }));
     setVerifiedAccountSignature("");
     setAccountResolveError("");
-    setCompensationApiError("");
+    setCompensationSaveError("");
   };
   const changeNigerianAccountNumber = (value: string) => {
     setCompensation((current) => ({
@@ -558,7 +559,7 @@ export default function TutorOnboardingFlow() {
     }));
     setVerifiedAccountSignature("");
     setAccountResolveError("");
-    setCompensationApiError("");
+    setCompensationSaveError("");
   };
   const resolveNigerianAccount = async () => {
     const accountNumber = compensation.accountNumber.replace(/\D/g, "");
@@ -585,7 +586,7 @@ export default function TutorOnboardingFlow() {
   };
   const continueCompensation = async () => {
     setCompensationValidationVisible(true);
-    setCompensationApiError("");
+    setCompensationSaveError("");
     if (!compensationComplete) return;
     if (submittedCompensationSignature === compensationSignature) {
       setCompensationValidationVisible(false);
@@ -613,7 +614,7 @@ export default function TutorOnboardingFlow() {
       await saveTutorCompensation(payload);
       setSubmittedCompensationSignature(compensationSignature);
     } catch (caught) {
-      setCompensationApiError(
+      setCompensationSaveError(
         caught instanceof Error
           ? caught.message
           : "Could not save compensation details.",
@@ -717,7 +718,7 @@ export default function TutorOnboardingFlow() {
                   <h1 className="text-xl font-bold text-[#252c3c]">
                     Personal information
                   </h1>
-                  {personalApiError ? <p className="mt-3 rounded-lg border border-[#f0d6b5] bg-[#fff9f1] px-3 py-2 text-sm font-medium text-[#8b5a20]" role="alert">{personalApiError}</p> : null}
+                  {personalSaveError ? <Notice className="mt-3 text-sm" role="alert">{personalSaveError}</Notice> : null}
                   <div className="mt-4 grid grid-cols-1 gap-x-4 gap-y-2.5 sm:grid-cols-2">
                     <label>
                       <FieldLabel>First name</FieldLabel>
@@ -799,7 +800,7 @@ export default function TutorOnboardingFlow() {
                           className="w-[8rem] shrink-0"
                           onChange={(value) =>
                             {
-                              setPersonalApiError("");
+                              setPersonalSaveError("");
                               setPhoneCountry(value as CountryCode);
                             }
                           }
@@ -1060,7 +1061,7 @@ export default function TutorOnboardingFlow() {
                                     (candidate) => candidate !== file,
                                   ),
                                 );
-                                setIdentityApiError("");
+                                setIdentitySaveError("");
                               }}
                               type="button"
                             >
@@ -1071,13 +1072,10 @@ export default function TutorOnboardingFlow() {
                       </div>
                     ) : null}
                   </div>
-                  {identityApiError ? (
-                    <p
-                      className="mt-3 rounded-lg border border-[#f0d6b5] bg-[#fff9f1] px-3 py-2 text-sm font-medium text-[#8b5a20]"
-                      role="alert"
-                    >
-                      {identityApiError}
-                    </p>
+                  {identitySaveError ? (
+                    <Notice className="mt-3 text-sm" role="alert">
+                      {identitySaveError}
+                    </Notice>
                   ) : null}
                 </>
               ) : stage === "compensation" ? (
@@ -1307,13 +1305,10 @@ export default function TutorOnboardingFlow() {
                       </>
                     )}
                   </div>
-                  {compensationApiError ? (
-                    <p
-                      className="mt-3 rounded-lg border border-[#f0d6b5] bg-[#fff9f1] px-3 py-2 text-sm font-medium text-[#8b5a20]"
-                      role="alert"
-                    >
-                      {compensationApiError}
-                    </p>
+                  {compensationSaveError ? (
+                    <Notice className="mt-3 text-sm" role="alert">
+                      {compensationSaveError}
+                    </Notice>
                   ) : null}
                 </>
               ) : (

@@ -1,6 +1,6 @@
 "use client";
 
-import { waitForAuthenticationRedirect } from "../auth/authSession";
+import { isRecord, requestJson } from "../auth/request";
 
 export type StudentDashboardStats = {
   ongoing: number;
@@ -9,21 +9,8 @@ export type StudentDashboardStats = {
   total_booked_sessions: number;
 };
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
-}
-
 export async function getStudentDashboardStats(signal?: AbortSignal) {
-  const response = await fetch("/api/student/dashboard", {
-    headers: { Accept: "application/json" },
-    cache: "no-store",
-    signal,
-  });
-  const payload = (await response.json().catch(() => null)) as unknown;
-  if (response.status === 401) return waitForAuthenticationRedirect();
-  if (!response.ok) {
-    throw new Error(isRecord(payload) && typeof payload.message === "string" ? payload.message : "The dashboard could not be loaded.");
-  }
+  const payload = await requestJson("/api/student/dashboard", { signal });
   const data = isRecord(payload) ? payload.data : null;
   if (!isRecord(payload) || payload.status !== "success" || payload.code !== 200 || !isRecord(data) ||
       typeof data.ongoing !== "number" || typeof data.pending !== "number" ||

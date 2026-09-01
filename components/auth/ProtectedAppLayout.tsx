@@ -3,6 +3,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 
 import { redirectToLoginForAuthentication, setAuthSession } from "./authSession";
+import { isAuthenticatedProfile } from "./profile";
 
 export function ProtectedAppLayout({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
@@ -27,7 +28,7 @@ export function ProtectedAppLayout({ children }: { children: ReactNode }) {
         const payload = await response.json().catch(() => null) as {
           data?: Parameters<typeof setAuthSession>[0];
         } | null;
-        if (!payload?.data || typeof payload.data !== "object") {
+        if (!isAuthenticatedProfile(payload?.data)) {
           setStatus("error");
           return;
         }

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import {
   clearAuthCookie,
-  getApiBaseUrl,
+  getBackendUrl,
   isSameOriginMutation,
   readAuthToken,
 } from "./authSession";
@@ -21,14 +21,14 @@ function configurationError() {
   );
 }
 
-export async function forwardAuthRequest(request: Request, backendPath: string) {
+export async function forwardPublicAuth(request: Request, backendPath: string) {
   if (!isSameOriginMutation(request)) return originError();
 
-  const apiBaseUrl = getApiBaseUrl();
-  if (!apiBaseUrl) return configurationError();
+  const backendUrl = getBackendUrl();
+  if (!backendUrl) return configurationError();
 
   try {
-    const response = await fetch(`${apiBaseUrl}${backendPath}`, {
+    const response = await fetch(`${backendUrl}${backendPath}`, {
       method: request.method,
       headers: { Accept: "application/json", "Content-Type": "application/json" },
       body: await request.text(),
@@ -49,7 +49,7 @@ export async function forwardAuthRequest(request: Request, backendPath: string) 
   }
 }
 
-export async function forwardAuthenticatedRequest(
+export async function forwardWithSession(
   request: Request,
   backendPath: string,
 ) {
@@ -63,12 +63,12 @@ export async function forwardAuthenticatedRequest(
     );
   }
 
-  const apiBaseUrl = getApiBaseUrl();
-  if (!apiBaseUrl) return configurationError();
+  const backendUrl = getBackendUrl();
+  if (!backendUrl) return configurationError();
 
   try {
     const contentType = request.headers.get("content-type");
-    const response = await fetch(`${apiBaseUrl}${backendPath}${new URL(request.url).search}`, {
+    const response = await fetch(`${backendUrl}${backendPath}${new URL(request.url).search}`, {
       method: request.method,
       headers: {
         Accept: "application/json",

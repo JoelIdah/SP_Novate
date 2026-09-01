@@ -1,4 +1,5 @@
 import { OnboardingNavbar } from "../OnboardingNavbar";
+import { Button } from "../../ui/Button";
 import { getStepIconKindFromLabel, StepItemIcon } from "./StepItemIcon";
 
 type OnboardingChecklistStepProps = {
@@ -39,11 +40,11 @@ export function OnboardingChecklistStep({
           </div>
 
           <div className="mx-auto mt-7 grid w-full max-w-[25rem] grid-cols-[auto_1fr] gap-2 sm:flex sm:justify-center">
-            <button className="h-11 rounded-full border border-[#d8dde8] bg-white px-5 text-sm font-semibold text-[#3f4759] hover:bg-[#f8f9fb]" onClick={onCancel} type="button">Back</button>
-            <button className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-brand-primary px-5 text-sm font-semibold text-white hover:bg-[#1c175f]" onClick={onContinue} type="button">
+            <Button onClick={onCancel} size="lg" variant="secondary">Back</Button>
+            <Button onClick={onContinue} size="lg" variant="primary">
               Let&apos;s get started
               <span aria-hidden>→</span>
-            </button>
+            </Button>
           </div>
         </div>
       </section>

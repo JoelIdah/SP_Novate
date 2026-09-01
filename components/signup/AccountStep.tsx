@@ -18,9 +18,8 @@ import { startFacebookAuth } from "./social/facebook";
 import { startGoogleAuth } from "./social/google";
 import { SocialAuthButtons } from "./social/SocialAuthButtons";
 
-import { socialAuthApi } from "./social/socialAuthApi";
+import { signInWithProvider } from "./social/signInWithProvider";
 import type { SocialProvider } from "./social/types";
-import { DIRECT_ONBOARDING_ENABLED } from "../../config/featureFlags";
 import { saveProfileSetupUser } from "./profileSetupSession";
 import {
   PRIVACY_POLICY_HREF,
@@ -30,7 +29,7 @@ import { setAuthSession } from "../auth/authSession";
 import {
   fetchAuthenticatedProfile,
   type AuthenticatedProfile,
-} from "../auth/profileApi";
+} from "../auth/profile";
 import { getSsoReturnPath } from "../auth/ssoReturn";
 
 export function AccountStep({
@@ -63,7 +62,6 @@ export function AccountStep({
   const emailInputRef = useRef<HTMLInputElement | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const isDirectOnboardingDisabled = !DIRECT_ONBOARDING_ENABLED;
 
   const focusEmail = () => {
     emailInputRef.current?.focus();
@@ -136,7 +134,7 @@ export function AccountStep({
     setSuccessMessage("");
 
     try {
-      const result = await socialAuthApi({ provider, token: cleanToken });
+      const result = await signInWithProvider({ provider, token: cleanToken });
 
       if (result.kind === "error") {
         setSocialError(result.message);
@@ -163,10 +161,6 @@ export function AccountStep({
       }
 
       setAuthSession(profile);
-      if (isDirectOnboardingDisabled) {
-        router.push("/coming-soon");
-        return;
-      }
       router.push("/students/dashboard");
     } catch (error) {
       setSocialError(
@@ -341,7 +335,6 @@ export function AccountStep({
     <AuthForm className="signup-auth-form" onSubmit={handleSubmit}>
       <SocialAuthButtons
         activeSocialProvider={activeSocialProvider}
-        enableApple={false}
         onFacebookClick={handleFacebookClick}
         onGoogleClick={handleGoogleClick}
       />

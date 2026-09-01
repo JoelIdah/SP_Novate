@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import {
-  getApiBaseUrl,
+  getBackendUrl,
   isSameOriginMutation,
   setAuthCookie,
 } from "@/lib/server/authSession";
@@ -26,8 +26,8 @@ export async function POST(request: Request) {
     );
   }
 
-  const apiBaseUrl = getApiBaseUrl();
-  if (!apiBaseUrl) {
+  const backendUrl = getBackendUrl();
+  if (!backendUrl) {
     return NextResponse.json(
       { status: "error", code: 500, message: "Authentication is not configured." },
       { status: 500 },
@@ -35,7 +35,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const backendResponse = await fetch(`${apiBaseUrl}/v1/auth/verify-otp`, {
+    const backendResponse = await fetch(`${backendUrl}/v1/auth/verify-otp`, {
       method: "POST",
       headers: { Accept: "application/json", "Content-Type": "application/json" },
       body: JSON.stringify({ email: body.email, token: body.token }),

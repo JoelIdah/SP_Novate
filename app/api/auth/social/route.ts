@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import {
-  getApiBaseUrl,
+  getBackendUrl,
   isSameOriginMutation,
   setAuthCookie,
 } from "@/lib/server/authSession";
@@ -14,8 +14,8 @@ export async function POST(request: Request) {
     );
   }
 
-  const apiBaseUrl = getApiBaseUrl();
-  if (!apiBaseUrl) {
+  const backendUrl = getBackendUrl();
+  if (!backendUrl) {
     return NextResponse.json(
       { status: "error", code: 500, message: "Authentication is not configured." },
       { status: 500 },
@@ -24,7 +24,7 @@ export async function POST(request: Request) {
 
   const body = await request.text();
   try {
-    const backendResponse = await fetch(`${apiBaseUrl}/v1/auth/social`, {
+    const backendResponse = await fetch(`${backendUrl}/v1/auth/social`, {
       method: "POST",
       headers: { Accept: "application/json", "Content-Type": "application/json" },
       body,
@@ -43,10 +43,17 @@ export async function POST(request: Request) {
 
     const token = payload?.data?.token?.trim();
     if (!token) {
-      return NextResponse.json(payload ?? {}, { status: backendResponse.status });
+      return NextResponse.json(
+        {
+          status: "error",
+          code: 502,
+          message: "The social authentication service returned an invalid response.",
+        },
+        { status: 502 },
+      );
     }
 
-    const profileResponse = await fetch(`${apiBaseUrl}/v1/profile`, {
+    const profileResponse = await fetch(`${backendUrl}/v1/profile`, {
       headers: { Accept: "application/json", Authorization: `Bearer ${token}` },
       cache: "no-store",
     });

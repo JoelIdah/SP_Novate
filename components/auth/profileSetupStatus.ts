@@ -1,4 +1,4 @@
-// Temporary staging API compatibility switch.
+// Temporary staging backend compatibility switch.
 // Set this to false as soon as the backend returns
 // profile_setup_required with its documented meaning.
 const BACKEND_RETURNS_INVERTED_PROFILE_SETUP_REQUIRED = true;

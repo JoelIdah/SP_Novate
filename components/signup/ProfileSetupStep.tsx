@@ -6,7 +6,7 @@ import {
   setAuthSession,
   waitForAuthenticationRedirect,
 } from "../auth/authSession";
-import { fetchAuthenticatedProfile } from "../auth/profileApi";
+import { fetchAuthenticatedProfile } from "../auth/profile";
 import { OnboardingNavbar } from "./OnboardingNavbar";
 import {
   markProfileDetailsSubmitted,
@@ -20,6 +20,7 @@ import {
 } from "./profile-setup/StepTwoAddressConfirm";
 import { StepOneProfileForm } from "./profile-setup/StepOneProfileForm";
 import { StepTwoLocationPrompt } from "./profile-setup/StepTwoLocationPrompt";
+import { Button } from "../ui/Button";
 import type { SetupMode, SetupStepId } from "./types";
 import {
   initialProfileForm,
@@ -131,7 +132,7 @@ export function ProfileSetupStep({
   const [profileValidationVisible, setProfileValidationVisible] =
     useState(false);
   const [profileSubmitting, setProfileSubmitting] = useState(false);
-  const [profileApiError, setProfileApiError] = useState("");
+  const [profileError, setProfileSaveError] = useState("");
   const [addressForm, setAddressForm] =
     useState<LocationAddressForm>(emptyAddressForm);
   const [mapCoordinates, setMapCoordinates] =
@@ -179,7 +180,7 @@ export function ProfileSetupStep({
   }, []);
 
   const updateProfileField = (field: keyof ProfileFormState, value: string) => {
-    setProfileApiError("");
+    setProfileSaveError("");
     setProfileForm((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -387,7 +388,7 @@ export function ProfileSetupStep({
 
   const handleContinue = async () => {
     setProfileValidationVisible(true);
-    setProfileApiError("");
+    setProfileSaveError("");
     if (!profileValid) {
       window.requestAnimationFrame(() => {
         document.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
@@ -424,7 +425,7 @@ export function ProfileSetupStep({
       setLocationView("prompt");
       setProfileValidationVisible(false);
     } catch (error) {
-      setProfileApiError(
+      setProfileSaveError(
         error instanceof Error
           ? error.message
           : "Could not complete profile setup.",
@@ -721,59 +722,61 @@ export function ProfileSetupStep({
 
             {displayedStep === "personal" ? (
               <div className="flex w-full flex-col gap-2 sm:w-auto sm:items-end">
-                {profileApiError ? (
+                {profileError ? (
                   <p
                     className="max-w-md text-sm font-medium text-brand-danger"
                     role="alert"
                   >
-                    {profileApiError}
+                    {profileError}
                   </p>
                 ) : null}
                 <div className="grid grid-cols-2 gap-2 sm:flex sm:shrink-0 sm:justify-end">
-                  <button
-                    className="h-11 rounded-full border border-[#d8dde8] bg-white px-5 text-sm font-semibold text-[#3f4759] hover:bg-[#f8f9fb]"
+                  <Button
                     disabled={profileSubmitting}
                     onClick={onBack}
-                    type="button"
+                    size="lg"
+                    variant="secondary"
                   >
                     Cancel
-                  </button>
-                  <button
-                    className="h-11 rounded-full bg-brand-primary px-6 text-sm font-semibold text-white hover:bg-[#1c175f] disabled:cursor-not-allowed disabled:bg-[#b8b6cf]"
+                  </Button>
+                  <Button
+                    className="px-6 disabled:bg-[#b8b6cf] disabled:opacity-100"
                     disabled={profileSubmitting}
                     onClick={() => void handleContinue()}
-                    type="button"
+                    size="lg"
+                    variant="primary"
                   >
                     {profileSubmitting ? "Saving..." : "Continue"}
-                  </button>
+                  </Button>
                 </div>
               </div>
             ) : locationView === "prompt" ? (
               <div className="grid grid-cols-2 gap-2 sm:flex sm:shrink-0 sm:justify-end">
-                <button
-                  className="h-11 rounded-full border border-[#d8dde8] bg-white px-5 text-sm font-semibold text-[#3f4759] hover:bg-[#f8f9fb]"
+                <Button
                   onClick={handleSkipLocation}
-                  type="button"
+                  size="lg"
+                  variant="secondary"
                 >
                   Skip
-                </button>
-                <button
-                  className="h-11 rounded-full bg-brand-primary px-6 text-sm font-semibold text-white disabled:bg-[#b8b6cf]"
+                </Button>
+                <Button
+                  className="px-6 disabled:bg-[#b8b6cf] disabled:opacity-100"
                   disabled
-                  type="button"
+                  size="lg"
+                  variant="primary"
                 >
                   Finish setup
-                </button>
+                </Button>
               </div>
             ) : locationView === "search" ? (
               <div className="flex shrink-0 justify-end">
-                <button
-                  className="h-11 rounded-full border border-[#d8dde8] bg-white px-5 text-sm font-semibold text-[#3f4759] hover:bg-[#f8f9fb]"
+                <Button
                   onClick={handleSkipLocation}
-                  type="button"
+                  size="lg"
+                  variant="secondary"
                 >
                   Skip
-                </button>
+                </Button>
               </div>
             ) : (
               <div className="grid grid-cols-2 gap-2 sm:flex sm:shrink-0 sm:justify-end">

@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 
 import ResponsiveSheet from "../ui/ResponsiveSheet";
-import { apiFetch } from "../auth/apiClient";
+import { requestJson } from "../auth/request";
 import { DashboardShell } from "../layout/DashboardShell";
 import { DataToolbar } from "../ui/DataToolbar";
 import { DataTableShell } from "../ui/DataTableShell";
@@ -69,7 +69,7 @@ type ResourceRow = {
   linkUrl: string;
 };
 
-type ResourceApiRow = {
+type ResourceRecord = {
   public_id?: string;
   created_at?: string;
   date?: string;
@@ -89,7 +89,7 @@ type ResourceApiRow = {
 type ResourcesResponse = {
   code?: number;
   data?: {
-    data?: ResourceApiRow[];
+    data?: ResourceRecord[];
     page?: number;
     page_size?: number;
     total?: number;
@@ -197,14 +197,9 @@ export default function TutorResourcesPage() {
     const controller = new AbortController();
     const loadDepartments = async () => {
       try {
-        const response = await apiFetch("/v1/categories", {
+        const result = await requestJson("/api/categories", {
           signal: controller.signal,
-        });
-        const result = (await response.json()) as CategoriesResponse;
-        if (!response.ok)
-          throw new Error(
-            result.message ?? "Could not load departments and subjects.",
-          );
+        }) as CategoriesResponse;
         setCategories(result.data ?? []);
       } catch (error) {
         if (!(error instanceof DOMException && error.name === "AbortError")) {
@@ -247,14 +242,11 @@ export default function TutorResourcesPage() {
       try {
         const listPath =
           activeTab === "archive"
-            ? "/v1/tutor/resources/archived"
-            : "/v1/tutor/resources";
-        const response = await apiFetch(`${listPath}?${params.toString()}`, {
+            ? "/api/tutor/resources/archived"
+            : "/api/tutor/resources";
+        const result = await requestJson(`${listPath}?${params.toString()}`, {
           signal,
-        });
-        const result = (await response.json()) as ResourcesResponse;
-        if (!response.ok)
-          throw new Error(result.message ?? "Could not load your resources.");
+        }) as ResourcesResponse;
         const payload = result.data;
         const nextResources = (payload?.data ?? []).map((resource) => ({
           publicId: resource.public_id ?? "",
@@ -929,8 +921,8 @@ function ResourceActionsSheet({
     setSubmitting(true);
     setError("");
     try {
-      const response = await apiFetch(
-        `/v1/tutor/resources/${encodeURIComponent(resource.publicId)}`,
+      await requestJson(
+        `/api/tutor/resources/${encodeURIComponent(resource.publicId)}`,
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -943,11 +935,6 @@ function ResourceActionsSheet({
           }),
         },
       );
-      const result = (await response.json().catch(() => null)) as {
-        message?: string;
-      } | null;
-      if (!response.ok)
-        throw new Error(result?.message ?? "Could not update the resource.");
       onChanged();
     } catch (updateError) {
       setError(
@@ -965,19 +952,14 @@ function ResourceActionsSheet({
     setSubmitting(true);
     setError("");
     try {
-      const response = await apiFetch(
-        `/v1/tutor/resources/${encodeURIComponent(resource.publicId)}/archive`,
+      await requestJson(
+        `/api/tutor/resources/${encodeURIComponent(resource.publicId)}/archive`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({}),
         },
       );
-      const result = (await response.json().catch(() => null)) as {
-        message?: string;
-      } | null;
-      if (!response.ok)
-        throw new Error(result?.message ?? "Could not archive the resource.");
       onChanged();
     } catch (archiveError) {
       setError(
@@ -1350,19 +1332,10 @@ function CreateResourceSheet({
     }
 
     try {
-      const response = await apiFetch("/v1/tutor/resources", {
+      await requestJson("/api/tutor/resources", {
         method: "POST",
         body: payload,
       });
-      const responseData = (await response.json().catch(() => null)) as {
-        message?: string;
-      } | null;
-
-      if (response.status !== 201) {
-        throw new Error(
-          responseData?.message ?? "Could not create the resource.",
-        );
-      }
 
       resetForm();
       onCreate(status);

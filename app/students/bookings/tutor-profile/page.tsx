@@ -7,11 +7,11 @@ import {
   Clock3, FileText, HelpCircle, Link2, MapPin, PlayCircle, Star,
 } from "lucide-react";
 
-import { createBooking, estimateBooking, type BookingEstimate, type BookingInput, type PaymentOption } from "../../../../components/bookings/bookingApi";
+import { createBooking, estimateBooking, type BookingEstimate, type BookingInput, type PaymentOption } from "../../../../components/bookings/bookings";
 import {
   getTutorProfile, getTutorRatings, getTutorResources,
   type TutorProfile, type TutorRating, type TutorResource, type TutorResources,
-} from "../../../../components/bookings/tutorProfileApi";
+} from "../../../../components/bookings/tutorProfile";
 import { Avatar } from "../../../../components/ui/Avatar";
 import { Card } from "../../../../components/ui/Card";
 import ResponsiveSheet from "../../../../components/ui/ResponsiveSheet";

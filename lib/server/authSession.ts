@@ -55,7 +55,7 @@ export function clearAuthCookie(response: NextResponse) {
   });
 }
 
-export function getApiBaseUrl(): string {
+export function getBackendUrl(): string {
   return (process.env.API_BASE_URL?.trim() ?? "").replace(/\/$/, "");
 }
 

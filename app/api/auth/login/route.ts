@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import {
-  getApiBaseUrl,
+  getBackendUrl,
   isSameOriginMutation,
   setAuthCookie,
 } from "@/lib/server/authSession";
@@ -28,8 +28,8 @@ export async function POST(request: Request) {
     );
   }
 
-  const apiBaseUrl = getApiBaseUrl();
-  if (!apiBaseUrl) {
+  const backendUrl = getBackendUrl();
+  if (!backendUrl) {
     return NextResponse.json(
       { status: "error", code: 500, message: "Authentication is not configured." },
       { status: 500 },
@@ -45,7 +45,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const loginResponse = await fetch(`${apiBaseUrl}/v1/auth/login`, {
+    const loginResponse = await fetch(`${backendUrl}/v1/auth/login`, {
       method: "POST",
       headers: { Accept: "application/json", "Content-Type": "application/json" },
       body: JSON.stringify(body),
@@ -65,7 +65,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const profileResponse = await fetch(`${apiBaseUrl}/v1/profile`, {
+    const profileResponse = await fetch(`${backendUrl}/v1/profile`, {
       headers: { Accept: "application/json", Authorization: `Bearer ${token}` },
       cache: "no-store",
     });

@@ -2,8 +2,8 @@ import { BookOpenCheck, MessageCircleMore, ReceiptText } from "lucide-react";
 import Link from "next/link";
 
 import { DashboardActionCard, DashboardResourceCard, DashboardSectionHeader } from "./DashboardPatterns";
-import type { StudentDashboardStats } from "./studentDashboardApi";
-import type { BookingListItem, BookingStatus } from "../bookings/bookingApi";
+import type { StudentDashboardStats } from "./studentDashboard";
+import type { BookingListItem, BookingStatus } from "../bookings/bookings";
 
 function DashboardEmptyState({ children }: { children: string }) {
   return <div className="flex min-h-48 items-center justify-center px-5 py-8 text-center text-sm font-medium text-[#8a93a7]">{children}</div>;

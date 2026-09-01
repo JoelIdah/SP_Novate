@@ -23,7 +23,7 @@ type SocialAuthResponseBody = {
   };
 };
 
-export async function socialAuthApi({ provider, token }: SocialAuthPayload): Promise<SocialAuthResult> {
+export async function signInWithProvider({ provider, token }: SocialAuthPayload): Promise<SocialAuthResult> {
   let response: Response;
 
   try {

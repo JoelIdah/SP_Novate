@@ -1,6 +1,6 @@
 "use client";
 
-import { waitForAuthenticationRedirect } from "../auth/authSession";
+import { isRecord, requestJson } from "../auth/request";
 
 export type PaymentOption = "full" | "per_session";
 export type BookingStatus = "pending" | "awaiting_approval" | "ongoing" | "completed" | "cancelled";
@@ -98,23 +98,6 @@ export type RatingInput = {
   would_recommend: "yes" | "no";
 };
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
-}
-
-async function request(path: string, init: RequestInit = {}) {
-  const headers = new Headers(init.headers);
-  headers.set("Accept", "application/json");
-  const response = await fetch(path, { ...init, headers, cache: "no-store" });
-  const payload = (await response.json().catch(() => null)) as unknown;
-  if (response.status === 401) return waitForAuthenticationRedirect();
-  if (!response.ok) {
-    const message = isRecord(payload) && typeof payload.message === "string" ? payload.message : "The request could not be completed.";
-    throw new Error(message);
-  }
-  return payload;
-}
-
 function dataFrom(payload: unknown, expectedCode: number, service: string) {
   if (!isRecord(payload) || payload.status !== "success" || payload.code !== expectedCode || !("data" in payload)) {
     throw new Error(`${service} returned an invalid response.`);
@@ -127,28 +110,28 @@ function jsonPost(body: unknown): RequestInit {
 }
 
 export async function estimateBooking(tutorId: string, input: BookingInput) {
-  return dataFrom(await request(`/api/student/tutors/${encodeURIComponent(tutorId)}/booking/estimate`, jsonPost(input)), 200, "The booking estimate service") as BookingEstimate;
+  return dataFrom(await requestJson(`/api/student/tutors/${encodeURIComponent(tutorId)}/booking/estimate`, jsonPost(input)), 200, "The booking estimate service") as BookingEstimate;
 }
 
 export async function createBooking(tutorId: string, input: BookingInput) {
-  return dataFrom(await request(`/api/student/tutors/${encodeURIComponent(tutorId)}/booking`, jsonPost(input)), 201, "The booking service") as { amount_charged: number; checkout_url: string };
+  return dataFrom(await requestJson(`/api/student/tutors/${encodeURIComponent(tutorId)}/booking`, jsonPost(input)), 201, "The booking service") as { amount_charged: number; checkout_url: string };
 }
 
 export async function getBookings(query: { date?: string; page: number; pageSize: number; status?: BookingStatus }, signal?: AbortSignal) {
   const params = new URLSearchParams({ page: String(query.page), page_size: String(query.pageSize) });
   if (query.status) params.set("status", query.status);
   if (query.date) params.set("date", query.date);
-  return dataFrom(await request(`/api/student/bookings?${params.toString()}`, { signal }), 200, "The bookings service") as BookingPage;
+  return dataFrom(await requestJson(`/api/student/bookings?${params.toString()}`, { signal }), 200, "The bookings service") as BookingPage;
 }
 
 export async function getBookingDetails(bookingId: string, signal?: AbortSignal) {
-  return dataFrom(await request(`/api/student/bookings/${encodeURIComponent(bookingId)}`, { signal }), 200, "The booking details service") as BookingDetails;
+  return dataFrom(await requestJson(`/api/student/bookings/${encodeURIComponent(bookingId)}`, { signal }), 200, "The booking details service") as BookingDetails;
 }
 
 export async function cancelBooking(bookingId: string, reason?: string) {
-  await request(`/api/student/bookings/${encodeURIComponent(bookingId)}/cancel`, jsonPost(reason?.trim() ? { reason: reason.trim() } : {}));
+  await requestJson(`/api/student/bookings/${encodeURIComponent(bookingId)}/cancel`, jsonPost(reason?.trim() ? { reason: reason.trim() } : {}));
 }
 
 export async function rateBooking(bookingId: string, input: RatingInput) {
-  await request(`/api/student/bookings/${encodeURIComponent(bookingId)}/rate`, jsonPost(input));
+  await requestJson(`/api/student/bookings/${encodeURIComponent(bookingId)}/rate`, jsonPost(input));
 }

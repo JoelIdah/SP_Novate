@@ -22,7 +22,7 @@ type ProfileResponse = {
   data?: unknown;
 };
 
-function isAuthenticatedProfile(value: unknown): value is AuthenticatedProfile {
+export function isAuthenticatedProfile(value: unknown): value is AuthenticatedProfile {
   if (!value || typeof value !== "object") return false;
   const profile = value as Record<string, unknown>;
   return (

@@ -1,6 +1,6 @@
 "use client";
 
-import { waitForAuthenticationRedirect } from "../auth/authSession";
+import { isRecord, RequestError, requestJson } from "../auth/request";
 
 export type StudentCategory = {
   department: string;
@@ -8,7 +8,7 @@ export type StudentCategory = {
   subjects: Array<{ subject: string }>;
 };
 
-export type TutorApiItem = {
+export type TutorSearchResult = {
   address?: string;
   average_rating: number;
   distance_km?: number | null;
@@ -22,7 +22,7 @@ export type TutorApiItem = {
 };
 
 export type TutorResultsPage = {
-  data: TutorApiItem[];
+  data: TutorSearchResult[];
   page: number;
   page_size: number;
   total: number;
@@ -38,52 +38,6 @@ type TutorQuery = {
   day?: string;
   minimumRating?: string;
 };
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
-}
-
-function readApiMessage(value: unknown): string | undefined {
-  if (!isRecord(value)) return undefined;
-  return typeof value.message === "string" && value.message.trim()
-    ? value.message
-    : undefined;
-}
-
-class ApiRequestError extends Error {
-  constructor(
-    message: string,
-    readonly status: number,
-    readonly code?: number,
-    readonly detail?: string,
-  ) {
-    super(message);
-    this.name = "ApiRequestError";
-  }
-}
-
-async function requestJson(path: string, init: RequestInit = {}): Promise<unknown> {
-  const headers = new Headers(init.headers);
-  headers.set("Accept", "application/json");
-  const response = await fetch(path, {
-    ...init,
-    headers,
-    cache: "no-store",
-  });
-  const payload = (await response.json().catch(() => null)) as unknown;
-
-  if (response.status === 401) return waitForAuthenticationRedirect();
-  if (!response.ok) {
-    throw new ApiRequestError(
-      readApiMessage(payload) ?? "The request could not be completed.",
-      response.status,
-      isRecord(payload) && typeof payload.code === "number" ? payload.code : undefined,
-      isRecord(payload) && typeof payload.error === "string" ? payload.error : undefined,
-    );
-  }
-
-  return payload;
-}
 
 function readSuccessData(payload: unknown, service: string): unknown {
   if (
@@ -193,7 +147,7 @@ export async function getTutors(query: TutorQuery, signal?: AbortSignal) {
 }
 
 export function isLocationRequiredError(error: unknown) {
-  return error instanceof ApiRequestError &&
+  return error instanceof RequestError &&
     error.status === 400 &&
     error.code === 400 &&
     (error.message.trim().toLowerCase() === "please set up your location" ||
@@ -201,7 +155,7 @@ export function isLocationRequiredError(error: unknown) {
 }
 
 export function isServiceUnavailableError(error: unknown) {
-  return error instanceof ApiRequestError &&
+  return error instanceof RequestError &&
     error.status >= 500;
 }
 

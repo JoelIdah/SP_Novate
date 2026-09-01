@@ -11,7 +11,7 @@ export type SessionUser = {
   role: "student" | "tutor" | "";
 };
 
-type ApiSessionUser = {
+type SessionUserInput = {
   email?: string;
   first_name?: string;
   last_name?: string;
@@ -36,7 +36,7 @@ export function clearLegacyAuthTokens() {
   sessionStorage.removeItem(LEGACY_PROFILE_SETUP_TOKEN_KEY);
 }
 
-export function setAuthSession(user?: ApiSessionUser) {
+export function setAuthSession(user?: SessionUserInput) {
   if (typeof window === "undefined") return;
   clearLegacyAuthTokens();
   if (user) {

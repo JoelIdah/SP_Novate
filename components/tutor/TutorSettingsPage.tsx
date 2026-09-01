@@ -3,11 +3,12 @@
 import { BookOpenCheck, FileCheck2, MapPin, Pencil, Settings2, X } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 
-import { apiFetch } from "../auth/apiClient";
+import { requestJson } from "../auth/request";
 import { useSessionUser } from "../auth/authSession";
 import { DashboardShell } from "../layout/DashboardShell";
 import { StepTwoAddressConfirm } from "../signup/profile-setup/StepTwoAddressConfirm";
 import { StepTwoLocationPrompt } from "../signup/profile-setup/StepTwoLocationPrompt";
+import { Notice } from "../ui/Notice";
 import { SelectMenu } from "../ui/SelectMenu";
 import { TutorNavbar } from "./TutorNavbar";
 import { useTutorLocationSetup, type TutorLocationSummary } from "./onboarding/useTutorLocationSetup";
@@ -75,9 +76,9 @@ export default function TutorSettingsPage() {
     const controller = new AbortController();
     void (async () => {
       try {
-        const response = await apiFetch("/v1/categories", { signal: controller.signal });
-        const result = (await response.json().catch(() => null)) as CategoriesResponse | null;
-        if (!response.ok) throw new Error(result?.message ?? "Could not load departments and subjects.");
+        const result = await requestJson("/api/categories", {
+          signal: controller.signal,
+        }) as CategoriesResponse;
         setCategories(result?.data ?? []);
       } catch (caught) {
         if (caught instanceof DOMException && caught.name === "AbortError") return;
@@ -219,7 +220,7 @@ function Detail({ label, value }: { label: string; value: string }) {
 }
 
 function AccountEditForm({ draft, message, onCancel, onChange, onSubmit }: { draft: AccountDraft; message: string; onCancel: () => void; onChange: (field: keyof AccountDraft, value: string) => void; onSubmit: () => void }) {
-  return <section className="rounded-2xl border border-[#e5e8ef] bg-white p-4 shadow-[0_8px_24px_rgba(31,40,74,0.06)] sm:p-5 lg:sticky lg:top-4"><div className="flex items-center justify-between"><h2 className="text-lg font-bold text-[#302d79]">Account details</h2><button aria-label="Close account editor" className="inline-flex h-9 w-9 items-center justify-center rounded-full text-[#70798e] hover:bg-[#f3f4f8]" onClick={onCancel} type="button"><X className="h-4 w-4" /></button></div><div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-1"><SettingsField label="First name" onChange={(value) => onChange("firstName", value)} value={draft.firstName} /><SettingsField label="Other name" onChange={(value) => onChange("otherName", value)} value={draft.otherName} /><SettingsField label="Last name" onChange={(value) => onChange("lastName", value)} value={draft.lastName} /><SettingsField label="Phone number" onChange={(value) => onChange("phone", value)} type="tel" value={draft.phone} /><SettingsField disabled label="Email" onChange={(value) => onChange("email", value)} type="email" value={draft.email} /><SettingsField label="Occupation" onChange={(value) => onChange("occupation", value)} value={draft.occupation} /><SettingsField label="Qualification" onChange={(value) => onChange("qualification", value)} value={draft.qualification} /><SettingsField label="DBS certificate number" onChange={(value) => onChange("dbsNumber", value)} value={draft.dbsNumber} /></div>{message ? <p className="mt-4 rounded-lg border border-[#f0d6b5] bg-[#fff9f1] px-3 py-2 text-xs font-medium leading-relaxed text-[#8b5a20]" role="status">{message}</p> : null}<div className="mt-5 flex flex-wrap justify-end gap-2"><button className="min-h-10 rounded-full border border-[#d8dde8] bg-white px-4 text-sm font-semibold text-[#555e73]" onClick={onCancel} type="button">Cancel</button><button className="min-h-10 rounded-full bg-brand-primary px-5 text-sm font-semibold text-white hover:bg-brand-primary-hover" onClick={onSubmit} type="button">Update details</button></div></section>;
+  return <section className="rounded-2xl border border-[#e5e8ef] bg-white p-4 shadow-[0_8px_24px_rgba(31,40,74,0.06)] sm:p-5 lg:sticky lg:top-4"><div className="flex items-center justify-between"><h2 className="text-lg font-bold text-[#302d79]">Account details</h2><button aria-label="Close account editor" className="inline-flex h-9 w-9 items-center justify-center rounded-full text-[#70798e] hover:bg-[#f3f4f8]" onClick={onCancel} type="button"><X className="h-4 w-4" /></button></div><div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-1"><SettingsField label="First name" onChange={(value) => onChange("firstName", value)} value={draft.firstName} /><SettingsField label="Other name" onChange={(value) => onChange("otherName", value)} value={draft.otherName} /><SettingsField label="Last name" onChange={(value) => onChange("lastName", value)} value={draft.lastName} /><SettingsField label="Phone number" onChange={(value) => onChange("phone", value)} type="tel" value={draft.phone} /><SettingsField disabled label="Email" onChange={(value) => onChange("email", value)} type="email" value={draft.email} /><SettingsField label="Occupation" onChange={(value) => onChange("occupation", value)} value={draft.occupation} /><SettingsField label="Qualification" onChange={(value) => onChange("qualification", value)} value={draft.qualification} /><SettingsField label="DBS certificate number" onChange={(value) => onChange("dbsNumber", value)} value={draft.dbsNumber} /></div>{message ? <SettingsMessage>{message}</SettingsMessage> : null}<div className="mt-5 flex flex-wrap justify-end gap-2"><button className="min-h-10 rounded-full border border-[#d8dde8] bg-white px-4 text-sm font-semibold text-[#555e73]" onClick={onCancel} type="button">Cancel</button><button className="min-h-10 rounded-full bg-brand-primary px-5 text-sm font-semibold text-white hover:bg-brand-primary-hover" onClick={onSubmit} type="button">Update details</button></div></section>;
 }
 
 function SettingsField({ disabled = false, label, onChange, type = "text", value }: { disabled?: boolean; label: string; onChange: (value: string) => void; type?: string; value: string }) {
@@ -245,7 +246,7 @@ function SettingsSelect({ disabled = false, label, onChange, options, placeholde
 }
 
 function SettingsMessage({ children }: { children: ReactNode }) {
-  return <p className="mt-4 rounded-lg border border-[#f0d6b5] bg-[#fff9f1] px-3 py-2 text-xs font-medium leading-relaxed text-[#8b5a20]" role="status">{children}</p>;
+  return <Notice className="mt-4 text-xs">{children}</Notice>;
 }
 
 function LocationUpdateModal({ onClose, onConfirmed }: { onClose: () => void; onConfirmed: (summary: TutorLocationSummary) => void }) {

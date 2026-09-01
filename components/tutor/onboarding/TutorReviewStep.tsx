@@ -3,7 +3,7 @@
 import { CircleDollarSign, FileCheck2, MapPin, Pencil, UserRound } from "lucide-react";
 import Image from "next/image";
 
-import type { TutorOnboardingReview } from "./tutorOnboardingApi";
+import type { TutorOnboardingReview } from "./tutorOnboarding";
 
 function titleCase(value: string) {
   return value.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());

@@ -1,4 +1,4 @@
-export type SocialProvider = "google" | "facebook" | "apple";
+export type SocialProvider = "google" | "facebook";
 
 export type SocialAuthResult =
   | {

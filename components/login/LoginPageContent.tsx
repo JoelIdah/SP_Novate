@@ -20,16 +20,15 @@ import { SocialAuthButtons } from "../signup/social/SocialAuthButtons";
 import { startFacebookAuth } from "../signup/social/facebook";
 import { startGoogleAuth } from "../signup/social/google";
 
-import { socialAuthApi } from "../signup/social/socialAuthApi";
+import { signInWithProvider } from "../signup/social/signInWithProvider";
 import type { SocialProvider } from "../signup/social/types";
 import { AuthShell } from "../signup/AuthShell";
-import { DIRECT_ONBOARDING_ENABLED } from "../../config/featureFlags";
 import { saveProfileSetupUser } from "../signup/profileSetupSession";
 import { setAuthSession } from "../auth/authSession";
 import {
   fetchAuthenticatedProfile,
   type AuthenticatedProfile,
-} from "../auth/profileApi";
+} from "../auth/profile";
 import { resolveProfileSetupRequired } from "../auth/profileSetupStatus";
 import { getSsoReturnPath } from "../auth/ssoReturn";
 
@@ -53,7 +52,6 @@ export function LoginPageContent() {
     useState<SocialProvider | null>(null);
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
-  const isDirectOnboardingDisabled = !DIRECT_ONBOARDING_ENABLED;
   const signupHref = searchParams.toString()
     ? `/signup?${searchParams.toString()}`
     : "/signup";
@@ -66,10 +64,6 @@ export function LoginPageContent() {
         : notice === "session_expired"
           ? "Your session expired. Sign in to continue."
         : "";
-  const redirectToComingSoon = () => {
-    router.push("/coming-soon");
-  };
-
   const resolveSafeNextPath = (): string => {
     const candidate = searchParams.get("next");
     if (!candidate) return "/";
@@ -122,7 +116,7 @@ export function LoginPageContent() {
     setSocialError("");
 
     try {
-      const result = await socialAuthApi({ provider, token: cleanToken });
+      const result = await signInWithProvider({ provider, token: cleanToken });
 
       if (result.kind === "error") {
         setSocialError(result.message);
@@ -147,10 +141,6 @@ export function LoginPageContent() {
         return;
       }
 
-      if (isDirectOnboardingDisabled) {
-        redirectToComingSoon();
-        return;
-      }
       router.push("/students/dashboard");
     } catch (error) {
       setSocialError(
@@ -260,11 +250,6 @@ export function LoginPageContent() {
         return;
       }
 
-      if (isDirectOnboardingDisabled) {
-        redirectToComingSoon();
-        return;
-      }
-
       router.push("/students/dashboard");
     } finally {
       setIsSubmitting(false);
@@ -289,7 +274,6 @@ export function LoginPageContent() {
           <div className="mt-[0.9em]">
             <SocialAuthButtons
               activeSocialProvider={activeSocialProvider}
-              enableApple={false}
               onFacebookClick={() => {
                 setSocialError("");
                 startFacebookAuth({

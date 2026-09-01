@@ -1,5 +1,5 @@
-import { forwardAuthRequest } from "@/lib/server/apiRequest";
+import { forwardPublicAuth } from "@/lib/server/backend";
 
 export async function POST(request: Request) {
-  return forwardAuthRequest(request, "/v1/auth/signup");
+  return forwardPublicAuth(request, "/v1/auth/signup");
 }

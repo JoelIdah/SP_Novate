@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import {
   clearAuthCookie,
-  getApiBaseUrl,
+  getBackendUrl,
   readAuthToken,
 } from "@/lib/server/authSession";
 
@@ -12,8 +12,8 @@ export async function GET(request: Request) {
     return NextResponse.json({ authenticated: false, user: null });
   }
 
-  const apiBaseUrl = getApiBaseUrl();
-  if (!apiBaseUrl) {
+  const backendUrl = getBackendUrl();
+  if (!backendUrl) {
     return NextResponse.json(
       { authenticated: false, user: null },
       { status: 500 },
@@ -21,7 +21,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    const backendResponse = await fetch(`${apiBaseUrl}/v1/profile`, {
+    const backendResponse = await fetch(`${backendUrl}/v1/profile`, {
       headers: { Accept: "application/json", Authorization: `Bearer ${token}` },
       cache: "no-store",
     });

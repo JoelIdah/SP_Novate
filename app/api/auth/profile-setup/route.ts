@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import {
   clearAuthCookie,
-  getApiBaseUrl,
+  getBackendUrl,
   isSameOriginMutation,
   readAuthToken,
   setAuthCookie,
@@ -23,8 +23,8 @@ export async function PUT(request: Request) {
     );
   }
 
-  const apiBaseUrl = getApiBaseUrl();
-  if (!apiBaseUrl) {
+  const backendUrl = getBackendUrl();
+  if (!backendUrl) {
     return NextResponse.json(
       { status: "error", code: 500, message: "Profile setup is not configured." },
       { status: 500 },
@@ -32,7 +32,7 @@ export async function PUT(request: Request) {
   }
 
   try {
-    const backendResponse = await fetch(`${apiBaseUrl}/v1/profile/setup`, {
+    const backendResponse = await fetch(`${backendUrl}/v1/profile/setup`, {
       method: "PUT",
       headers: { Accept: "application/json", Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       body: await request.text(),

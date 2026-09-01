@@ -56,11 +56,7 @@ export function clearAuthCookie(response: NextResponse) {
 }
 
 export function getApiBaseUrl(): string {
-  return (
-    process.env.API_BASE_URL?.trim() ??
-    process.env.NEXT_PUBLIC_API_BASE_URL?.trim() ??
-    ""
-  ).replace(/\/$/, "");
+  return (process.env.API_BASE_URL?.trim() ?? "").replace(/\/$/, "");
 }
 
 export function isSameOriginMutation(request: Request): boolean {
@@ -68,5 +64,5 @@ export function isSameOriginMutation(request: Request): boolean {
     return true;
   }
   const origin = request.headers.get("origin");
-  return !origin || origin === new URL(request.url).origin;
+  return origin !== null && origin === new URL(request.url).origin;
 }

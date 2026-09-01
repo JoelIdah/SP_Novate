@@ -53,15 +53,6 @@ export async function socialAuthApi({ provider, token }: SocialAuthPayload): Pro
     }
   }
 
-  if (response.status === 403) {
-    return {
-      kind: "success",
-      message: data?.message ?? "Profile setup is required.",
-      user: data?.data?.user,
-      profileSetupRequired: true,
-    };
-  }
-
   if (!response.ok) {
     return {
       kind: "error",

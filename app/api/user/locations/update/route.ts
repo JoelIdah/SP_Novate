@@ -1,5 +1,5 @@
-import { proxyAuthenticatedRequest } from "@/lib/server/proxyAuthenticatedGet";
+import { forwardAuthenticatedRequest } from "@/lib/server/apiRequest";
 
 export async function POST(request: Request) {
-  return proxyAuthenticatedRequest(request, "/v1/user/locations/update");
+  return forwardAuthenticatedRequest(request, "/v1/user/locations/update");
 }

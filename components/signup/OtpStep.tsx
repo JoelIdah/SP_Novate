@@ -112,7 +112,7 @@ export function OtpStep({
     setResendMessage("");
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/v1/auth/resend-otp`, {
+      const response = await fetch("/api/auth/resend-otp", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

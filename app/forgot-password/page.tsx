@@ -45,7 +45,7 @@ function ForgotPasswordPageContent() {
 
     setIsSending(true);
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/v1/auth/forget-password`, {
+      const response = await fetch("/api/auth/forgot-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email.trim(), platform: "web" }),
@@ -103,7 +103,7 @@ function ForgotPasswordPageContent() {
     setIsResetting(true);
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/v1/auth/reset-password`, {
+      const response = await fetch("/api/auth/reset-password", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token, password, confirm_password: confirmPassword }),

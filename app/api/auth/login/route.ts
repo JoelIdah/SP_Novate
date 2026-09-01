@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 
-import { getApiBaseUrl, setAuthCookie } from "@/lib/server/authSession";
+import {
+  getApiBaseUrl,
+  isSameOriginMutation,
+  setAuthCookie,
+} from "@/lib/server/authSession";
 
 type BackendAuthResponse = {
   status?: string;
@@ -17,6 +21,13 @@ async function readJson(response: Response): Promise<BackendAuthResponse | null>
 }
 
 export async function POST(request: Request) {
+  if (!isSameOriginMutation(request)) {
+    return NextResponse.json(
+      { status: "error", code: 403, message: "Forbidden" },
+      { status: 403 },
+    );
+  }
+
   const apiBaseUrl = getApiBaseUrl();
   if (!apiBaseUrl) {
     return NextResponse.json(

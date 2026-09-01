@@ -1,7 +1,7 @@
-import { proxyAuthenticatedGet } from "../../../../lib/server/proxyAuthenticatedGet";
+import { forwardAuthenticatedRequest } from "@/lib/server/apiRequest";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
-  return proxyAuthenticatedGet(request, "/v1/student/dashboard");
+  return forwardAuthenticatedRequest(request, "/v1/student/dashboard");
 }

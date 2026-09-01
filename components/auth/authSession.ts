@@ -32,6 +32,7 @@ export function clearLegacyAuthTokens() {
   if (typeof window === "undefined") return;
   localStorage.removeItem(LEGACY_ACCESS_TOKEN_KEY);
   localStorage.removeItem(LEGACY_PROFILE_SETUP_TOKEN_KEY);
+  localStorage.removeItem(SESSION_USER_KEY);
   sessionStorage.removeItem(LEGACY_PROFILE_SETUP_TOKEN_KEY);
 }
 
@@ -39,7 +40,7 @@ export function setAuthSession(user?: ApiSessionUser) {
   if (typeof window === "undefined") return;
   clearLegacyAuthTokens();
   if (user) {
-    localStorage.setItem(
+    sessionStorage.setItem(
       SESSION_USER_KEY,
       JSON.stringify({
         email: user.email?.trim() ?? "",
@@ -51,7 +52,7 @@ export function setAuthSession(user?: ApiSessionUser) {
       } satisfies SessionUser),
     );
   } else {
-    localStorage.removeItem(SESSION_USER_KEY);
+    sessionStorage.removeItem(SESSION_USER_KEY);
     cachedUser = null;
   }
   cachedRaw = null;
@@ -61,7 +62,7 @@ export function setAuthSession(user?: ApiSessionUser) {
 export function clearAuthSession() {
   if (typeof window === "undefined") return;
   clearLegacyAuthTokens();
-  localStorage.removeItem(SESSION_USER_KEY);
+  sessionStorage.removeItem(SESSION_USER_KEY);
   cachedRaw = null;
   cachedUser = null;
   window.dispatchEvent(new Event(SESSION_EVENT));
@@ -83,7 +84,7 @@ export function waitForAuthenticationRedirect(): Promise<never> {
 
 function readSessionUser(): SessionUser | null {
   if (typeof window === "undefined") return emptyUser;
-  const raw = localStorage.getItem(SESSION_USER_KEY);
+  const raw = sessionStorage.getItem(SESSION_USER_KEY);
   if (raw === cachedRaw) return cachedUser;
 
   cachedRaw = raw;

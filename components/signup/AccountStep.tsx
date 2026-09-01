@@ -270,22 +270,19 @@ export function AccountStep({
       let response: Response;
 
       try {
-        response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/v1/auth/signup`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              email: email.trim(),
-              first_name: firstName.trim(),
-              last_name: lastName.trim(),
-              password,
-              confirm_password: confirmPassword,
-            }),
+        response = await fetch("/api/auth/signup", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
           },
-        );
+          body: JSON.stringify({
+            email: email.trim(),
+            first_name: firstName.trim(),
+            last_name: lastName.trim(),
+            password,
+            confirm_password: confirmPassword,
+          }),
+        });
       } catch {
         setFirstNameError("Could not reach signup service. Please try again.");
         return;

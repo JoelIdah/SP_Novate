@@ -20,11 +20,7 @@ const resolveSafeNextPath = (candidate: string | null): string => {
 };
 
 const getAllowedCallbackOrigins = () =>
-  (
-    process.env.SPMEET_ALLOWED_CALLBACK_ORIGINS ??
-    process.env.NEXT_PUBLIC_SPMEET_ALLOWED_CALLBACK_ORIGINS ??
-    ""
-  )
+  (process.env.SPMEET_ALLOWED_CALLBACK_ORIGINS ?? "")
     .split(",")
     .map((value) => value.trim())
     .filter(Boolean);

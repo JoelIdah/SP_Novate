@@ -11,12 +11,6 @@ const resolveSafeNextPath = (candidate: string | null): string => {
   return trimmed;
 };
 
-const allowedCallbackOrigins = () =>
-  (process.env.NEXT_PUBLIC_SPMEET_ALLOWED_CALLBACK_ORIGINS ?? "")
-    .split(",")
-    .map((value) => value.trim())
-    .filter(Boolean);
-
 export function getSsoReturnPath(searchParams: SearchParamsReader): string | null {
   const requestedReturnTo = searchParams.get("returnTo")?.trim();
   const state = searchParams.get("state")?.trim();
@@ -31,7 +25,6 @@ export function getSsoReturnPath(searchParams: SearchParamsReader): string | nul
 
   if (
     !["http:", "https:"].includes(callback.protocol) ||
-    !allowedCallbackOrigins().includes(callback.origin) ||
     callback.pathname !== "/auth/callback" ||
     callback.username ||
     callback.password ||

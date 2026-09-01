@@ -1,8 +1,19 @@
 import { NextResponse } from "next/server";
 
-import { getApiBaseUrl, setAuthCookie } from "@/lib/server/authSession";
+import {
+  getApiBaseUrl,
+  isSameOriginMutation,
+  setAuthCookie,
+} from "@/lib/server/authSession";
 
 export async function POST(request: Request) {
+  if (!isSameOriginMutation(request)) {
+    return NextResponse.json(
+      { status: "error", code: 403, message: "Forbidden" },
+      { status: 403 },
+    );
+  }
+
   const apiBaseUrl = getApiBaseUrl();
   if (!apiBaseUrl) {
     return NextResponse.json(
@@ -26,7 +37,7 @@ export async function POST(request: Request) {
       data?: { profile_setup_required?: boolean; token?: string; user?: unknown };
     } | null;
 
-    if (!backendResponse.ok && backendResponse.status !== 403) {
+    if (!backendResponse.ok) {
       return NextResponse.json(payload ?? {}, { status: backendResponse.status });
     }
 

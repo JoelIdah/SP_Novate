@@ -1,298 +1,189 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
-import { ArrowLeft, ArrowUpDown, BanknoteArrowDown, CheckCircle2, Copy, EllipsisVertical, Landmark, Wallet } from "lucide-react";
+import { useEffect, useState, type ReactNode } from "react";
+import { ArrowLeft, BanknoteArrowDown, CheckCircle2, Copy, EllipsisVertical, Landmark, Wallet } from "lucide-react";
 
 import { StudentDashboardNavbar } from "../dashboard/StudentDashboardNavbar";
 import { TutorNavbar } from "../tutor/TutorNavbar";
 import { DashboardShell } from "../layout/DashboardShell";
-import { MetricCard } from "../ui/MetricCard";
-import { DataToolbar } from "../ui/DataToolbar";
 import { DataTableShell } from "../ui/DataTableShell";
-import { TableFilters } from "../ui/TableFilters";
-import { StatusIndicator, type StatusTone } from "../ui/StatusIndicator";
+import { MetricCard } from "../ui/MetricCard";
+import { InfiniteScrollTrigger } from "../ui/InfiniteScrollTrigger";
 import ResponsiveSheet from "../ui/ResponsiveSheet";
+import { StatusIndicator, type StatusTone } from "../ui/StatusIndicator";
+import { TableFilters } from "../ui/TableFilters";
+import {
+  getTransactionDetails,
+  getTransactions,
+  getTransactionStats,
+  type Transaction,
+  type TransactionDetails,
+  type TransactionRole,
+  type TransactionStats,
+} from "./transactions";
 
-type TxStatus = "Successful" | "Pending" | "Failed";
-
-type Transaction = {
-  id: string;
-  amount: string;
-  method: string;
-  type: "CR";
-  date: string;
-  status: TxStatus;
-};
-
-const transactions: Transaction[] = [
-  { id: "B4927183010373", amount: "₦11,037.50", method: "Bank Transfer", type: "CR", date: "March 19, 2026", status: "Successful" },
-  { id: "B4927183010374", amount: "₦11,037.50", method: "Bank Transfer", type: "CR", date: "March 19, 2026", status: "Successful" },
-  { id: "B4927183010375", amount: "₦11,037.50", method: "Bank Transfer", type: "CR", date: "March 18, 2026", status: "Successful" },
-  { id: "B4927183010376", amount: "₦16,050.50", method: "Card", type: "CR", date: "March 18, 2026", status: "Failed" },
-  { id: "B4927183010377", amount: "₦24,760.00", method: "Card", type: "CR", date: "March 17, 2026", status: "Pending" },
-  { id: "B4927183010378", amount: "₦11,037.50", method: "Bank Transfer", type: "CR", date: "March 17, 2026", status: "Successful" },
-  { id: "B4927183010379", amount: "₦24,760.00", method: "Card", type: "CR", date: "March 16, 2026", status: "Pending" },
-  { id: "B4927183010380", amount: "₦11,037.50", method: "Bank Transfer", type: "CR", date: "March 16, 2026", status: "Successful" },
-  { id: "B4927183010381", amount: "₦16,050.50", method: "Card", type: "CR", date: "March 15, 2026", status: "Failed" },
-  { id: "B4927183010382", amount: "₦11,037.50", method: "Bank Transfer", type: "CR", date: "March 15, 2026", status: "Successful" },
-];
-
-const statusTone: Record<TxStatus, StatusTone> = {
-  Successful: "success",
-  Pending: "warning",
-  Failed: "danger",
-};
-
-async function writeClipboard(text: string) {
-  if (navigator.clipboard?.writeText) {
-    await navigator.clipboard.writeText(text);
-    return;
-  }
-  const textarea = document.createElement("textarea");
-  textarea.value = text;
-  textarea.style.position = "fixed";
-  textarea.style.opacity = "0";
-  document.body.appendChild(textarea);
-  textarea.select();
-  document.execCommand("copy");
-  textarea.remove();
+const PAGE_SIZE = 20;
+function number(value: number | undefined) {
+  return value === undefined ? "—" : new Intl.NumberFormat().format(value);
 }
 
-type TransactionRole = "student" | "tutor";
+function words(value: string) {
+  return value.replaceAll("_", " ").replace(/\b\w/g, (character) => character.toUpperCase());
+}
 
-const transactionMetrics = {
-  student: [
-    { label: "Total Value", value: "₦147,846.50", icon: <Wallet className="h-4 w-4 text-[#dca95a]" /> },
-    { label: "Successful Transactions", value: "6", icon: <CheckCircle2 className="h-4 w-4 text-[#289c7f]" /> },
-    { label: "Session Fees", value: "₦4,000", icon: <BanknoteArrowDown className="h-4 w-4 text-[#9553da]" /> },
-    { label: "Finders Fees", value: "₦500", icon: <Landmark className="h-4 w-4 text-[#157ac8]" /> },
-  ],
-  tutor: [
-    { label: "Total Value", value: "₦147,846.50", icon: <Wallet className="h-4 w-4 text-[#dca95a]" /> },
-    { label: "Successful Transactions", value: "6", icon: <CheckCircle2 className="h-4 w-4 text-[#289c7f]" /> },
-    { label: "Session Fees", value: "₦4,000", icon: <BanknoteArrowDown className="h-4 w-4 text-[#9553da]" /> },
-  ],
-} satisfies Record<TransactionRole, Array<{ label: string; value: string; icon: ReactNode }>>;
+function tone(status: string): StatusTone {
+  if (status.toLowerCase() === "success") return "success";
+  if (status.toLowerCase() === "pending") return "warning";
+  if (status.toLowerCase() === "failed") return "danger";
+  return "neutral";
+}
 
-export default function TransactionsPage({ role = "student" }: { role?: TransactionRole }) {
-  const [selectedStatus, setSelectedStatus] = useState<"All" | TxStatus>("All");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [newestFirst, setNewestFirst] = useState(true);
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
-  const [detailsOpen, setDetailsOpen] = useState(false);
-  const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
-  const [copiedId, setCopiedId] = useState("");
-  const [shareFeedback, setShareFeedback] = useState("");
-  const filteredRows = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase();
-    const rows = transactions.filter((row) => {
-      const statusPass = selectedStatus === "All" ? true : row.status === selectedStatus;
-      const queryPass = !query || [row.id, row.amount, row.method, row.type, row.date, row.status].some((value) => value.toLowerCase().includes(query));
-      const rowDate = new Date(row.date);
-      const from = dateFrom ? new Date(dateFrom) : null;
-      const to = dateTo ? new Date(dateTo) : null;
-      const fromPass = from ? rowDate >= from : true;
-      const toPass = to ? rowDate <= to : true;
-      const datePass = !Number.isNaN(rowDate.valueOf()) && fromPass && toPass;
-      return statusPass && datePass && queryPass;
-    });
-    return [...rows].sort((first, second) => {
-      const difference = new Date(second.date).valueOf() - new Date(first.date).valueOf();
-      return newestFirst ? difference : -difference;
-    });
-  }, [dateFrom, dateTo, newestFirst, searchQuery, selectedStatus]);
+async function copy(text: string) {
+  await navigator.clipboard.writeText(text);
+}
 
-  const openDetails = (tx: Transaction) => {
-    setSelectedTx(tx);
-    setShareFeedback("");
-    setDetailsOpen(true);
+export default function TransactionsPage({ role }: { role: TransactionRole }) {
+  const [stats, setStats] = useState<TransactionStats | null>(null);
+  const [rows, setRows] = useState<Transaction[]>([]);
+  const [status, setStatus] = useState("");
+  const [date, setDate] = useState("");
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [selected, setSelected] = useState<Transaction | null>(null);
+  const [details, setDetails] = useState<TransactionDetails | null>(null);
+  const [detailsError, setDetailsError] = useState("");
+  const [detailsLoading, setDetailsLoading] = useState(false);
+  const [copied, setCopied] = useState("");
+
+  useEffect(() => {
+    const controller = new AbortController();
+    getTransactionStats(role, controller.signal)
+      .then(setStats)
+      .catch((reason: unknown) => {
+        if (!(reason instanceof DOMException && reason.name === "AbortError")) {
+          setError(reason instanceof Error ? reason.message : "Transactions could not be loaded.");
+        }
+      });
+    return () => controller.abort();
+  }, [role]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    getTransactions(role, { date: date || undefined, page, pageSize: PAGE_SIZE, status: status || undefined }, controller.signal)
+      .then((result) => {
+        setRows((current) => page === 1 ? result.data : [...current, ...result.data]);
+        setTotal(result.total);
+        setTotalPages(Math.max(result.total_pages, 1));
+      })
+      .catch((reason: unknown) => {
+        if (!(reason instanceof DOMException && reason.name === "AbortError")) {
+          setError(reason instanceof Error ? reason.message : "Transactions could not be loaded.");
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
+    return () => controller.abort();
+  }, [date, page, role, status]);
+
+  const openDetails = (transaction: Transaction) => {
+    setSelected(transaction);
+    setDetails(null);
+    setDetailsError("");
+    setDetailsLoading(true);
+    const controller = new AbortController();
+    getTransactionDetails(role, transaction.reference, controller.signal)
+      .then(setDetails)
+      .catch((reason: unknown) => setDetailsError(reason instanceof Error ? reason.message : "Transaction details could not be loaded."))
+      .finally(() => setDetailsLoading(false));
   };
 
-  const copyReference = async (id: string) => {
-    await writeClipboard(id);
-    setCopiedId(id);
-    window.setTimeout(() => setCopiedId((current) => current === id ? "" : current), 1600);
-  };
-
-  const shareDetails = async () => {
-    if (!selectedTx) return;
-    const text = `Transaction ${selectedTx.id}\n${selectedTx.amount} via ${selectedTx.method}\n${selectedTx.status} · ${selectedTx.date}`;
-    try {
-      if (navigator.share) {
-        await navigator.share({ title: "SP Novate transaction", text });
-        setShareFeedback("Shared");
-      } else {
-        await writeClipboard(text);
-        setShareFeedback("Details copied");
-      }
-    } catch (error) {
-      if (error instanceof DOMException && error.name === "AbortError") return;
-      await writeClipboard(text);
-      setShareFeedback("Details copied");
-    }
-  };
-
-  const navbar = role === "tutor" ? <TutorNavbar active="Transactions" /> : <StudentDashboardNavbar active="Transactions" />;
-  const metrics = transactionMetrics[role];
+  const metrics = [
+    { label: "Total volume", value: number(stats?.total_volume), icon: <Wallet className="h-4 w-4 text-[#dca95a]" /> },
+    { label: "Successful transactions", value: number(stats?.total_successful_transactions), icon: <CheckCircle2 className="h-4 w-4 text-[#289c7f]" /> },
+    { label: "Session fees", value: number(stats?.total_session_fee), icon: <BanknoteArrowDown className="h-4 w-4 text-[#9553da]" /> },
+    { label: role === "tutor" ? "Service fees" : "Finder's fees", value: number(role === "tutor" ? stats?.total_service_fee : stats?.total_finders_fee), icon: <Landmark className="h-4 w-4 text-[#157ac8]" /> },
+  ];
 
   return (
     <>
-      <DashboardShell navbar={navbar}>
+      <DashboardShell navbar={role === "tutor" ? <TutorNavbar active="Transactions" /> : <StudentDashboardNavbar active="Transactions" />}>
         <section className="w-full py-4 md:py-5">
-              <div className={`grid gap-2.5 sm:grid-cols-2 ${metrics.length === 4 ? "xl:grid-cols-4" : "lg:grid-cols-3"}`}>
-                {metrics.map((metric) => <MetricCard icon={metric.icon} key={metric.label} label={metric.label} value={metric.value} />)}
-              </div>
+          <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
+            {metrics.map((metric) => <MetricCard {...metric} key={metric.label} />)}
+          </div>
 
-              <div className="mt-5 sm:mt-6">
-              <DataToolbar
-                actions={(
-                  <button className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-lg border border-ui-border bg-white px-3 text-xs font-semibold text-ui-body hover:bg-[#f7f8fb] md:min-h-10" onClick={() => setNewestFirst((current) => !current)} type="button">
-                    <ArrowUpDown className="h-4 w-4" />
-                    <span className="hidden sm:inline">{newestFirst ? "Newest" : "Oldest"}</span>
-                  </button>
-                )}
-                onChange={(value) => {
-                  setSearchQuery(value);
-                }}
-                placeholder="Search transactions"
-                value={searchQuery}
-              />
-              </div>
+          <TableFilters className="mt-5" date={date} filters={[{ label: "Status", value: status ? "Successful" : "All", options: ["All", "Successful"], onChange: (value) => { setLoading(true); setError(""); setStatus(value === "Successful" ? "success" : ""); setPage(1); } }]} onDateChange={(value) => { setLoading(true); setError(""); setDate(value); setPage(1); }} />
 
-              <TableFilters
-                className="mt-2.5"
-                dateFrom={dateFrom}
-                dateTo={dateTo}
-                filters={[{ label: "Status", value: selectedStatus, options: ["All", "Successful", "Pending", "Failed"], onChange: (value) => setSelectedStatus(value as "All" | TxStatus) }]}
-                onDateFromChange={setDateFrom}
-                onDateToChange={setDateTo}
-              />
+          {error ? <p className="mt-3 rounded-lg border border-[#f0d2ce] bg-[#fff7f5] px-3 py-2 text-sm text-brand-danger">{error}</p> : null}
 
-              <DataTableShell className="mt-3">
-                  <table className="w-full min-w-[920px] border-collapse text-left text-[0.74em] text-[#5f667b]">
-                    <thead className="bg-[#f2f5fa] text-[#676f85]">
-                      <tr>
-                        {["Status", "Reference", "Amount", "Method", "Type", "Date Created", ""].map((head) => (
-                          <th key={head} className="px-3 py-2.5 font-semibold">{head}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredRows.map((row, idx) => (
-                        <tr className="cursor-pointer border-t border-[#edf0f6] hover:bg-[#fafbff]" key={`${row.id}-${idx}`} onClick={() => openDetails(row)}>
-                          <td className="px-3 py-2.5">
-                            <StatusIndicator label={row.status} tone={statusTone[row.status]} />
-                          </td>
-                          <td className="px-3 py-2.5">
-                            <span className="inline-flex items-center gap-2">
-                              {row.id}
-                              <button aria-label={`Copy reference ${row.id}`} className="inline-flex h-8 w-8 items-center justify-center rounded-md text-[#4b69d2] hover:bg-[#eef1fb]" onClick={(event) => { event.stopPropagation(); void copyReference(row.id); }} title={copiedId === row.id ? "Copied" : "Copy reference"} type="button">
-                                <Copy className="h-3.5 w-3.5" />
-                              </button>
-                            </span>
-                          </td>
-                          <td className="px-3 py-2.5">{row.amount}</td>
-                          <td className="px-3 py-2.5">{row.method}</td>
-                          <td className="px-3 py-2.5">{row.type}</td>
-                          <td className="px-3 py-2.5">{row.date}</td>
-                          <td className="px-3 py-2.5 text-right"><EllipsisVertical className="ml-auto h-3.5 w-3.5 text-[#6f768c]" /></td>
-                        </tr>
-                      ))}
-                      {filteredRows.length === 0 ? (
-                        <tr><td className="px-4 py-10 text-center text-sm text-[#7a8297]" colSpan={7}>No transactions match your search and filters.</td></tr>
-                      ) : null}
-                    </tbody>
-                  </table>
-              </DataTableShell>
-
-              <div className="mt-3 space-y-1.5 pb-6 md:hidden">
-                {filteredRows.map((row, idx) => (
-                  <article className="rounded-lg border border-[#e6eaf3] bg-white px-3 py-2.5" key={`${row.id}-mobile-${idx}`}>
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <div className="inline-flex max-w-full items-center gap-1.5 text-[0.76em] font-semibold text-[#2f3547]">
-                          <span className="truncate">{row.id}</span>
-                          <button aria-label={`Copy reference ${row.id}`} className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-[#4b69d2]" onClick={() => void copyReference(row.id)} title={copiedId === row.id ? "Copied" : "Copy reference"} type="button">
-                            <Copy className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
-                        <p className="mt-0.5 text-[0.64em] text-[#7a8299]">{row.method}</p>
-                      </div>
-                      <span className="text-[0.64em] text-[#7a8299]">{row.date}</span>
-                    </div>
-                    <div className="mt-1.5 flex items-center justify-between">
-                      <StatusIndicator className="text-[0.66em]" label={row.status} tone={statusTone[row.status]} />
-                      <span className="text-[0.68em] font-semibold text-[#4a5166]">{row.amount}</span>
-                    </div>
-                    <button className="mt-2 min-h-11 w-full rounded-lg border border-[#e0e5f0] bg-[#fafbfe] text-[0.72em] font-semibold text-[#4f576d]" onClick={() => openDetails(row)} type="button">View transaction details</button>
-                  </article>
+          <DataTableShell className="mt-3">
+            <table className="w-full min-w-[900px] border-collapse text-left text-xs text-[#5f667b]">
+              <thead className="bg-[#f2f5fa] text-[#676f85]"><tr>{["Status", "Reference", "Amount", "Method", "Type", "Date Created", ""].map((head) => <th className="px-3 py-2.5 font-semibold" key={head}>{head}</th>)}</tr></thead>
+              <tbody>
+                {rows.map((row) => (
+                  <tr className="cursor-pointer border-t border-[#edf0f6] hover:bg-[#fafbff]" key={row.reference} onClick={() => openDetails(row)}>
+                    <td className="px-3 py-2.5"><StatusIndicator label={words(row.status)} tone={tone(row.status)} /></td>
+                    <td className="px-3 py-2.5"><span className="inline-flex items-center gap-2">{row.reference}<button aria-label={`Copy reference ${row.reference}`} className="inline-flex h-8 w-8 items-center justify-center rounded-md text-[#4b69d2] hover:bg-[#eef1fb]" onClick={(event) => { event.stopPropagation(); void copy(row.reference).then(() => setCopied(row.reference)); }} title={copied === row.reference ? "Copied" : "Copy reference"} type="button"><Copy className="h-3.5 w-3.5" /></button></span></td>
+                    <td className="px-3 py-2.5">{number(row.amount)}</td>
+                    <td className="px-3 py-2.5">{words(row.method)}</td>
+                    <td className="px-3 py-2.5">{row.tx_type}</td>
+                    <td className="px-3 py-2.5">{row.date}</td>
+                    <td className="px-3 py-2.5 text-right"><EllipsisVertical className="ml-auto h-3.5 w-3.5" /></td>
+                  </tr>
                 ))}
-                {filteredRows.length === 0 ? <p className="rounded-lg border border-dashed border-[#dce1ec] px-4 py-10 text-center text-sm text-[#7a8297]">No transactions match your search and filters.</p> : null}
-              </div>
+                {!loading && rows.length === 0 ? <tr><td className="px-4 py-10 text-center text-sm text-[#7a8297]" colSpan={7}>No transactions found.</td></tr> : null}
+                {loading ? <tr><td className="px-4 py-10 text-center text-sm text-[#7a8297]" colSpan={7}>Loading transactions…</td></tr> : null}
+              </tbody>
+            </table>
+          </DataTableShell>
+
+          <p className="mt-3 text-xs text-ui-body">{number(total)} transaction{total === 1 ? "" : "s"}</p>
+          {loading && page > 1 ? <p className="py-3 text-center text-xs text-[#8a93a7]" role="status">Loading more transactions...</p> : null}
+          <InfiniteScrollTrigger enabled={!loading && page < totalPages} onVisible={() => { setLoading(true); setError(""); setPage((current) => current + 1); }} />
         </section>
       </DashboardShell>
 
-      <ResponsiveSheet
-        ariaLabel="Transaction details"
-        open={detailsOpen}
-        onClose={() => setDetailsOpen(false)}
-        panelClassName="max-h-[100dvh] rounded-none border-0 px-0 pt-0 pb-[calc(env(safe-area-inset-bottom)+12px)] md:max-h-[92dvh] md:rounded-t-2xl md:border-t md:px-4 md:pt-3 xl:max-w-[560px] xl:rounded-l-xl xl:rounded-tr-none xl:border-l xl:px-5 xl:pt-5"
-      >
+      <ResponsiveSheet ariaLabel="Transaction details" open={Boolean(selected)} onClose={() => setSelected(null)} panelClassName="max-h-[100dvh] rounded-none border-0 px-0 pt-0 pb-[calc(env(safe-area-inset-bottom)+12px)] md:max-h-[92dvh] md:rounded-t-2xl md:border-t md:px-4 md:pt-3 xl:max-w-[560px] xl:rounded-l-xl xl:rounded-tr-none xl:border-l xl:px-5 xl:pt-5">
         <div className="flex h-full min-h-0 flex-col">
-          <div className="flex items-center gap-2 border-b border-[#eceff5] px-4 py-3 xl:px-1 xl:py-0 xl:pb-4">
-            <button aria-label="Close transaction details" className="inline-flex h-11 w-11 items-center justify-center rounded-full text-[#5a647e] xl:hidden" onClick={() => setDetailsOpen(false)} type="button">
-              <ArrowLeft className="h-4 w-4" />
-            </button>
-            <p className="text-[0.94em] font-semibold text-[#2f3547]">Transaction details</p>
-          </div>
-
-          <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3 xl:px-1 xl:py-0">
+          <div className="flex items-center gap-2 border-b border-[#eceff5] px-4 py-3 xl:px-1 xl:py-0 xl:pb-4"><button aria-label="Close transaction details" className="inline-flex h-11 w-11 items-center justify-center rounded-full text-[#5a647e] xl:hidden" onClick={() => setSelected(null)} type="button"><ArrowLeft className="h-4 w-4" /></button><p className="text-sm font-semibold text-[#2f3547]">Transaction details</p></div>
+          <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3 xl:px-1">
             <DetailsBlock title="Transaction summary">
-              <DetailRow label="Reference" value={selectedTx?.id ?? "—"} />
-              <DetailRow label="Status" value={selectedTx?.status ?? "—"} />
-              <DetailRow label="Amount" value={selectedTx?.amount ?? "—"} />
-              <DetailRow label="Payment method" value={selectedTx?.method ?? "—"} />
-              <DetailRow label="Transaction type" value={selectedTx?.type ?? "—"} />
-              <DetailRow label="Date created" value={selectedTx?.date ?? "—"} />
+              <DetailRow label="Reference" value={selected?.reference ?? "—"} />
+              <DetailRow label="Status" value={selected ? words(selected.status) : "—"} />
+              <DetailRow label="Amount charged" value={number(selected?.amount)} />
+              <DetailRow label="Payment method" value={selected ? words(selected.method) : "—"} />
+              <DetailRow label="Transaction type" value={selected?.tx_type ?? "—"} />
+              <DetailRow label="Date created" value={selected?.date ?? "—"} />
             </DetailsBlock>
-
-            <DetailsBlock title="Cost estimate">
-              <DetailRow label="Tutor's fee" value="₦3,500" />
-              <DetailRow label="Weekly rate" value="₦7,000" subLabel="Based on 2 sessions per week and 1 hour per session" />
-              <DetailRow label="Finder's fee" value="₦500" />
-              <DetailRow label="VAT (7.5%)" value="₦37.50" />
-              <DetailRow label="Subtotal" value={selectedTx?.amount ?? "₦11,037.50"} />
-              <DetailRow label="Applicable taxes" value="₦0.00" />
-              <div className="mt-2 flex items-center justify-between border-t border-[#e7ebf4] pt-2.5 text-[0.84em] font-semibold text-[#2f3547]">
-                <span>Total cost</span>
-                <span>{selectedTx?.amount ?? "₦11,037.50"}</span>
-              </div>
-            </DetailsBlock>
-
-            <DetailsBlock title="Booking summary">
-              <DetailRow label="Department type" value="Common entrance exams" />
-              <DetailRow label="Subject type" value="Entrance Exams" />
-              <DetailRow label="Session" value="Online" />
-              <DetailRow label="Period" value="Evening" />
-              <DetailRow label="Number of weeks" value="2 weeks" />
-              <DetailRow label="Hours per day" value="1 hour" />
-              <DetailRow label="Payment option" value="Full payment" />
-              <DetailRow label="Availability" value="Mondays" />
-              <DetailRow label="Tutor's fee" value="₦3,500" />
-            </DetailsBlock>
+            {detailsLoading ? <p className="py-8 text-center text-sm text-[#7a8297]">Loading details…</p> : null}
+            {detailsError ? <p className="rounded-lg border border-[#f0d2ce] bg-[#fff7f5] px-3 py-2 text-sm text-brand-danger">{detailsError}</p> : null}
+            {details ? <>
+              <DetailsBlock title="Cost estimate">
+                <DetailRow label="Tutor fee" value={number(details.estimate.tutor_fee)} />
+                <DetailRow label="Weekly rate" value={number(details.estimate.weekly_rate)} />
+                <DetailRow label="Finder's fee" value={number(details.estimate.finders_fee)} />
+                <DetailRow label={`VAT (${number(details.estimate.vat_percent)}%)`} value={number(details.estimate.vat)} />
+                <DetailRow label="Subtotal" value={number(details.estimate.subtotal)} />
+                <DetailRow label="Payment status" value={words(details.estimate.payment_status)} />
+                <div className="mt-2 flex items-center justify-between border-t border-[#e7ebf4] pt-2.5 text-sm font-semibold text-[#2f3547]"><span>Total cost</span><span>{number(details.estimate.total)}</span></div>
+              </DetailsBlock>
+              <DetailsBlock title="Booking summary">
+                <DetailRow label="Department" value={details.summary.department} />
+                <DetailRow label="Session type" value={words(details.summary.session_type)} />
+                <DetailRow label="Period" value={words(details.summary.period)} />
+                <DetailRow label="Number of weeks" value={number(details.summary.number_of_weeks)} />
+                <DetailRow label="Hours per day" value={number(details.summary.hours_per_day)} />
+                <DetailRow label="Payment option" value={words(details.summary.payment_option)} />
+                <DetailRow label="Availability" value={details.summary.availability.map(words).join(", ")} />
+                <DetailRow label="Tutor fee" value={number(details.summary.tutor_fee)} />
+              </DetailsBlock>
+            </> : null}
           </div>
-
-          <div className="border-t border-[#eceff5] px-4 py-3 xl:px-1">
-            <div className="flex flex-col-reverse gap-2 md:flex-row md:justify-end">
-              <button className="h-11 rounded-full bg-[#e5e7eb] px-6 text-[0.78em] font-semibold text-[#4f576d]" onClick={() => setDetailsOpen(false)} type="button">
-                Close
-              </button>
-              <button className="h-11 rounded-full bg-[#262563] px-6 text-[0.78em] font-semibold text-white" onClick={() => void shareDetails()} type="button">
-                {shareFeedback || "Share details"}
-              </button>
-            </div>
-          </div>
+          <div className="border-t border-[#eceff5] px-4 py-3 xl:px-1"><button className="h-11 w-full rounded-full bg-[#e5e7eb] px-6 text-xs font-semibold text-[#4f576d]" onClick={() => setSelected(null)} type="button">Close</button></div>
         </div>
       </ResponsiveSheet>
     </>
@@ -300,22 +191,9 @@ export default function TransactionsPage({ role = "student" }: { role?: Transact
 }
 
 function DetailsBlock({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <section className="mb-3 rounded-lg border border-[#e3e8f3] bg-white p-3">
-      <h3 className="mb-2 text-[0.75em] font-semibold text-[#414a62]">{title}</h3>
-      {children}
-    </section>
-  );
+  return <section className="mb-3 rounded-lg border border-[#e3e8f3] bg-white p-3"><h3 className="mb-2 text-xs font-semibold text-[#414a62]">{title}</h3>{children}</section>;
 }
 
-function DetailRow({ label, value, subLabel }: { label: string; value: string; subLabel?: string }) {
-  return (
-    <div className="mb-1.5 flex items-start justify-between gap-3 text-[0.72em] text-[#616a81]">
-      <div>
-        <span>{label}</span>
-        {subLabel ? <p className="mt-[0.12em] text-[0.9em] text-[#8a92a8]">{subLabel}</p> : null}
-      </div>
-      <span className="text-right font-medium text-[#4d556b]">{value}</span>
-    </div>
-  );
+function DetailRow({ label, value }: { label: string; value: string }) {
+  return <div className="mb-1.5 flex items-start justify-between gap-3 text-xs text-[#616a81]"><span>{label}</span><span className="text-right font-medium text-[#4d556b]">{value}</span></div>;
 }

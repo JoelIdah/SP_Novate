@@ -1,4 +1,4 @@
-import { forwardWithSession } from "@/lib/server/backend";
+import { forwardWithSession } from "@/lib/server/routeForwarding";
 
 export async function GET(request: Request, { params }: { params: Promise<{ reference: string }> }) {
   const { reference } = await params;

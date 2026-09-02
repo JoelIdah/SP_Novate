@@ -1,4 +1,4 @@
-import { forwardWithSession } from "@/lib/server/backend";
+import { forwardWithSession } from "@/lib/server/routeForwarding";
 
 type RouteContext = { params: Promise<{ tutorId: string }> };
 

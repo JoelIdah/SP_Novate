@@ -1,5 +1,5 @@
-import StudentTransactionsPage from "../../../components/transactions/StudentTransactionsPage";
+import TransactionsPage from "../../../components/transactions/TransactionsPage";
 
 export default function StudentsTransactionsRoute() {
-  return <StudentTransactionsPage />;
+  return <TransactionsPage role="student" />;
 }

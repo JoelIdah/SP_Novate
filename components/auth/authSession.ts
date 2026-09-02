@@ -68,6 +68,13 @@ export function clearAuthSession() {
   window.dispatchEvent(new Event(SESSION_EVENT));
 }
 
+export async function signOut() {
+  const response = await fetch("/api/auth/logout", { method: "POST" });
+  if (!response.ok) throw new Error("Could not log out.");
+  clearAuthSession();
+  window.location.replace("/login");
+}
+
 export function redirectToLoginForAuthentication() {
   clearAuthSession();
   void fetch("/api/auth/logout", { method: "POST" }).catch(() => undefined);

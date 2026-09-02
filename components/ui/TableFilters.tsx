@@ -11,10 +11,8 @@ type ChoiceFilter = {
 };
 
 type TableFiltersProps = {
-  dateFrom?: string;
-  dateTo?: string;
-  onDateFromChange?: (value: string) => void;
-  onDateToChange?: (value: string) => void;
+  date?: string;
+  onDateChange?: (value: string) => void;
   filters?: ChoiceFilter[];
   className?: string;
 };
@@ -26,19 +24,15 @@ function formatDate(value: string) {
 }
 
 export function TableFilters({
-  dateFrom = "",
-  dateTo = "",
-  onDateFromChange,
-  onDateToChange,
+  date = "",
+  onDateChange,
   filters = [],
   className = "",
 }: TableFiltersProps) {
   const [openFilter, setOpenFilter] = useState<string | null>(null);
   const rootRef = useRef<HTMLDivElement | null>(null);
-  const hasDateFilter = Boolean(onDateFromChange && onDateToChange);
-  const dateLabel = dateFrom || dateTo
-    ? `${formatDate(dateFrom)} – ${formatDate(dateTo)}`
-    : "All dates";
+  const hasDateFilter = Boolean(onDateChange);
+  const dateLabel = formatDate(date);
 
   useEffect(() => {
     const closeOnOutsideClick = (event: PointerEvent) => {
@@ -77,21 +71,12 @@ export function TableFilters({
           {openFilter === "date" ? (
             <div className="absolute left-0 top-[calc(100%+0.45rem)] z-30 w-[min(18rem,calc(100vw-2rem))] rounded-xl border border-ui-border bg-white p-3 shadow-[var(--ui-shadow-overlay)]">
               <div className="mb-3 flex items-center justify-between gap-3">
-                <p className="text-sm font-semibold text-ui-title">Date range</p>
-                {dateFrom || dateTo ? (
-                  <button className="rounded-md px-1.5 py-1 text-xs font-semibold text-brand-accent" onClick={() => { onDateFromChange?.(""); onDateToChange?.(""); }} type="button">Clear</button>
+                <p className="text-sm font-semibold text-ui-title">Date</p>
+                {date ? (
+                  <button className="rounded-md px-1.5 py-1 text-xs font-semibold text-brand-accent" onClick={() => onDateChange?.("")} type="button">Clear</button>
                 ) : null}
               </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <label className="block text-xs font-semibold text-ui-body">
-                  From
-                  <input className="mt-1.5 h-11 w-full rounded-lg border border-ui-border bg-white px-2.5 text-sm text-ui-title" max={dateTo || undefined} onChange={(event) => onDateFromChange?.(event.target.value)} type="date" value={dateFrom} />
-                </label>
-                <label className="block text-xs font-semibold text-ui-body">
-                  To
-                  <input className="mt-1.5 h-11 w-full rounded-lg border border-ui-border bg-white px-2.5 text-sm text-ui-title" min={dateFrom || undefined} onChange={(event) => onDateToChange?.(event.target.value)} type="date" value={dateTo} />
-                </label>
-              </div>
+              <input aria-label="Filter date" className="h-11 w-full rounded-lg border border-ui-border bg-white px-2.5 text-sm text-ui-title" onChange={(event) => onDateChange?.(event.target.value)} type="date" value={date} />
             </div>
           ) : null}
         </div>

@@ -1,6 +1,6 @@
  "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChevronRight, ClipboardList, Compass, EllipsisVertical, LocateFixed, MapPin, Search, Star, X } from "lucide-react";
@@ -13,6 +13,8 @@ import ResponsiveSheet from "../ui/ResponsiveSheet";
 import { DataTableShell } from "../ui/DataTableShell";
 import { Notice } from "../ui/Notice";
 import { SelectMenu } from "../ui/SelectMenu";
+import { TableFilters } from "../ui/TableFilters";
+import { InfiniteScrollTrigger } from "../ui/InfiniteScrollTrigger";
 import { getBookings, type BookingListItem, type BookingStatus } from "./bookings";
 import {
   getCategories,
@@ -41,6 +43,11 @@ type BookingView = "explore" | "manage";
 
 function bookingStatusLabel(status: BookingStatus) {
   return status.split("_").map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(" ");
+}
+
+function bookingStatusFromLabel(label: string): BookingStatus | "" {
+  if (label === "All") return "";
+  return label.toLowerCase().replaceAll(" ", "_") as BookingStatus;
 }
 
 function bookingStatusColor(status: BookingStatus) {
@@ -202,11 +209,11 @@ export default function BookingsPage({ initialView = "explore", notice }: { init
       setBookingsError("");
       try {
         const result = await getBookings({ date: bookingDate || undefined, page: bookingsPage, pageSize: 20, status: selectedStatus || undefined }, controller.signal);
-        setBookings(result.data);
+        setBookings((current) => bookingsPage === 1 ? result.data : [...current, ...result.data]);
         setBookingsTotalPages(result.total_pages);
       } catch (error) {
         if (error instanceof DOMException && error.name === "AbortError") return;
-        setBookings([]);
+        if (bookingsPage === 1) setBookings([]);
         setBookingsError(error instanceof Error ? error.message : "Could not load bookings.");
       } finally {
         if (!controller.signal.aborted) setBookingsLoading(false);
@@ -472,7 +479,7 @@ export default function BookingsPage({ initialView = "explore", notice }: { init
           ))}
           {!tutorsLoading && !tutorsError && !serviceUnavailable && tutorCards.length === 0 ? <p className="col-span-full rounded-2xl border border-dashed border-[#d9deea] bg-[#fafbfe] px-4 py-10 text-center text-sm text-[#747d92]">{debouncedTutorQuery ? "No tutors match that name." : "No tutors match the selected filters."}</p> : null}
           {tutorsLoading && tutorCards.length > 0 ? <p className="col-span-full flex items-center justify-center gap-2 py-3 text-xs text-[#8a93a7]" role="status"><span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[#d6daf0] border-t-[#4d43d7]" />Loading more tutors</p> : null}
-          <InfiniteTutorScroll enabled={!tutorsLoading && tutorsPage < tutorsTotalPages} onVisible={() => setTutorsPage((current) => current + 1)} />
+          <InfiniteScrollTrigger className="col-span-full" enabled={!tutorsLoading && tutorsPage < tutorsTotalPages} onVisible={() => setTutorsPage((current) => current + 1)} />
           </div>
         ) : (
           <section className="flex flex-col space-y-4">
@@ -492,13 +499,10 @@ export default function BookingsPage({ initialView = "explore", notice }: { init
               <p className="rounded-xl border border-[#bde8d0] bg-[#effaf4] px-4 py-3 text-sm font-medium text-[#20784d]" role="status">Your booking request was submitted. You can track it here.</p>
             ) : null}
 
-            <div className="grid gap-3 rounded-xl border border-[#e5e9f2] bg-[#f8f9fc] p-3 sm:grid-cols-2">
-              <label className="text-xs font-semibold text-[#657087]">Status<SelectMenu ariaLabel="Booking status" className="mt-1.5" onChange={(value) => { setSelectedStatus(value as BookingStatus | ""); setBookingsPage(1); }} options={[{ label: "All statuses", value: "" }, { label: "Pending", value: "pending" }, { label: "Awaiting approval", value: "awaiting_approval" }, { label: "Ongoing", value: "ongoing" }, { label: "Completed", value: "completed" }, { label: "Cancelled", value: "cancelled" }]} placeholder="All statuses" value={selectedStatus} /></label>
-              <label className="text-xs font-semibold text-[#657087]">Booking date<input className="mt-1.5 h-11 w-full rounded-xl border border-[#dce1eb] bg-white px-3 text-sm text-[#4a5265] outline-none focus:border-[#5f64d8]" onChange={(event) => { setBookingDate(event.target.value); setBookingsPage(1); }} type="date" value={bookingDate} /></label>
-            </div>
+            <TableFilters date={bookingDate} filters={[{ label: "Status", value: selectedStatus ? bookingStatusLabel(selectedStatus) : "All", options: ["All", "Pending", "Awaiting approval", "Ongoing", "Completed", "Cancelled"], onChange: (value) => { setSelectedStatus(bookingStatusFromLabel(value)); setBookingsPage(1); } }]} onDateChange={(value) => { setBookingDate(value); setBookingsPage(1); }} />
 
             {bookingsError ? <div className="flex items-center justify-between gap-3 rounded-xl border border-[#f0d6b5] bg-[#fff9f1] px-4 py-3 text-sm font-medium text-[#8b5a20]" role="alert"><span>{bookingsError}</span><button className="shrink-0 underline" onClick={() => setBookingsRefreshKey((current) => current + 1)} type="button">Try again</button></div> : null}
-            {bookingsLoading ? <p className="py-4 text-center text-sm text-[#7a8299]" role="status">Loading bookings...</p> : null}
+            {bookingsLoading && bookingsPage === 1 ? <p className="py-4 text-center text-sm text-[#7a8299]" role="status">Loading bookings...</p> : null}
 
             {!bookingsLoading && bookings.length ? <DataTableShell>
                 <table className="w-full min-w-[920px] border-collapse text-left text-[0.74em] text-[#5f667b]">
@@ -573,7 +577,8 @@ export default function BookingsPage({ initialView = "explore", notice }: { init
               ))}
             </div> : null}
             {!bookingsLoading && !bookingsError && bookings.length === 0 ? <p className="rounded-xl border border-dashed border-[#d9deea] bg-[#fafbfe] px-4 py-10 text-center text-sm text-[#747d92]">No bookings match these filters.</p> : null}
-            {bookingsTotalPages > 1 ? <div className="flex items-center justify-center gap-3 pb-6"><button className="min-h-10 rounded-full border border-[#d8dde8] px-4 text-sm font-semibold text-[#596177] disabled:opacity-40" disabled={bookingsLoading || bookingsPage <= 1} onClick={() => setBookingsPage((current) => current - 1)} type="button">Previous</button><span className="text-xs font-medium text-[#7a8299]">Page {bookingsPage} of {bookingsTotalPages}</span><button className="min-h-10 rounded-full border border-[#d8dde8] px-4 text-sm font-semibold text-[#596177] disabled:opacity-40" disabled={bookingsLoading || bookingsPage >= bookingsTotalPages} onClick={() => setBookingsPage((current) => current + 1)} type="button">Next</button></div> : null}
+            {bookingsLoading && bookingsPage > 1 ? <p className="py-3 text-center text-xs text-[#8a93a7]" role="status">Loading more bookings...</p> : null}
+            <InfiniteScrollTrigger enabled={!bookingsLoading && bookingsPage < bookingsTotalPages} onVisible={() => setBookingsPage((current) => current + 1)} />
           </section>
         )}
         </section>
@@ -660,20 +665,6 @@ function LocationRequiredModal({ onClose, onSaved }: { onClose: () => void; onSa
 
 function TutorCardSkeleton() {
   return <div className="animate-pulse rounded-2xl border border-[#e8ecf3] bg-[#f6f8fc] p-4"><div className="rounded-xl border border-[#e8ecf3] bg-white p-4"><div className="flex gap-3"><span className="h-14 w-14 shrink-0 rounded-xl bg-[#e9edf4]" /><div className="flex-1"><span className="block h-3 w-2/5 rounded-full bg-[#e9edf4]" /><span className="mt-2 block h-2.5 w-3/5 rounded-full bg-[#f0f2f6]" /><div className="mt-3 flex gap-2"><span className="h-5 w-20 rounded-md bg-[#f0f2f6]" /><span className="h-5 w-16 rounded-md bg-[#f0f2f6]" /></div><span className="mt-3 block h-2.5 w-1/2 rounded-full bg-[#f0f2f6]" /></div></div></div><div className="mt-3 flex justify-end gap-2"><span className="h-10 w-28 rounded-full bg-[#e9edf4]" /><span className="h-10 w-28 rounded-full bg-[#dddff0]" /></div></div>;
-}
-
-function InfiniteTutorScroll({ enabled, onVisible }: { enabled: boolean; onVisible: () => void }) {
-  const triggerRef = useRef<HTMLDivElement | null>(null);
-  useEffect(() => {
-    const trigger = triggerRef.current;
-    if (!enabled || !trigger) return;
-    const observer = new IntersectionObserver((entries) => {
-      if (entries.some((entry) => entry.isIntersecting)) onVisible();
-    }, { rootMargin: "180px" });
-    observer.observe(trigger);
-    return () => observer.disconnect();
-  }, [enabled, onVisible]);
-  return <div aria-hidden className="col-span-full h-px" ref={triggerRef} />;
 }
 
 function FilterSelect({

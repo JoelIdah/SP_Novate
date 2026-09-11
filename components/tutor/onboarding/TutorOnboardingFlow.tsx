@@ -17,7 +17,8 @@ import {
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
-import { useSessionUser } from "../../auth/authSession";
+import { setAuthSession, useSessionUser } from "../../auth/authSession";
+import { fetchAuthenticatedProfile } from "../../auth/profile";
 import { OnboardingNavbar } from "../../signup/OnboardingNavbar";
 import { StepTwoAddressConfirm } from "../../signup/profile-setup/StepTwoAddressConfirm";
 import { StepTwoLocationPrompt } from "../../signup/profile-setup/StepTwoLocationPrompt";
@@ -339,6 +340,13 @@ export default function TutorOnboardingFlow() {
     country: personalForm.country,
   });
   const displayName = firstName || "there";
+  const hasSavedApplication = Boolean(
+    reviewData?.personal_details ||
+    reviewData?.identification ||
+    reviewData?.compensation ||
+    reviewData?.location ||
+    reviewData?.documents.length,
+  );
 
   const markCompleted = (item: SetupStage) =>
     setCompleted((current) =>
@@ -393,7 +401,7 @@ export default function TutorOnboardingFlow() {
   });
 
   useEffect(() => {
-    if (stage !== "review") return;
+    if (stage !== "overview" && stage !== "review") return;
     const controller = new AbortController();
     getTutorOnboardingReview(controller.signal)
       .then((data) => {
@@ -441,7 +449,7 @@ export default function TutorOnboardingFlow() {
     setIdFiles(combined);
   };
   const startSetup = () => {
-    setStage("personal");
+    setStage(hasSavedApplication ? "review" : "personal");
   };
   const continuePersonal = async () => {
     setValidationVisible(true);
@@ -645,6 +653,8 @@ export default function TutorOnboardingFlow() {
       setSubmissionMessage(message);
       setApplicationSubmitted(true);
       setReviewConfirmed(false);
+      void fetchAuthenticatedProfile().then(setAuthSession).catch(() => undefined);
+      void getTutorOnboardingReview().then(setReviewData).catch(() => undefined);
     } catch (caught) {
       setSubmissionMessage(caught instanceof Error ? caught.message : "Tutor application could not be submitted.");
     } finally {
@@ -695,7 +705,7 @@ export default function TutorOnboardingFlow() {
               onClick={startSetup}
               type="button"
             >
-              Let&apos;s get started
+              {hasSavedApplication ? "Resume application" : "Let's get started"}
             </button>
           </div>
         ) : stage === "review" ? (

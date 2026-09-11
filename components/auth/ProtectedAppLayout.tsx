@@ -4,6 +4,7 @@ import { useEffect, useState, type ReactNode } from "react";
 
 import { redirectToLoginForAuthentication, setAuthSession } from "./authSession";
 import { isAuthenticatedProfile } from "./profile";
+import { ChatConnection } from "../chat/ChatConnection";
 
 export function ProtectedAppLayout({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
@@ -42,7 +43,7 @@ export function ProtectedAppLayout({ children }: { children: ReactNode }) {
     return () => controller.abort();
   }, [attempt]);
 
-  if (status === "ready") return children;
+  if (status === "ready") return <ChatConnection>{children}</ChatConnection>;
   if (status === "loading") return null;
 
   return (

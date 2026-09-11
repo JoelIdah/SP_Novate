@@ -1,6 +1,7 @@
 import type { NextResponse } from "next/server";
 
 export const AUTH_TOKEN_COOKIE = "spnovate_auth_token";
+export const PROFILE_SETUP_REQUIRED_COOKIE = "spnovate_profile_setup_required";
 
 const DEFAULT_SESSION_MAX_AGE_SECONDS = 60 * 60 * 24;
 
@@ -45,8 +46,39 @@ export function setAuthCookie(response: NextResponse, token: string) {
   });
 }
 
+export function readProfileSetupRequired(request: Request): boolean | null {
+  const cookieHeader = request.headers.get("cookie") ?? "";
+  const prefix = `${PROFILE_SETUP_REQUIRED_COOKIE}=`;
+  const value = cookieHeader
+    .split(";")
+    .map((part) => part.trim())
+    .find((part) => part.startsWith(prefix))
+    ?.slice(prefix.length);
+  return value === "1" ? true : value === "0" ? false : null;
+}
+
+export function setProfileSetupRequiredCookie(
+  response: NextResponse,
+  required: boolean,
+) {
+  response.cookies.set(PROFILE_SETUP_REQUIRED_COOKIE, required ? "1" : "0", {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: DEFAULT_SESSION_MAX_AGE_SECONDS,
+  });
+}
+
 export function clearAuthCookie(response: NextResponse) {
   response.cookies.set(AUTH_TOKEN_COOKIE, "", {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: 0,
+  });
+  response.cookies.set(PROFILE_SETUP_REQUIRED_COOKIE, "", {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",

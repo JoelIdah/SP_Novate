@@ -43,6 +43,7 @@ export function TutorReviewStep({ confirmed, onConfirmedChange, onEdit, review }
   return (
     <section className="mx-auto w-full max-w-[40rem] pb-4">
       <div className="mb-4 text-center"><h1 className="text-2xl font-bold text-[#1d2331]">Hey {personal?.first_name || "there"}!</h1><p className="mt-1 text-sm font-medium text-[#8a93a7]">Please confirm the information saved for your tutor application.</p></div>
+      <div className="mb-3 rounded-xl border border-[#dfe3f0] bg-[#f7f8fc] px-4 py-3 text-sm text-[#596277]"><span className="font-semibold">Application status:</span> {titleCase(review.tutor_status)}</div>
       {!review.is_complete ? <div className="mb-3 rounded-xl border border-[#f0d6b5] bg-[#fff9f1] px-4 py-3 text-sm text-[#8b5a20]" role="alert"><p className="font-semibold">Your application is not complete yet.</p><p className="mt-1 text-xs">Missing: {review.missing_steps.length ? review.missing_steps.map(titleCase).join(", ") : "one or more required steps"}.</p></div> : null}
       <div className="space-y-3">
         <ReviewCard icon={UserRound} onEdit={() => onEdit("personal")} title="Personal information">

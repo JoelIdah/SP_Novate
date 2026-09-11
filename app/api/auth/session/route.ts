@@ -4,6 +4,7 @@ import {
   clearAuthCookie,
   getBackendUrl,
   readAuthToken,
+  readProfileSetupRequired,
 } from "@/lib/server/authSession";
 
 export async function GET(request: Request) {
@@ -36,7 +37,11 @@ export async function GET(request: Request) {
       return response;
     }
 
-    return NextResponse.json({ authenticated: true, user: payload?.data ?? null });
+    return NextResponse.json({
+      authenticated: true,
+      profileSetupRequired: readProfileSetupRequired(request),
+      user: payload?.data ?? null,
+    });
   } catch {
     return NextResponse.json(
       { authenticated: false, user: null },
@@ -44,4 +49,3 @@ export async function GET(request: Request) {
     );
   }
 }
-

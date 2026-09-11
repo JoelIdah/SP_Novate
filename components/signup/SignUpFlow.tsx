@@ -8,7 +8,7 @@ import { AuthCardHeader } from "./AuthCardHeader";
 import { AuthCard } from "./AuthPrimitives";
 import { AuthShell } from "./AuthShell";
 import { OtpStep } from "./OtpStep";
-import { areProfileDetailsSubmitted, clearProfileSetupSession, isProfileSetupActive, subscribeProfileSetupSession, useProfileSetupUser } from "./profileSetupSession";
+import { clearProfileSetupSession, isProfileSetupActive, subscribeProfileSetupSession, useProfileSetupUser } from "./profileSetupSession";
 import { StudentFlow } from "./student/StudentFlow";
 import type { SetupMode, SetupStepId, SignUpFlowStage, SignUpView } from "./types";
 import { getSsoReturnPath } from "../auth/ssoReturn";
@@ -69,19 +69,6 @@ function useProfileSetupActive(): boolean {
   );
 }
 
-function useProfileSetupRouteReady(forceProfileSetup: boolean): boolean {
-  return useSyncExternalStore(
-    (onStoreChange) => {
-      return subscribeProfileSetupSession(onStoreChange);
-    },
-    () =>
-      !forceProfileSetup ||
-      isProfileSetupActive() ||
-      areProfileDetailsSubmitted(),
-    () => !forceProfileSetup,
-  );
-}
-
 export function SignUpFlow({ forceProfileSetup = false }: { forceProfileSetup?: boolean }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -92,7 +79,7 @@ export function SignUpFlow({ forceProfileSetup = false }: { forceProfileSetup?: 
   const profileSetupActive = useProfileSetupActive();
   const profileSetupUser = useProfileSetupUser();
   const [accountProfile, setAccountProfile] = useState<AccountProfile>({});
-  const profileSetupRouteReady = useProfileSetupRouteReady(forceProfileSetup);
+  const [profileSetupRouteReady, setProfileSetupRouteReady] = useState(!forceProfileSetup);
   const setupProfile = {
     email: accountProfile.email ?? profileSetupUser.email,
     firstName: accountProfile.firstName ?? profileSetupUser.firstName,
@@ -104,14 +91,25 @@ export function SignUpFlow({ forceProfileSetup = false }: { forceProfileSetup?: 
 
     void fetch("/api/auth/session", { cache: "no-store" })
       .then(async (response) => {
-        const payload = await response.json().catch(() => null) as { authenticated?: boolean } | null;
+        const payload = await response.json().catch(() => null) as {
+          authenticated?: boolean;
+          profileSetupRequired?: boolean | null;
+          user?: { email?: string; first_name?: string; last_name?: string } | null;
+        } | null;
         if (!response.ok || !payload?.authenticated) {
           router.replace("/login");
           return;
         }
-        if (!isProfileSetupActive() && !areProfileDetailsSubmitted()) {
+        if (payload.profileSetupRequired !== true) {
           router.replace("/students/dashboard");
+          return;
         }
+        setAccountProfile({
+          email: payload.user?.email ?? "",
+          firstName: payload.user?.first_name ?? "",
+          lastName: payload.user?.last_name ?? "",
+        });
+        setProfileSetupRouteReady(true);
       })
       .catch(() => router.replace("/login"));
   }, [forceProfileSetup, router]);

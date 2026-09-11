@@ -6,6 +6,7 @@ import {
   isSameOriginMutation,
   readAuthToken,
   setAuthCookie,
+  setProfileSetupRequiredCookie,
 } from "@/lib/server/authSession";
 
 export async function PUT(request: Request) {
@@ -61,6 +62,7 @@ export async function PUT(request: Request) {
         );
       }
       setAuthCookie(response, upgradedToken);
+      setProfileSetupRequiredCookie(response, false);
     }
     return response;
   } catch {

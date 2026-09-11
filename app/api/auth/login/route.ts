@@ -4,6 +4,7 @@ import {
   getBackendUrl,
   isSameOriginMutation,
   setAuthCookie,
+  setProfileSetupRequiredCookie,
 } from "@/lib/server/authSession";
 
 type BackendAuthResponse = {
@@ -77,16 +78,20 @@ export async function POST(request: Request) {
       return NextResponse.json(profilePayload ?? {}, { status: profileResponse.status });
     }
 
+    const profileSetupRequired = loginPayload?.data?.profile_setup_required;
     const response = NextResponse.json({
       status: loginPayload?.status,
       message: loginPayload?.message,
       code: loginPayload?.code,
       data: {
-        profile_setup_required: loginPayload?.data?.profile_setup_required,
+        profile_setup_required: profileSetupRequired,
         user: profilePayload?.data ?? null,
       },
     });
     setAuthCookie(response, token);
+    if (profileSetupRequired !== undefined) {
+      setProfileSetupRequiredCookie(response, profileSetupRequired);
+    }
     return response;
   } catch {
     return NextResponse.json(

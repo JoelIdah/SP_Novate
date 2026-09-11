@@ -1,5 +1,4 @@
 import type { SocialAuthResult, SocialProvider } from "./types";
-import { resolveProfileSetupRequired } from "../../auth/profileSetupStatus";
 
 type SocialAuthPayload = {
   provider: SocialProvider;
@@ -61,11 +60,15 @@ export async function signInWithProvider({ provider, token }: SocialAuthPayload)
     };
   }
 
-  if (
-    resolveProfileSetupRequired({
-      profileSetupRequired: data?.data?.profile_setup_required,
-    })
-  ) {
+  if (typeof data?.data?.profile_setup_required !== "boolean") {
+    return {
+      kind: "error",
+      message: "The authentication service did not return the profile setup status.",
+      status: 502,
+    };
+  }
+
+  if (data.data.profile_setup_required) {
     return {
       kind: "success",
       message: data?.message ?? "Profile setup is required.",

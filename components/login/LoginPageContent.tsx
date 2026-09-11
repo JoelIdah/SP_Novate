@@ -29,7 +29,6 @@ import {
   fetchAuthenticatedProfile,
   type AuthenticatedProfile,
 } from "../auth/profile";
-import { resolveProfileSetupRequired } from "../auth/profileSetupStatus";
 import { getSsoReturnPath } from "../auth/ssoReturn";
 
 type LoginResponse = {
@@ -221,9 +220,10 @@ export function LoginPageContent() {
       let profileSetupRequired: boolean;
       let profile: AuthenticatedProfile;
       try {
-        profileSetupRequired = resolveProfileSetupRequired({
-          profileSetupRequired: data?.data?.profile_setup_required,
-        });
+        if (typeof data?.data?.profile_setup_required !== "boolean") {
+          throw new Error("The login service did not return the profile setup status.");
+        }
+        profileSetupRequired = data.data.profile_setup_required;
         profile = await fetchAuthenticatedProfile();
       } catch (error) {
         setPasswordError(

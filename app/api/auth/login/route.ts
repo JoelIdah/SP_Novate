@@ -24,7 +24,7 @@ async function readJson(response: Response): Promise<BackendAuthResponse | null>
 export async function POST(request: Request) {
   if (!isSameOriginMutation(request)) {
     return NextResponse.json(
-      { status: "error", code: 403, message: "Forbidden" },
+      { status: "error", code: 403, message: "You don’t have permission to perform this action." },
       { status: 403 },
     );
   }
@@ -32,7 +32,7 @@ export async function POST(request: Request) {
   const backendUrl = getBackendUrl();
   if (!backendUrl) {
     return NextResponse.json(
-      { status: "error", code: 500, message: "Authentication is not configured." },
+      { status: "error", code: 500, message: "Sign-in is temporarily unavailable. Please try again later." },
       { status: 500 },
     );
   }
@@ -61,7 +61,7 @@ export async function POST(request: Request) {
     const token = loginPayload?.data?.token?.trim();
     if (!token) {
       return NextResponse.json(
-        { status: "error", code: 502, message: "The login service returned an invalid response." },
+        { status: "error", code: 502, message: "We couldn’t sign you in right now. Please try again." },
         { status: 502 },
       );
     }
@@ -95,7 +95,7 @@ export async function POST(request: Request) {
     return response;
   } catch {
     return NextResponse.json(
-      { status: "error", code: 502, message: "Could not reach login service. Please try again." },
+      { status: "error", code: 502, message: "We couldn’t sign you in right now. Please try again." },
       { status: 502 },
     );
   }

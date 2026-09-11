@@ -34,7 +34,7 @@ function parseCoordinate(value: unknown, min: number, max: number) {
 export async function POST(request: Request) {
   const apiKey = process.env.GOOGLE_PLACES_API_KEY;
   if (!apiKey) {
-    return NextResponse.json({ message: "GPS address lookup is not configured on the server." }, { status: 503 });
+    return NextResponse.json({ message: "Current-location lookup is temporarily unavailable. Search for your address instead." }, { status: 503 });
   }
 
   let latitude: number | null = null;

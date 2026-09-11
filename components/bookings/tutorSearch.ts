@@ -39,22 +39,22 @@ type TutorQuery = {
   minimumRating?: string;
 };
 
-function readSuccessData(payload: unknown, service: string): unknown {
+function readSuccessData(payload: unknown, errorMessage: string): unknown {
   if (
     !isRecord(payload) ||
     payload.status !== "success" ||
     payload.code !== 200 ||
     !("data" in payload)
   ) {
-    throw new Error(`${service} returned an invalid response.`);
+    throw new Error(errorMessage);
   }
   return payload.data;
 }
 
 function parseCategories(payload: unknown): StudentCategory[] {
-  const data = readSuccessData(payload, "The categories service");
+  const data = readSuccessData(payload, "We couldn’t load the learning categories. Please try again.");
   if (!Array.isArray(data)) {
-    throw new Error("The categories service did not return a categories list.");
+    throw new Error("We couldn’t load the learning categories. Please try again.");
   }
 
   for (const category of data) {
@@ -68,7 +68,7 @@ function parseCategories(payload: unknown): StudentCategory[] {
           isRecord(subject) && typeof subject.subject === "string",
       )
     ) {
-      throw new Error("The categories service returned invalid category data.");
+      throw new Error("We couldn’t load the learning categories. Please try again.");
     }
   }
 
@@ -76,7 +76,7 @@ function parseCategories(payload: unknown): StudentCategory[] {
 }
 
 function parseTutorResults(payload: unknown): TutorResultsPage {
-  const data = readSuccessData(payload, "The tutor service");
+  const data = readSuccessData(payload, "We couldn’t load the tutors. Please try again.");
   if (
     !isRecord(data) ||
     !Array.isArray(data.data) ||
@@ -85,7 +85,7 @@ function parseTutorResults(payload: unknown): TutorResultsPage {
     typeof data.total !== "number" ||
     typeof data.total_pages !== "number"
   ) {
-    throw new Error("The tutor service returned invalid pagination data.");
+    throw new Error("We couldn’t load more tutors. Please try again.");
   }
 
   for (const tutor of data.data) {
@@ -111,7 +111,7 @@ function parseTutorResults(payload: unknown): TutorResultsPage {
         tutor.distance_km !== null &&
         typeof tutor.distance_km !== "number")
     ) {
-      throw new Error("The tutor service returned invalid tutor data.");
+      throw new Error("We couldn’t load the tutors. Please try again.");
     }
   }
 
@@ -169,5 +169,5 @@ export async function updateCurrentLocation(location: {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ ...location, source: "gps" }),
   });
-  readSuccessData(payload, "The location service");
+  readSuccessData(payload, "We couldn’t save your location. Please try again.");
 }

@@ -9,14 +9,14 @@ import {
 
 function originError() {
   return NextResponse.json(
-    { status: "error", code: 403, message: "Forbidden" },
+    { status: "error", code: 403, message: "You don’t have permission to perform this action." },
     { status: 403 },
   );
 }
 
 function configurationError() {
   return NextResponse.json(
-    { status: "error", code: 500, message: "API_BASE_URL is not configured." },
+    { status: "error", code: 500, message: "This feature is temporarily unavailable." },
     { status: 500 },
   );
 }
@@ -43,7 +43,7 @@ export async function forwardPublicAuth(request: Request, backendPath: string) {
     });
   } catch {
     return NextResponse.json(
-      { status: "error", code: 502, message: "The backend is unavailable." },
+      { status: "error", code: 502, message: "We couldn’t complete that request. Please try again." },
       { status: 502 },
     );
   }
@@ -58,7 +58,7 @@ export async function forwardWithSession(
   const token = readAuthToken(request);
   if (!token) {
     return NextResponse.json(
-      { status: "error", code: 401, message: "Unauthorized" },
+      { status: "error", code: 401, message: "Your session has expired. Please sign in again." },
       { status: 401 },
     );
   }
@@ -91,7 +91,7 @@ export async function forwardWithSession(
     return result;
   } catch {
     return NextResponse.json(
-      { status: "error", code: 502, message: "The backend is unavailable." },
+      { status: "error", code: 502, message: "We couldn’t complete that request. Please try again." },
       { status: 502 },
     );
   }

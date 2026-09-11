@@ -15,7 +15,7 @@ function clean(value: unknown) {
 export async function POST(request: Request) {
   const apiKey = process.env.GOOGLE_PLACES_API_KEY;
   if (!apiKey) {
-    return NextResponse.json({ message: "Address verification is not configured on the server." }, { status: 503 });
+    return NextResponse.json({ message: "Address verification is temporarily unavailable. Please try again later." }, { status: 503 });
   }
 
   let address = "";

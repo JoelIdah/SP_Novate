@@ -39,7 +39,7 @@ export function initializeFacebookSdk() {
 export function startFacebookAuth(options: { onToken: (token: string) => void; onError: (message: string) => void }) {
   const appId = process.env.NEXT_PUBLIC_FACEBOOK_APP_ID;
   if (!appId) {
-    options.onError("Facebook auth is not configured. Add NEXT_PUBLIC_FACEBOOK_APP_ID.");
+    options.onError("Facebook sign-in is temporarily unavailable.");
     return;
   }
 

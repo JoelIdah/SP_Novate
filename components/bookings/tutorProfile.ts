@@ -45,9 +45,9 @@ export type TutorResources = {
   video: TutorResource[];
 };
 
-function readSuccessData(payload: unknown, service: string) {
+function readSuccessData(payload: unknown, errorMessage: string) {
   if (!isRecord(payload) || payload.status !== "success" || payload.code !== 200 || !("data" in payload)) {
-    throw new Error(`${service} returned an invalid response.`);
+    throw new Error(errorMessage);
   }
   return payload.data;
 }
@@ -65,7 +65,7 @@ function isTutorSubject(value: unknown): value is TutorSubject {
 }
 
 function parseProfile(payload: unknown): TutorProfile {
-  const data = readSuccessData(payload, "The tutor profile service");
+  const data = readSuccessData(payload, "We couldn’t load this tutor profile. Please try again.");
   if (!isRecord(data) ||
     typeof data.public_id !== "string" ||
     typeof data.name !== "string" ||
@@ -80,13 +80,13 @@ function parseProfile(payload: unknown): TutorProfile {
     !Array.isArray(data.subjects) ||
     !data.subjects.every(isTutorSubject) ||
     (data.distance_km !== undefined && data.distance_km !== null && typeof data.distance_km !== "number")) {
-    throw new Error("The tutor profile service returned invalid profile data.");
+    throw new Error("We couldn’t load this tutor profile. Please try again.");
   }
   return data as TutorProfile;
 }
 
 function parseRatings(payload: unknown): TutorRating[] {
-  const data = readSuccessData(payload, "The ratings service");
+  const data = readSuccessData(payload, "We couldn’t load tutor ratings. Please try again.");
   if (!Array.isArray(data) || !data.every((rating) =>
     isRecord(rating) &&
     typeof rating.created_at === "string" &&
@@ -94,7 +94,7 @@ function parseRatings(payload: unknown): TutorRating[] {
     typeof rating.rating === "number" &&
     typeof rating.student_name === "string" &&
     typeof rating.student_photo === "string")) {
-    throw new Error("The ratings service returned invalid ratings data.");
+    throw new Error("We couldn’t load tutor ratings. Please try again.");
   }
   return data as TutorRating[];
 }
@@ -105,12 +105,12 @@ function isResource(value: unknown): value is TutorResource {
 }
 
 function parseResources(payload: unknown): TutorResources {
-  const data = readSuccessData(payload, "The resources service");
+  const data = readSuccessData(payload, "We couldn’t load tutor resources. Please try again.");
   if (!isRecord(data) ||
     !Array.isArray(data.docs) || !data.docs.every(isResource) ||
     !Array.isArray(data.link) || !data.link.every(isResource) ||
     !Array.isArray(data.video) || !data.video.every(isResource)) {
-    throw new Error("The resources service returned invalid resource data.");
+    throw new Error("We couldn’t load tutor resources. Please try again.");
   }
   return data as TutorResources;
 }

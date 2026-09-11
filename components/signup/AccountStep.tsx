@@ -278,7 +278,7 @@ export function AccountStep({
           }),
         });
       } catch {
-        setFirstNameError("Could not reach signup service. Please try again.");
+        setFirstNameError("We couldn’t create your account right now. Please try again.");
         return;
       }
 

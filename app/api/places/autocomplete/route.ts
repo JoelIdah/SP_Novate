@@ -20,7 +20,7 @@ export async function POST(request: Request) {
   const apiKey = process.env.GOOGLE_PLACES_API_KEY;
   if (!apiKey) {
     return NextResponse.json(
-      { message: "Address search is not configured on the server." },
+      { message: "Address search is temporarily unavailable. Please try again later." },
       { status: 503 },
     );
   }

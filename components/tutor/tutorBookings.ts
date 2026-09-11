@@ -45,9 +45,9 @@ export type TutorBookingDetails = {
   timeline: Array<{ date?: string; label: string; reached: boolean; time?: string }>;
 };
 
-function responseData(payload: unknown, service: string) {
+function responseData(payload: unknown, errorMessage: string) {
   if (!isRecord(payload) || payload.status !== "success" || payload.code !== 200 || !("data" in payload)) {
-    throw new Error(`${service} returned invalid data.`);
+    throw new Error(errorMessage);
   }
   return payload.data;
 }
@@ -56,11 +56,11 @@ export async function getTutorBookings(query: { date?: string; page: number; pag
   const params = new URLSearchParams({ page: String(query.page), page_size: String(query.pageSize) });
   if (query.status) params.set("status", query.status);
   if (query.date) params.set("date", query.date);
-  return responseData(await requestJson(`/api/tutor/bookings?${params}`, { signal }), "The tutor bookings service") as TutorBookingPage;
+  return responseData(await requestJson(`/api/tutor/bookings?${params}`, { signal }), "We couldn’t load your booking requests. Please try again.") as TutorBookingPage;
 }
 
 export async function getTutorBooking(bookingId: string, signal?: AbortSignal) {
-  return responseData(await requestJson(`/api/tutor/bookings/${encodeURIComponent(bookingId)}`, { signal }), "The tutor booking service") as TutorBookingDetails;
+  return responseData(await requestJson(`/api/tutor/bookings/${encodeURIComponent(bookingId)}`, { signal }), "We couldn’t load this booking. Please try again.") as TutorBookingDetails;
 }
 
 export async function acceptTutorBooking(bookingId: string) {

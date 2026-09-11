@@ -36,7 +36,7 @@ export async function signInWithProvider({ provider, token }: SocialAuthPayload)
   } catch {
     return {
       kind: "error",
-      message: "Could not reach social auth service. Please try again.",
+      message: "Social sign-in is temporarily unavailable. Please try again.",
       status: 0,
     };
   }
@@ -63,7 +63,7 @@ export async function signInWithProvider({ provider, token }: SocialAuthPayload)
   if (typeof data?.data?.profile_setup_required !== "boolean") {
     return {
       kind: "error",
-      message: "The authentication service did not return the profile setup status.",
+      message: "We couldn’t finish signing you in. Please try again.",
       status: 502,
     };
   }

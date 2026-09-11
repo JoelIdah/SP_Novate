@@ -258,7 +258,7 @@ export function ChatConnection({ children }: { children: ReactNode }) {
       }
 
       if (payload.event === "error") {
-        setError(typeof payload.data === "string" ? payload.data : "The chat request failed.");
+        setError(typeof payload.data === "string" ? payload.data : "We couldn’t complete that chat action. Please try again.");
       }
     };
 
@@ -276,7 +276,7 @@ export function ChatConnection({ children }: { children: ReactNode }) {
         }
         if (!response.ok) {
           throw new Error(
-            typeof payload?.message === "string" ? payload.message : "Chat connection failed.",
+            typeof payload?.message === "string" ? payload.message : "We couldn’t connect to chat. We’ll keep trying.",
           );
         }
         const token = typeof payload?.token === "string" ? payload.token : "";
@@ -295,7 +295,7 @@ export function ChatConnection({ children }: { children: ReactNode }) {
           try {
             handleEvent(JSON.parse(String(message.data)) as SocketEvent);
           } catch {
-            setError("Chat returned an unreadable response.");
+            setError("Chat could not update correctly. Please reconnect and try again.");
           }
         };
         socket.onerror = () => setError("The live chat connection was interrupted.");
@@ -305,7 +305,7 @@ export function ChatConnection({ children }: { children: ReactNode }) {
         };
       } catch (connectionError) {
         if (stopped) return;
-        setError(connectionError instanceof Error ? connectionError.message : "Chat connection failed.");
+        setError(connectionError instanceof Error ? connectionError.message : "We couldn’t connect to chat. We’ll keep trying.");
         scheduleReconnect();
       }
     };

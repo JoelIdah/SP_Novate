@@ -12,14 +12,14 @@ import {
 export async function PUT(request: Request) {
   if (!isSameOriginMutation(request)) {
     return NextResponse.json(
-      { status: "error", code: 403, message: "Forbidden" },
+      { status: "error", code: 403, message: "You don’t have permission to perform this action." },
       { status: 403 },
     );
   }
   const token = readAuthToken(request);
   if (!token) {
     return NextResponse.json(
-      { status: "error", code: 401, message: "Unauthorized" },
+      { status: "error", code: 401, message: "Your session has expired. Please sign in again." },
       { status: 401 },
     );
   }
@@ -27,7 +27,7 @@ export async function PUT(request: Request) {
   const backendUrl = getBackendUrl();
   if (!backendUrl) {
     return NextResponse.json(
-      { status: "error", code: 500, message: "Profile setup is not configured." },
+      { status: "error", code: 500, message: "Profile setup is temporarily unavailable. Please try again later." },
       { status: 500 },
     );
   }
@@ -57,7 +57,7 @@ export async function PUT(request: Request) {
       const upgradedToken = payload?.data?.token?.trim();
       if (!upgradedToken) {
         return NextResponse.json(
-          { status: "error", code: 502, message: "The profile service returned an invalid response." },
+          { status: "error", code: 502, message: "We couldn’t save your profile right now. Please try again." },
           { status: 502 },
         );
       }
@@ -67,7 +67,7 @@ export async function PUT(request: Request) {
     return response;
   } catch {
     return NextResponse.json(
-      { status: "error", code: 502, message: "Could not reach the profile service." },
+      { status: "error", code: 502, message: "We couldn’t save your profile right now. Please try again." },
       { status: 502 },
     );
   }

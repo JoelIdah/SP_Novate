@@ -82,7 +82,7 @@ export default function TutorSettingsPage({ initialTab = "account" }: { initialT
       if (!controller.signal.aborted) setSubjectsError(error instanceof Error ? error.message : "Subjects could not be loaded.");
     }).finally(() => { if (!controller.signal.aborted) setSubjectsLoading(false); });
     void getTutorKyc(controller.signal).then(setKyc).catch((error: unknown) => {
-      if (!controller.signal.aborted) setKycError(error instanceof Error ? error.message : "KYC could not be loaded.");
+      if (!controller.signal.aborted) setKycError(error instanceof Error ? error.message : "We couldn’t load your identity verification details.");
     }).finally(() => { if (!controller.signal.aborted) setKycLoading(false); });
     fetch("/api/categories", { cache: "no-store", signal: controller.signal }).then((response) => response.json()).then((payload) => setCategories(Array.isArray(payload?.data) ? payload.data : [])).catch(() => undefined);
     return () => controller.abort();

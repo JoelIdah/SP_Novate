@@ -11,7 +11,7 @@ function parseCoordinate(value: string | null, min: number, max: number) {
 export async function GET(request: Request) {
   const apiKey = process.env.GOOGLE_PLACES_API_KEY;
   if (!apiKey) {
-    return NextResponse.json({ message: "Map preview is not configured on the server." }, { status: 503 });
+    return NextResponse.json({ message: "The map preview is temporarily unavailable." }, { status: 503 });
   }
 
   const requestUrl = new URL(request.url);

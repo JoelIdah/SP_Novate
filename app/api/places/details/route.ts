@@ -26,7 +26,7 @@ function componentValue(components: GoogleAddressComponent[], ...types: string[]
 export async function POST(request: Request) {
   const apiKey = process.env.GOOGLE_PLACES_API_KEY;
   if (!apiKey) {
-    return NextResponse.json({ message: "Address details are not configured on the server." }, { status: 503 });
+    return NextResponse.json({ message: "We couldn’t load this address. Please try again." }, { status: 503 });
   }
 
   let placeId = "";

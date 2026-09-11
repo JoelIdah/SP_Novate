@@ -15,7 +15,7 @@ export async function getStudentDashboardStats(signal?: AbortSignal) {
   if (!isRecord(payload) || payload.status !== "success" || payload.code !== 200 || !isRecord(data) ||
       typeof data.ongoing !== "number" || typeof data.pending !== "number" ||
       typeof data.sessions_completed !== "number" || typeof data.total_booked_sessions !== "number") {
-    throw new Error("The dashboard returned an invalid response.");
+    throw new Error("We couldn’t load your dashboard. Please try again.");
   }
   return data as StudentDashboardStats;
 }

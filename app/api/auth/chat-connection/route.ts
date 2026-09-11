@@ -24,13 +24,13 @@ export async function POST(request: Request) {
 
   const token = readAuthToken(request);
   if (!token) {
-    return NextResponse.json({ message: "Unauthorized." }, { status: 401 });
+    return NextResponse.json({ message: "Your session has expired. Please sign in again." }, { status: 401 });
   }
 
   const apiBaseUrl = getBackendUrl();
   if (!apiBaseUrl) {
     return NextResponse.json(
-      { message: "The chat service is not configured." },
+      { message: "Chat is temporarily unavailable." },
       { status: 500 },
     );
   }

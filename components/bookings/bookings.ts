@@ -98,9 +98,9 @@ export type RatingInput = {
   would_recommend: "yes" | "no";
 };
 
-function dataFrom(payload: unknown, expectedCode: number, service: string) {
+function dataFrom(payload: unknown, expectedCode: number, errorMessage: string) {
   if (!isRecord(payload) || payload.status !== "success" || payload.code !== expectedCode || !("data" in payload)) {
-    throw new Error(`${service} returned an invalid response.`);
+    throw new Error(errorMessage);
   }
   return payload.data;
 }
@@ -110,22 +110,22 @@ function jsonPost(body: unknown): RequestInit {
 }
 
 export async function estimateBooking(tutorId: string, input: BookingInput) {
-  return dataFrom(await requestJson(`/api/student/tutors/${encodeURIComponent(tutorId)}/booking/estimate`, jsonPost(input)), 200, "The booking estimate service") as BookingEstimate;
+  return dataFrom(await requestJson(`/api/student/tutors/${encodeURIComponent(tutorId)}/booking/estimate`, jsonPost(input)), 200, "We couldn’t calculate this booking. Please try again.") as BookingEstimate;
 }
 
 export async function createBooking(tutorId: string, input: BookingInput) {
-  return dataFrom(await requestJson(`/api/student/tutors/${encodeURIComponent(tutorId)}/booking`, jsonPost(input)), 201, "The booking service") as { amount_charged: number; checkout_url: string };
+  return dataFrom(await requestJson(`/api/student/tutors/${encodeURIComponent(tutorId)}/booking`, jsonPost(input)), 201, "We couldn’t complete your booking. Please try again.") as { amount_charged: number; checkout_url: string };
 }
 
 export async function getBookings(query: { date?: string; page: number; pageSize: number; status?: BookingStatus }, signal?: AbortSignal) {
   const params = new URLSearchParams({ page: String(query.page), page_size: String(query.pageSize) });
   if (query.status) params.set("status", query.status);
   if (query.date) params.set("date", query.date);
-  return dataFrom(await requestJson(`/api/student/bookings?${params.toString()}`, { signal }), 200, "The bookings service") as BookingPage;
+  return dataFrom(await requestJson(`/api/student/bookings?${params.toString()}`, { signal }), 200, "We couldn’t load your bookings. Please try again.") as BookingPage;
 }
 
 export async function getBookingDetails(bookingId: string, signal?: AbortSignal) {
-  return dataFrom(await requestJson(`/api/student/bookings/${encodeURIComponent(bookingId)}`, { signal }), 200, "The booking details service") as BookingDetails;
+  return dataFrom(await requestJson(`/api/student/bookings/${encodeURIComponent(bookingId)}`, { signal }), 200, "We couldn’t load this booking. Please try again.") as BookingDetails;
 }
 
 export async function cancelBooking(bookingId: string, reason?: string) {

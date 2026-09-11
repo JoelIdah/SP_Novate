@@ -39,7 +39,7 @@ function hasNumbers(value: Record<string, unknown>, keys: string[]) {
 async function request(path: string, signal?: AbortSignal) {
   const payload = await requestJson(path, { signal });
   if (!isRecord(payload) || payload.status !== "success" || payload.code !== 200 || !("data" in payload)) {
-    throw new Error("The transaction service returned an invalid response.");
+    throw new Error("We couldn’t load your transactions. Please try again.");
   }
   return payload.data;
 }
@@ -50,7 +50,7 @@ export async function getTransactionStats(role: TransactionRole, signal?: AbortS
   const data = await request(`/api/${role}/transactions/stats`, signal);
   const roleFee = role === "tutor" ? "total_service_fee" : "total_finders_fee";
   if (!isRecord(data) || !hasNumbers(data, [roleFee, "total_session_fee", "total_successful_transactions", "total_volume"])) {
-    throw new Error("The transaction statistics service returned invalid data.");
+    throw new Error("We couldn’t load your transaction summary. Please try again.");
   }
   return data as TransactionStats;
 }
@@ -63,7 +63,7 @@ export async function getTransactions(role: TransactionRole, query: { date?: str
   if (!isRecord(data) || !Array.isArray(data.data) || !hasNumbers(data, ["page", "page_size", "total", "total_pages"]) ||
       !data.data.every((item) => isRecord(item) && typeof item.amount === "number" && typeof item.date === "string" &&
         typeof item.method === "string" && typeof item.reference === "string" && typeof item.status === "string" && typeof item.tx_type === "string")) {
-    throw new Error("The transactions service returned invalid data.");
+    throw new Error("We couldn’t load your transactions. Please try again.");
   }
   return data as TransactionPage;
 }
@@ -78,7 +78,7 @@ export async function getTransactionDetails(role: TransactionRole, reference: st
       !summary.availability.every((day) => typeof day === "string") ||
       !hasNumbers(summary, ["hours_per_day", "number_of_weeks", "tutor_fee"]) ||
       !["department", "payment_option", "period", "session_type"].every((key) => typeof summary[key] === "string")) {
-    throw new Error("The transaction details service returned invalid data.");
+    throw new Error("We couldn’t load this transaction. Please try again.");
   }
   return data as TransactionDetails;
 }

@@ -42,9 +42,9 @@ export type TutorKyc = {
   status: string;
 };
 
-function dataFrom(payload: unknown, service: string) {
+function dataFrom(payload: unknown, errorMessage: string) {
   if (!isRecord(payload) || payload.status !== "success" || !("data" in payload)) {
-    throw new Error(`${service} returned invalid data.`);
+    throw new Error(errorMessage);
   }
   return payload.data;
 }
@@ -54,7 +54,7 @@ function jsonRequest(method: "POST" | "PATCH", body: unknown): RequestInit {
 }
 
 export async function getTutorAccount(signal?: AbortSignal) {
-  return dataFrom(await requestJson("/api/tutor/settings/account", { signal }), "The tutor account service") as TutorAccount;
+  return dataFrom(await requestJson("/api/tutor/settings/account", { signal }), "We couldn’t load your account details. Please try again.") as TutorAccount;
 }
 
 export async function updateTutorAccount(input: Record<string, unknown>) {
@@ -62,7 +62,7 @@ export async function updateTutorAccount(input: Record<string, unknown>) {
 }
 
 export async function getTutorSubjects(signal?: AbortSignal) {
-  return dataFrom(await requestJson("/api/tutor/settings/subjects", { signal }), "The tutor subjects service") as TutorSubject[];
+  return dataFrom(await requestJson("/api/tutor/settings/subjects", { signal }), "We couldn’t load your subjects. Please try again.") as TutorSubject[];
 }
 
 export async function createTutorSubject(input: TutorSubjectInput) {
@@ -75,7 +75,7 @@ export async function updateTutorSubject(subjectId: string, input: Partial<Tutor
 
 export async function getTutorKyc(signal?: AbortSignal) {
   try {
-    return dataFrom(await requestJson("/api/tutor/settings/kyc", { signal }), "The tutor KYC service") as TutorKyc;
+    return dataFrom(await requestJson("/api/tutor/settings/kyc", { signal }), "We couldn’t load your identity verification details. Please try again.") as TutorKyc;
   } catch (error) {
     if (error instanceof RequestError && error.status === 404) return null;
     throw error;

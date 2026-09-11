@@ -189,7 +189,7 @@ export function LoginPageContent() {
             }),
           });
       } catch {
-        setPasswordError("Could not reach login service. Please try again.");
+        setPasswordError("We couldn’t sign you in right now. Please try again.");
         return;
       }
 
@@ -221,7 +221,7 @@ export function LoginPageContent() {
       let profile: AuthenticatedProfile;
       try {
         if (typeof data?.data?.profile_setup_required !== "boolean") {
-          throw new Error("The login service did not return the profile setup status.");
+          throw new Error("We couldn’t finish signing you in. Please try again.");
         }
         profileSetupRequired = data.data.profile_setup_required;
         profile = await fetchAuthenticatedProfile();

@@ -37,7 +37,7 @@ export async function requestJson(
     throw new RequestError(
       isRecord(payload) && typeof payload.message === "string"
         ? payload.message
-        : "The request could not be completed.",
+        : "Something went wrong. Please try again.",
       response.status,
       isRecord(payload) && typeof payload.code === "number"
         ? payload.code

@@ -10,7 +10,7 @@ import {
 export async function POST(request: Request) {
   if (!isSameOriginMutation(request)) {
     return NextResponse.json(
-      { status: "error", code: 403, message: "Forbidden" },
+      { status: "error", code: 403, message: "You don’t have permission to perform this action." },
       { status: 403 },
     );
   }
@@ -18,7 +18,7 @@ export async function POST(request: Request) {
   const backendUrl = getBackendUrl();
   if (!backendUrl) {
     return NextResponse.json(
-      { status: "error", code: 500, message: "Authentication is not configured." },
+      { status: "error", code: 500, message: "Social sign-in is temporarily unavailable. Please try again later." },
       { status: 500 },
     );
   }
@@ -48,7 +48,7 @@ export async function POST(request: Request) {
         {
           status: "error",
           code: 502,
-          message: "The social authentication service returned an invalid response.",
+          message: "Social sign-in is temporarily unavailable. Please try again.",
         },
         { status: 502 },
       );
@@ -80,7 +80,7 @@ export async function POST(request: Request) {
     return response;
   } catch {
     return NextResponse.json(
-      { status: "error", code: 502, message: "Could not reach social auth service. Please try again." },
+      { status: "error", code: 502, message: "Social sign-in is temporarily unavailable. Please try again." },
       { status: 502 },
     );
   }

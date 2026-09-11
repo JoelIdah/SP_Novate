@@ -75,7 +75,7 @@ export type TutorOnboardingReview = {
 async function onboardingRequest(path: string, init: RequestInit = {}) {
   const payload = await requestJson(path, init);
   if (!isRecord(payload) || payload.status !== "success" || payload.code !== 200) {
-    throw new Error("The tutor onboarding service returned an invalid response.");
+    throw new Error("We couldn’t load your tutor application. Please try again.");
   }
   return payload;
 }
@@ -89,7 +89,7 @@ export async function saveTutorPersonalDetails(input: TutorPersonalDetailsInput)
     body: JSON.stringify(input),
   });
   if (!isRecord(payload) || payload.status !== "success" || payload.code !== 200) {
-    throw new Error("The personal details service returned an invalid response.");
+    throw new Error("We couldn’t save your personal details. Please try again.");
   }
 }
 
@@ -106,14 +106,14 @@ export async function saveTutorIdentification(input: TutorIdentificationInput) {
     body: formData,
   });
   if (!isRecord(payload) || payload.status !== "success" || payload.code !== 200) {
-    throw new Error("The identification service returned an invalid response.");
+    throw new Error("We couldn’t save your identification details. Please try again.");
   }
 }
 
 export async function getNigerianBanks() {
   const payload = await onboardingRequest("/api/tutor/set-up/compensation/nigeria/banks");
   if (!Array.isArray(payload.data) || !payload.data.every((bank) => isRecord(bank) && typeof bank.code === "string" && typeof bank.name === "string")) {
-    throw new Error("The banks service returned invalid data.");
+    throw new Error("We couldn’t load the list of banks. Please try again.");
   }
   return payload.data as NigerianBank[];
 }
@@ -122,7 +122,7 @@ export async function resolveNigerianBankAccount(accountNumber: string, bankCode
   const params = new URLSearchParams({ account_number: accountNumber, bank_code: bankCode });
   const payload = await onboardingRequest(`/api/tutor/set-up/compensation/nigeria/resolve-account?${params}`);
   if (!isRecord(payload.data) || typeof payload.data.account_name !== "string" || !payload.data.account_name.trim()) {
-    throw new Error("The account resolution service returned invalid data.");
+    throw new Error("We couldn’t verify this bank account. Check the details and try again.");
   }
   return payload.data.account_name;
 }
@@ -142,7 +142,7 @@ export async function getTutorOnboardingReview(signal?: AbortSignal) {
   if (!isRecord(data) || typeof data.is_complete !== "boolean" || !Array.isArray(data.missing_steps) ||
       !data.missing_steps.every((step) => typeof step === "string") || !Array.isArray(data.documents) ||
       typeof data.tutor_status !== "string") {
-    throw new Error("The tutor review service returned invalid data.");
+    throw new Error("We couldn’t load your application review. Please try again.");
   }
   return data as TutorOnboardingReview;
 }

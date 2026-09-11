@@ -58,7 +58,7 @@ export async function fetchAuthenticatedProfile(): Promise<AuthenticatedProfile>
     throw new Error(result?.message ?? "Could not retrieve your profile.");
   }
   if (result?.status !== "success" || !isAuthenticatedProfile(result.data)) {
-    throw new Error("The profile service returned an invalid response.");
+    throw new Error("We couldn’t load your profile right now. Please try again.");
   }
 
   return result.data;

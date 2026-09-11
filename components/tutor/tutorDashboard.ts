@@ -27,7 +27,7 @@ export async function getTutorDashboard(signal?: AbortSignal) {
     : null;
 
   if (!data || !fields.every((field) => typeof data[field] === "number")) {
-    throw new Error("The tutor dashboard returned invalid data.");
+    throw new Error("We couldn’t load your tutor dashboard. Please try again.");
   }
 
   return data as TutorDashboardStats;

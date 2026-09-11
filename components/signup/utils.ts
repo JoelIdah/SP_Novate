@@ -43,18 +43,11 @@ export function isEmailValid(value: string): boolean {
 }
 
 export function isStepOneValid(form: ProfileFormState): boolean {
-  const phoneStarted = Boolean(
-    form.phoneCountry ||
-      form.countryCode.trim() ||
-      form.phoneNumber.trim(),
-  );
-  const phoneValid = !phoneStarted || isPhoneNumberValid(form);
-
   return (
     isEmailValid(form.email) &&
     form.lastName.trim().length > 0 &&
     form.firstName.trim().length > 0 &&
-    phoneValid
+    isPhoneNumberValid(form)
   );
 }
 

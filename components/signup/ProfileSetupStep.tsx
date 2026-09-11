@@ -55,6 +55,17 @@ type LocationUpdateResponse = {
 type ProfileSetupResponse = {
   message?: string;
 };
+type ProfileField = "email" | "firstName" | "lastName" | "otherName" | "phoneNumber";
+
+function profileFieldForMessage(message: string): ProfileField | null {
+  const value = message.toLowerCase();
+  if (value.includes("phone") || value.includes("mobile")) return "phoneNumber";
+  if (value.includes("email")) return "email";
+  if (value.includes("first name") || value.includes("first_name")) return "firstName";
+  if (value.includes("last name") || value.includes("last_name")) return "lastName";
+  if (value.includes("other name") || value.includes("other_names")) return "otherName";
+  return null;
+}
 
 const emptyAddressForm: LocationAddressForm = {
   address: "",
@@ -133,6 +144,7 @@ export function ProfileSetupStep({
     useState(false);
   const [profileSubmitting, setProfileSubmitting] = useState(false);
   const [profileError, setProfileSaveError] = useState("");
+  const [profileFieldErrors, setProfileFieldErrors] = useState<Partial<Record<ProfileField, string>>>({});
   const [addressForm, setAddressForm] =
     useState<LocationAddressForm>(emptyAddressForm);
   const [mapCoordinates, setMapCoordinates] =
@@ -181,6 +193,10 @@ export function ProfileSetupStep({
 
   const updateProfileField = (field: keyof ProfileFormState, value: string) => {
     setProfileSaveError("");
+    const errorField = field === "phoneCountry" || field === "countryCode" ? "phoneNumber" : field;
+    if (errorField in profileFieldErrors) {
+      setProfileFieldErrors((current) => ({ ...current, [errorField]: undefined }));
+    }
     setProfileForm((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -389,6 +405,7 @@ export function ProfileSetupStep({
   const handleContinue = async () => {
     setProfileValidationVisible(true);
     setProfileSaveError("");
+    setProfileFieldErrors({});
     if (!profileValid) {
       window.requestAnimationFrame(() => {
         document.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
@@ -408,7 +425,7 @@ export function ProfileSetupStep({
             first_name: profileForm.firstName.trim(),
             last_name: profileForm.lastName.trim(),
             other_names: profileForm.otherName.trim() || undefined,
-            phone_number: formatPhoneNumberE164(profileForm) || undefined,
+            phone_number: formatPhoneNumberE164(profileForm),
           }),
         });
       const result = (await response
@@ -416,7 +433,16 @@ export function ProfileSetupStep({
         .catch(() => null)) as ProfileSetupResponse | null;
       if (response.status === 401) await waitForAuthenticationRedirect();
       if (!response.ok) {
-        throw new Error(result?.message ?? "Could not complete profile setup.");
+        const message = result?.message ?? "Could not complete profile setup.";
+        const field = profileFieldForMessage(message);
+        if (field) {
+          setProfileFieldErrors({ [field]: message });
+          window.requestAnimationFrame(() => {
+            document.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
+          });
+          return;
+        }
+        throw new Error(message);
       }
       const profile = await fetchAuthenticatedProfile();
       setAuthSession(profile);
@@ -652,6 +678,8 @@ export function ProfileSetupStep({
           ) : displayedStep === "personal" ? (
             <StepOneProfileForm
               emailLocked={Boolean(initialProfile?.email?.trim())}
+              fieldErrors={profileFieldErrors}
+              generalError={profileError}
               greetingName={greetingName}
               onProfileFieldChange={updateProfileField}
               profileForm={profileForm}
@@ -722,14 +750,6 @@ export function ProfileSetupStep({
 
             {displayedStep === "personal" ? (
               <div className="flex w-full flex-col gap-2 sm:w-auto sm:items-end">
-                {profileError ? (
-                  <p
-                    className="max-w-md text-sm font-medium text-brand-danger"
-                    role="alert"
-                  >
-                    {profileError}
-                  </p>
-                ) : null}
                 <div className="grid grid-cols-2 gap-2 sm:flex sm:shrink-0 sm:justify-end">
                   <Button
                     disabled={profileSubmitting}

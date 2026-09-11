@@ -140,7 +140,7 @@ export function DashboardNavbar({ role, active = "Home" }: { role: DashboardRole
     <header className="dashboard-header sticky top-0 z-50 border-b border-[#dfe4ee] bg-white shadow-[0_2px_12px_rgba(31,40,74,0.06)]">
       <div className="mx-auto grid min-h-[var(--topbar-h)] w-full max-w-[var(--dashboard-max-width)] grid-cols-[auto_1fr_auto] items-center gap-3 px-[var(--dashboard-gutter)] xl:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] xl:gap-6">
         <Link className="col-start-1 flex h-11 w-fit items-center rounded-lg" href={config.homeHref} aria-label="SP Novate dashboard">
-          <Image alt="SP Novate" className="h-8 w-auto xl:h-10" height={40} priority src="/logo/logo.png" width={40} />
+          <Image alt="SP Novate" className="h-8 w-8 xl:h-10 xl:w-10" height={80} priority src="/logo/logo.png" width={80} />
         </Link>
 
         <nav aria-label={`${role} navigation`} className="navbar-scroll col-start-2 hidden self-stretch xl:flex xl:items-center xl:justify-center xl:gap-1.5 2xl:gap-2.5">

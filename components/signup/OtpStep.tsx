@@ -150,7 +150,7 @@ export function OtpStep({
     <div className="mx-auto mt-[0.9em] w-full max-w-[22.5em]">
       <div className="mb-[1.1em] flex justify-center">
         <div className="overflow-hidden rounded-[0.7em] shadow-[0_9px_20px_rgba(53,49,177,0.25)]">
-          <Image alt="SP Novate" className="h-[2.8em] w-auto" height={48} src="/logo/logo.png" width={48} />
+          <Image alt="SP Novate" className="h-[2.8em] w-[2.8em]" height={80} src="/logo/logo.png" width={80} />
         </div>
       </div>
       <h2 className="text-center text-[1.25em] font-bold tracking-[-0.02em] text-[#1d2230]">Enter verification code</h2>

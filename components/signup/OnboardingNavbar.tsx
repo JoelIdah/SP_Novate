@@ -20,7 +20,7 @@ export function OnboardingNavbar({ email, name }: OnboardingNavbarProps) {
       <div className="mx-auto grid min-h-[var(--topbar-h)] w-full max-w-[var(--dashboard-max-width)] grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-[var(--dashboard-gutter)]">
         <div className="flex min-w-0 items-center gap-3">
           <div className="flex h-11 shrink-0 items-center" aria-label="SP Novate">
-            <Image alt="SP Novate" className="h-8 w-auto xl:h-10" height={40} priority src="/logo/logo.png" width={80} />
+            <Image alt="SP Novate" className="h-8 w-8 xl:h-10 xl:w-10" height={80} priority src="/logo/logo.png" width={80} />
           </div>
           <span aria-hidden className="hidden h-7 w-px bg-[#e1e5ed] sm:block" />
           <span className="hidden truncate text-sm font-semibold text-[#454d60] sm:block">Profile setup</span>

@@ -96,5 +96,10 @@ export function isSameOriginMutation(request: Request): boolean {
     return true;
   }
   const origin = request.headers.get("origin");
-  return origin !== null && origin === new URL(request.url).origin;
+  const host = request.headers.get("host");
+  if (!origin || !host) return false;
+
+  const protocol = request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim()
+    || new URL(request.url).protocol.replace(":", "");
+  return origin === `${protocol}://${host}`;
 }

@@ -9,6 +9,7 @@ import {
   AuthCard,
   AuthDivider,
   AuthFieldError,
+  AuthFormError,
   AuthForm,
   AuthPasswordInput,
   AuthPasswordShell,
@@ -51,6 +52,7 @@ export function LoginPageContent() {
     useState<SocialProvider | null>(null);
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
+  const [formError, setFormError] = useState("");
   const signupHref = searchParams.toString()
     ? `/signup?${searchParams.toString()}`
     : "/signup";
@@ -158,6 +160,7 @@ export function LoginPageContent() {
     let hasError = false;
     setEmailError("");
     setPasswordError("");
+    setFormError("");
     setSocialError("");
 
     if (!email.trim()) {
@@ -189,7 +192,7 @@ export function LoginPageContent() {
             }),
           });
       } catch {
-        setPasswordError("We couldn’t sign you in right now. Please try again.");
+        setFormError("We couldn’t sign you in right now. Please try again.");
         return;
       }
 
@@ -212,7 +215,7 @@ export function LoginPageContent() {
         } else if (lower.includes("password")) {
           setPasswordError(message);
         } else {
-          setPasswordError(message);
+          setFormError(message);
         }
         return;
       }
@@ -226,7 +229,7 @@ export function LoginPageContent() {
         profileSetupRequired = data.data.profile_setup_required;
         profile = await fetchAuthenticatedProfile();
       } catch (error) {
-        setPasswordError(
+        setFormError(
           error instanceof Error
             ? error.message
             : "Could not complete login. Please try again.",
@@ -312,8 +315,13 @@ export function LoginPageContent() {
             <label className="block text-[0.78em] font-semibold text-[#6f778c]">
               Email
               <AuthTextInput
+                autoComplete="email"
                 invalid={Boolean(emailError)}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (emailError) setEmailError("");
+                  if (formError) setFormError("");
+                }}
                 placeholder="Enter your email"
                 type="email"
                 value={email}
@@ -325,7 +333,12 @@ export function LoginPageContent() {
               Password
               <AuthPasswordShell invalid={Boolean(passwordError)}>
                 <AuthPasswordInput
-                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="current-password"
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (passwordError) setPasswordError("");
+                    if (formError) setFormError("");
+                  }}
                   placeholder="Enter your password"
                   type={showPassword ? "text" : "password"}
                   value={password}
@@ -341,6 +354,8 @@ export function LoginPageContent() {
               </AuthPasswordShell>
               <AuthFieldError message={passwordError} />
             </label>
+
+            <AuthFormError message={formError} />
 
             <Link
               className="inline-block text-[0.72em] font-semibold text-[#6f8fb5] hover:text-[#17679f]"

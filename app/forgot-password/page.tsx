@@ -7,6 +7,7 @@ import { AuthCardHeader } from "../../components/signup/AuthCardHeader";
 import {
   AuthCard,
   AuthFieldError,
+  AuthFormError,
   AuthForm,
   AuthPasswordInput,
   AuthPasswordShell,
@@ -29,6 +30,7 @@ function ForgotPasswordPageContent() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [confirmPasswordError, setConfirmPasswordError] = useState("");
+  const [formError, setFormError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [isResetting, setIsResetting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -37,6 +39,7 @@ function ForgotPasswordPageContent() {
   const handleSend = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setEmailError("");
+    setFormError("");
 
     if (!email.trim()) {
       setEmailError("Email is required.");
@@ -62,13 +65,15 @@ function ForgotPasswordPageContent() {
       }
 
       if (!response.ok) {
-        setEmailError(data?.message ?? "Could not send reset link.");
+        const message = data?.message ?? "Could not send reset link.";
+        if (message.toLowerCase().includes("email")) setEmailError(message);
+        else setFormError(message);
         return;
       }
 
       router.push(`/forgot-password/sent?email=${encodeURIComponent(email.trim())}`);
     } catch {
-      setEmailError("Could not send reset link. Please try again.");
+      setFormError("Could not send reset link. Please try again.");
     } finally {
       setIsSending(false);
     }
@@ -79,11 +84,12 @@ function ForgotPasswordPageContent() {
 
     setPasswordError("");
     setConfirmPasswordError("");
+    setFormError("");
     setSuccessMessage("");
 
     let hasError = false;
     if (!token) {
-      setPasswordError("Missing reset token. Use your email reset link.");
+      setFormError("This password reset link is invalid. Request a new link and try again.");
       hasError = true;
     }
     if (!password.trim()) {
@@ -123,8 +129,10 @@ function ForgotPasswordPageContent() {
         const message = data?.message ?? "Could not reset password.";
         if (message.toLowerCase().includes("match")) {
           setConfirmPasswordError(message);
-        } else {
+        } else if (message.toLowerCase().includes("password")) {
           setPasswordError(message);
+        } else {
+          setFormError(message);
         }
         return;
       }
@@ -133,7 +141,7 @@ function ForgotPasswordPageContent() {
       setPassword("");
       setConfirmPassword("");
     } catch {
-      setPasswordError("Could not reset password. Please try again.");
+      setFormError("Could not reset password. Please try again.");
     } finally {
       setIsResetting(false);
     }
@@ -155,7 +163,7 @@ function ForgotPasswordPageContent() {
               <label className="block text-[0.78em] font-semibold text-[#6f778c]">
                 New password
                 <AuthPasswordShell invalid={Boolean(passwordError)}>
-                  <AuthPasswordInput onChange={(e) => setPassword(e.target.value)} placeholder="Enter your new password" type={showPassword ? "text" : "password"} value={password} />
+                  <AuthPasswordInput autoComplete="new-password" onChange={(e) => { setPassword(e.target.value); if (passwordError) setPasswordError(""); if (formError) setFormError(""); }} placeholder="Enter your new password" type={showPassword ? "text" : "password"} value={password} />
                   <button aria-label={showPassword ? "Hide password" : "Show password"} className="text-[#7b84a0] hover:text-[#2187d3]" onClick={() => setShowPassword((v) => !v)} type="button"><EyeIcon open={showPassword} /></button>
                 </AuthPasswordShell>
                 <AuthFieldError message={passwordError} />
@@ -164,12 +172,14 @@ function ForgotPasswordPageContent() {
               <label className="block text-[0.78em] font-semibold text-[#6f778c]">
                 Confirm password
                 <AuthPasswordShell invalid={Boolean(confirmPasswordError)}>
-                  <AuthPasswordInput onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirm your new password" type={showConfirmPassword ? "text" : "password"} value={confirmPassword} />
+                  <AuthPasswordInput autoComplete="new-password" onChange={(e) => { setConfirmPassword(e.target.value); if (confirmPasswordError) setConfirmPasswordError(""); if (formError) setFormError(""); }} placeholder="Confirm your new password" type={showConfirmPassword ? "text" : "password"} value={confirmPassword} />
                   <button aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"} className="text-[#7b84a0] hover:text-[#2187d3]" onClick={() => setShowConfirmPassword((v) => !v)} type="button"><EyeIcon open={showConfirmPassword} /></button>
                 </AuthPasswordShell>
                 <AuthFieldError message={confirmPasswordError} />
               </label>
             </div>
+
+            <AuthFormError message={formError} />
 
             <AuthPrimaryButton className="mt-[0.95em]" disabled={isResetting} type="submit">{isResetting ? "Resetting..." : "Reset password"}</AuthPrimaryButton>
             <div className={`overflow-hidden text-center transition-all duration-200 ease-out ${successMessage ? "mt-[0.7em] max-h-[1.6em] opacity-100" : "max-h-0 opacity-0"}`}><p className="text-[0.68em] font-medium text-[#247f57]">{successMessage}</p></div>
@@ -179,10 +189,12 @@ function ForgotPasswordPageContent() {
             <div className="mt-[1.1em] space-y-[0.6em]">
               <label className="block text-[0.78em] font-semibold text-[#6f778c]">
                 Email
-                <AuthTextInput invalid={Boolean(emailError)} onChange={(e) => setEmail(e.target.value)} placeholder="Enter your email" type="email" value={email} />
+                <AuthTextInput autoComplete="email" invalid={Boolean(emailError)} onChange={(e) => { setEmail(e.target.value); if (emailError) setEmailError(""); if (formError) setFormError(""); }} placeholder="Enter your email" type="email" value={email} />
                 <AuthFieldError message={emailError} />
               </label>
             </div>
+
+            <AuthFormError message={formError} />
 
             <AuthPrimaryButton className="mt-[0.95em]" disabled={isSending} type="submit">{isSending ? "Sending..." : "Send reset link"}</AuthPrimaryButton>
           </AuthForm>

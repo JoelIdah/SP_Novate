@@ -354,6 +354,7 @@ export function AccountStep({
         <label className="block text-[0.78em] font-semibold text-[#6f778c]">
           Email
           <AuthTextInput
+            autoComplete="email"
             invalid={Boolean(emailError)}
             onChange={(e) => {
               setEmail(e.target.value);
@@ -371,6 +372,7 @@ export function AccountStep({
           <label className="block text-[0.78em] font-semibold text-[#6f778c]">
             First name
             <AuthTextInput
+              autoComplete="given-name"
               invalid={Boolean(firstNameError)}
               onChange={(e) => {
                 setFirstName(e.target.value);
@@ -386,6 +388,7 @@ export function AccountStep({
           <label className="block text-[0.78em] font-semibold text-[#6f778c]">
             Last name
             <AuthTextInput
+              autoComplete="family-name"
               invalid={Boolean(lastNameError)}
               onChange={(e) => {
                 setLastName(e.target.value);
@@ -403,6 +406,7 @@ export function AccountStep({
           Password
           <AuthPasswordShell invalid={Boolean(passwordError)}>
             <AuthPasswordInput
+              autoComplete="new-password"
               onChange={(e) => {
                 const nextPassword = e.target.value;
                 setPassword(nextPassword);
@@ -435,6 +439,7 @@ export function AccountStep({
           Confirm password
           <AuthPasswordShell invalid={Boolean(confirmPasswordError)}>
             <AuthPasswordInput
+              autoComplete="new-password"
               onChange={(e) => {
                 const nextConfirmPassword = e.target.value;
                 setConfirmPassword(nextConfirmPassword);

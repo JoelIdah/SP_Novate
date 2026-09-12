@@ -30,8 +30,8 @@ import {
 } from "./utils";
 
 type SetupStep = "personal" | "location";
-type LocationView = "prompt" | "search" | "review" | "edit";
-type LocationSource = "gps" | "search" | "manual";
+type LocationView = "prompt" | "search" | "review";
+type LocationSource = "gps" | "search";
 const GPS_BROWSER_TIMEOUT_MS = 10000;
 
 type PlacePrediction = {
@@ -75,29 +75,6 @@ const emptyAddressForm: LocationAddressForm = {
   city: "",
 };
 
-function isAddressComplete(address: LocationAddressForm): boolean {
-  return Boolean(
-    address.address.trim() &&
-    address.country.trim() &&
-    address.state.trim() &&
-    address.city.trim(),
-  );
-}
-
-function firstNonEmpty(...values: Array<string | undefined>): string {
-  return values.find((value) => value?.trim())?.trim() ?? "";
-}
-
-function readCoordinates(
-  data?: LocationUpdateResponse["data"],
-  fallback?: LocationCoordinates,
-): LocationCoordinates | null {
-  const latitude = data?.latitude ?? fallback?.latitude;
-  const longitude = data?.longitude ?? fallback?.longitude;
-  return typeof latitude === "number" && typeof longitude === "number"
-    ? { latitude, longitude }
-    : null;
-}
 const steps: Array<{ id: SetupStep; label: string }> = [
   { id: "personal", label: "Profile setup" },
   { id: "location", label: "Location access" },
@@ -134,11 +111,10 @@ export function ProfileSetupStep({
   });
   const [requestingLocation, setRequestingLocation] = useState(false);
   const [requestingPlaceSearch, setRequestingPlaceSearch] = useState(false);
-  const [resolvingMapLocation, setResolvingMapLocation] = useState(false);
   const [savingLocation, setSavingLocation] = useState(false);
   const [locationView, setLocationView] = useState<LocationView>("prompt");
   const [locationSource, setLocationSource] =
-    useState<LocationSource>("manual");
+    useState<LocationSource>("gps");
   const [locationError, setLocationError] = useState("");
   const [profileValidationVisible, setProfileValidationVisible] =
     useState(false);
@@ -166,7 +142,9 @@ export function ProfileSetupStep({
     : activeStep;
   const activeStepIndex = displayedStep === "location" ? 1 : 0;
   const profileValid = isStepOneValid(profileForm);
-  const addressComplete = isAddressComplete(addressForm);
+  const locationReady = locationSource === "gps"
+    ? Boolean(mapCoordinates && gpsAccuracy !== null)
+    : Boolean(selectedPlaceId);
   const greetingName =
     profileForm.firstName.trim() ||
     initialProfile?.firstName?.trim() ||
@@ -200,21 +178,6 @@ export function ProfileSetupStep({
     setProfileForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  const readAddressFromResponse = (
-    data: LocationUpdateResponse["data"],
-    fallback?: Partial<LocationAddressForm>,
-  ): LocationAddressForm => ({
-    address: firstNonEmpty(data?.address, fallback?.address),
-    country: firstNonEmpty(data?.country, fallback?.country),
-    postcode: firstNonEmpty(
-      data?.postcode,
-      data?.postal_code,
-      fallback?.postcode,
-    ),
-    state: firstNonEmpty(data?.state, fallback?.state),
-    city: firstNonEmpty(data?.city, fallback?.city),
-  });
-
   const submitLocationUpdate = async (
     payload: Record<string, string | number>,
   ) => {
@@ -242,61 +205,6 @@ export function ProfileSetupStep({
     }
 
     return data ?? { message: "Location saved.", data: null };
-  };
-
-  const fetchPlaceDetails = async (
-    placeId: string,
-  ): Promise<LocationUpdateResponse["data"]> => {
-    const response = await fetch("/api/places/details", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ placeId }),
-    });
-    const result = (await response.json()) as LocationUpdateResponse;
-    if (!response.ok)
-      throw new Error(result.message ?? "Could not retrieve address details.");
-    return result.data ?? null;
-  };
-
-  const fetchGpsAddress = async (
-    coordinates: LocationCoordinates,
-  ): Promise<LocationUpdateResponse["data"]> => {
-    const response = await fetch("/api/places/reverse-geocode", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(coordinates),
-    });
-    const result = (await response.json()) as LocationUpdateResponse;
-    if (!response.ok)
-      throw new Error(result.message ?? "Could not retrieve your GPS address.");
-    return result.data ?? null;
-  };
-
-  const fetchPlaceIdForManualAddress = async () => {
-    const response = await fetch("/api/places/geocode", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(addressForm),
-    });
-    const result = (await response.json()) as LocationUpdateResponse;
-    if (!response.ok || !result.data?.placeId) {
-      throw new Error(
-        result.message ?? "Could not verify the entered address.",
-      );
-    }
-    return result.data.placeId;
-  };
-
-  const updateAddressField = (
-    field: keyof LocationAddressForm,
-    value: string,
-  ) => {
-    setAddressForm((current) => ({ ...current, [field]: value }));
-    setLocationSource("manual");
-    setSelectedPlaceId("");
-    setGpsAccuracy(null);
-    setMapCoordinates(null);
-    setLocationError("");
   };
 
   const stopLocationRequest = () => {
@@ -329,9 +237,7 @@ export function ProfileSetupStep({
 
   const handleAllowLocation = () => {
     if (typeof window === "undefined" || !navigator.geolocation) {
-      openAddressSearch(
-        "Location is not supported on this browser. Search for your address instead.",
-      );
+      setLocationError("Current location is not available in this browser. You can search for your address instead.");
       return;
     }
 
@@ -343,48 +249,21 @@ export function ProfileSetupStep({
     locationRequestIdRef.current = requestId;
 
     navigator.geolocation.getCurrentPosition(
-      async (position) => {
+      (position) => {
         if (locationRequestIdRef.current !== requestId) return;
-        try {
-          const lat = position.coords.latitude;
-          const lon = position.coords.longitude;
-          const accuracy = position.coords.accuracy;
-          if (!Number.isFinite(accuracy) || accuracy > 50) {
-            openAddressSearch(
-              "Your location wasn't precise enough. Search for your address instead.",
-            );
-            return;
-          }
-          const coordinates = { latitude: lat, longitude: lon };
-          const result = await fetchGpsAddress(coordinates);
-          if (locationRequestIdRef.current !== requestId) return;
-          const resolvedAddress = readAddressFromResponse(result, {
-            address: `Lat ${lat.toFixed(5)}, Lng ${lon.toFixed(5)}`,
-          });
-          if (!isAddressComplete(resolvedAddress)) {
-            openAddressSearch(
-              "We found your location but couldn't identify a complete address. Search for it below.",
-            );
-            return;
-          }
-          setLocationSource("gps");
-          setLocationView("review");
-          setAddressForm(resolvedAddress);
-          setMapCoordinates(coordinates);
-          setGpsAccuracy(accuracy);
-          setPlaceQuery(resolvedAddress.address);
-          setLocationError("");
-        } catch (error) {
-          if (locationRequestIdRef.current !== requestId) return;
-          openAddressSearch(
-            error instanceof Error
-              ? error.message
-              : "We couldn't retrieve an address for your location. Search for it instead.",
-          );
-        } finally {
-          if (locationRequestIdRef.current === requestId)
-            setRequestingLocation(false);
+        const accuracy = position.coords.accuracy;
+        if (!Number.isFinite(accuracy) || accuracy > 50) {
+          setRequestingLocation(false);
+          setLocationError("Your device could not provide a precise enough location. You can try again or search for your address.");
+          return;
         }
+        setLocationSource("gps");
+        setLocationView("review");
+        setAddressForm(emptyAddressForm);
+        setMapCoordinates({ latitude: position.coords.latitude, longitude: position.coords.longitude });
+        setGpsAccuracy(accuracy);
+        setLocationError("");
+        setRequestingLocation(false);
       },
       (error) => {
         if (locationRequestIdRef.current !== requestId) return;
@@ -392,11 +271,12 @@ export function ProfileSetupStep({
           error.code === error.PERMISSION_DENIED
             ? "Location permission was denied. Search for your address instead."
             : "We couldn't get your location. Search for your address instead.";
-        openAddressSearch(message);
+        setRequestingLocation(false);
+        setLocationError(message);
       },
       {
-        enableHighAccuracy: false,
-        maximumAge: 300000,
+        enableHighAccuracy: true,
+        maximumAge: 0,
         timeout: GPS_BROWSER_TIMEOUT_MS,
       },
     );
@@ -468,7 +348,7 @@ export function ProfileSetupStep({
   };
 
   const handleFinishSetup = async () => {
-    if (!addressComplete || savingLocation || resolvingMapLocation) return;
+    if (!locationReady || savingLocation) return;
     stopLocationRequest();
     stopPlaceSearchRequest();
     setSavingLocation(true);
@@ -485,15 +365,11 @@ export function ProfileSetupStep({
           longitude: mapCoordinates.longitude,
           source: "gps",
         };
-      } else if (locationSource === "search") {
+      } else {
         if (!selectedPlaceId) {
           throw new Error("Please search for and select your address again.");
         }
         payload = { placeId: selectedPlaceId, source: "search" };
-      } else {
-        const verifiedPlaceId = await fetchPlaceIdForManualAddress();
-        setSelectedPlaceId(verifiedPlaceId);
-        payload = { placeId: verifiedPlaceId, source: "search" };
       }
       await submitLocationUpdate(payload);
       setSetupComplete(true);
@@ -514,11 +390,6 @@ export function ProfileSetupStep({
     setRequestingLocation(false);
     setLocationError("");
 
-    if (locationView === "edit") {
-      setLocationView(addressComplete ? "review" : "search");
-      return;
-    }
-
     if (locationView === "review") {
       setLocationView(locationSource === "search" ? "search" : "prompt");
       return;
@@ -530,11 +401,6 @@ export function ProfileSetupStep({
     }
 
     setActiveStep("personal");
-  };
-
-  const handleEditAddress = () => {
-    setLocationView("edit");
-    setLocationError("");
   };
 
   const handlePlaceQueryChange = (value: string) => {
@@ -598,70 +464,23 @@ export function ProfileSetupStep({
           setRequestingPlaceSearch(false);
         }
       }
-    }, 350);
+    }, 500);
   };
 
-  const handleSelectPlace = async (placeId: string) => {
-    setRequestingPlaceSearch(true);
+  const handleSelectPlace = (placeId: string) => {
     setLocationError("");
-    try {
-      const selectedPlace = placePredictions.find(
-        (prediction) => prediction.placeId === placeId,
-      );
-      const details = await fetchPlaceDetails(placeId);
-      const detailsAddress = readAddressFromResponse(details, {
-        address: selectedPlace?.description ?? placeQuery,
-      });
-      setPlaceQuery(selectedPlace?.description ?? placeQuery);
-      setPlacePredictions([]);
-      setLocationSource("search");
-      setSelectedPlaceId(placeId);
-      setGpsAccuracy(null);
-      setAddressForm(detailsAddress);
-      setMapCoordinates(readCoordinates(details));
-      setLocationView(isAddressComplete(detailsAddress) ? "review" : "edit");
-      setLocationError("");
-    } catch (error) {
-      setLocationError(
-        error instanceof Error
-          ? error.message
-          : "Could not retrieve the selected address.",
-      );
-    } finally {
-      setRequestingPlaceSearch(false);
-    }
-  };
-
-  const handleMapLocationChange = async (coordinates: LocationCoordinates) => {
-    setResolvingMapLocation(true);
-    setLocationError("");
-    try {
-      const result = await fetchGpsAddress(coordinates);
-      const resolvedAddress = readAddressFromResponse(result);
-      const placeId = result?.placeId?.trim() ?? "";
-      if (!isAddressComplete(resolvedAddress) || !placeId) {
-        throw new Error(
-          "We couldn't verify an address at that map position. Try a nearby point.",
-        );
-      }
-
-      setAddressForm(resolvedAddress);
-      setMapCoordinates(coordinates);
-      setGpsAccuracy(null);
-      setSelectedPlaceId(placeId);
-      setLocationSource("search");
-      setPlaceQuery(resolvedAddress.address);
-      return true;
-    } catch (error) {
-      setLocationError(
-        error instanceof Error
-          ? error.message
-          : "Could not update the map location.",
-      );
-      return false;
-    } finally {
-      setResolvingMapLocation(false);
-    }
+    const selectedPlace = placePredictions.find(
+      (prediction) => prediction.placeId === placeId,
+    );
+    const description = selectedPlace?.description ?? placeQuery;
+    setPlaceQuery(description);
+    setPlacePredictions([]);
+    setLocationSource("search");
+    setSelectedPlaceId(placeId);
+    setGpsAccuracy(null);
+    setAddressForm({ ...emptyAddressForm, address: description });
+    setMapCoordinates(null);
+    setLocationView("review");
   };
 
   const currentStep = steps[activeStepIndex];
@@ -700,14 +519,11 @@ export function ProfileSetupStep({
                   coordinates={mapCoordinates}
                   locationError={locationError}
                   mode={locationView}
-                  onAddressFieldChange={updateAddressField}
                   onPlaceQueryChange={handlePlaceQueryChange}
                   onSelectPlace={handleSelectPlace}
                   placePredictions={placePredictions}
                   placeQuery={placeQuery}
-                  resolvingMapLocation={resolvingMapLocation}
                   requestingPlaceSearch={requestingPlaceSearch}
-                  onMapLocationChange={handleMapLocationChange}
                 />
               )}
             </div>
@@ -738,9 +554,7 @@ export function ProfileSetupStep({
                   <span className="hidden sm:inline">
                     {locationView === "search"
                       ? "Back to location options"
-                      : locationView === "edit"
-                        ? "Back to address review"
-                        : locationSource === "search"
+                      : locationSource === "search"
                           ? "Back to address search"
                           : "Back to location options"}
                   </span>
@@ -802,30 +616,18 @@ export function ProfileSetupStep({
               <div className="grid grid-cols-2 gap-2 sm:flex sm:shrink-0 sm:justify-end">
                 <button
                   className="h-11 rounded-full border border-[#d8dde8] bg-white px-4 text-xs font-semibold text-[#3f4759] hover:bg-[#f8f9fb] sm:px-5 sm:text-sm"
-                  onClick={
-                    locationView === "edit"
-                      ? handleLocationBack
-                      : handleEditAddress
-                  }
+                  onClick={handleLocationBack}
                   type="button"
                 >
-                  {locationView === "edit"
-                    ? "Cancel"
-                    : "No, this is not my address"}
+                  Choose another location
                 </button>
                 <button
                   className="h-11 rounded-full bg-brand-primary px-5 text-sm font-semibold text-white disabled:bg-[#b8b6cf]"
-                  disabled={
-                    !addressComplete || savingLocation || resolvingMapLocation
-                  }
+                  disabled={!locationReady || savingLocation}
                   onClick={() => void handleFinishSetup()}
                   type="button"
                 >
-                  {resolvingMapLocation
-                    ? "Checking..."
-                    : savingLocation
-                      ? "Saving..."
-                      : "Yes, this is my address"}
+                  {savingLocation ? "Saving..." : "Confirm location"}
                 </button>
               </div>
             )}

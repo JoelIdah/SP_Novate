@@ -641,8 +641,7 @@ export default function TutorOnboardingFlow() {
     setReviewLoading(true);
     setReturnToReview(true);
     setStage(section);
-    if (section === "location")
-      location.setView(locationSummary ? "edit" : "prompt");
+    if (section === "location") location.goBack();
   };
   const submitReview = async () => {
     if (!reviewConfirmed || !reviewData?.is_complete || consentSubmitting || applicationSubmitted) return;
@@ -1337,14 +1336,11 @@ export default function TutorOnboardingFlow() {
                       coordinates={location.coordinates}
                       locationError={location.error}
                       mode={location.view}
-                      onAddressFieldChange={location.changeAddress}
-                      onMapLocationChange={location.moveMap}
                       onPlaceQueryChange={location.changeQuery}
                       onSelectPlace={location.selectPlace}
                       placePredictions={location.predictions}
                       placeQuery={location.query}
                       requestingPlaceSearch={location.requestingSearch}
-                      resolvingMapLocation={location.resolvingMap}
                     />
                   )}
                 </>
@@ -1431,28 +1427,20 @@ export default function TutorOnboardingFlow() {
                   <>
                     <button
                       className="h-11 rounded-full border border-[#d8dde8] px-5 text-sm font-semibold"
-                      onClick={
-                        location.view === "edit"
-                          ? location.goBack
-                          : location.openEdit
-                      }
+                      onClick={location.goBack}
                       type="button"
                     >
-                      {location.view === "edit" ? "Cancel" : "No, edit address"}
+                      Choose another location
                     </button>
                     <button
                       className="h-11 rounded-full bg-brand-primary px-5 text-sm font-semibold text-white disabled:bg-[#b8b6cf]"
-                      disabled={
-                        !location.complete ||
-                        location.saving ||
-                        location.resolvingMap
-                      }
+                      disabled={!location.ready || location.saving}
                       onClick={() => void location.confirm()}
                       type="button"
                     >
                       {location.saving
                         ? "Saving..."
-                        : "Yes, this is my address"}
+                        : "Confirm location"}
                     </button>
                   </>
                 )

@@ -46,6 +46,14 @@
   border-color: #d04b4b !important;
 }
 
+.auth-form input:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0 1000px #e8f0fe inset;
+}
+
+.auth-input-shell:has(input:-webkit-autofill) {
+  background-color: #e8f0fe;
+}
+
 .profile-setup-field:focus,
 .profile-setup-field:focus-visible,
 .profile-setup-phone-shell:focus-within {

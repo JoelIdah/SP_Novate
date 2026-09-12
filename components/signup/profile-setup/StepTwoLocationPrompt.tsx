@@ -23,7 +23,7 @@ export function StepTwoLocationPrompt({
       </div>
       <h1 className="text-2xl font-bold tracking-[-0.02em] text-[#1d2331] sm:text-3xl">{tutor ? "Allow students to find you easily" : "Find tutors near you"}</h1>
       <p className="mx-auto mt-3 max-w-[25rem] text-sm font-medium leading-relaxed text-[#8c93a7]">
-        {tutor ? "Share your tutoring location so nearby students can discover and book you." : "Use your current location for better tutor recommendations, or enter an address manually."}
+        {tutor ? "Share your tutoring location so nearby students can discover and book you." : "Use your current location for better tutor recommendations. You can also search for an address."}
       </p>
 
       <div className="mx-auto mt-6 flex w-full max-w-[18rem] flex-col gap-3">
@@ -40,7 +40,7 @@ export function StepTwoLocationPrompt({
           onClick={onEnterAddress}
           type="button"
         >
-          {tutor ? "Search for address" : "Enter address manually"}
+          Search for an address
         </button>
       </div>
 

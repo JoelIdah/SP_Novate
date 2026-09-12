@@ -79,6 +79,18 @@ export function AuthFieldError({ message }: { message?: string }) {
   );
 }
 
+export function AuthFormError({ message }: { message?: string }) {
+  if (!message) return null;
+  return (
+    <p
+      className="rounded-[0.55em] bg-[#fff4f4] px-[0.85em] py-[0.7em] text-center text-[0.7em] font-medium text-brand-danger"
+      role="alert"
+    >
+      {message}
+    </p>
+  );
+}
+
 export const AuthTextInput = forwardRef<
   HTMLInputElement,
   InputHTMLAttributes<HTMLInputElement> & { invalid?: boolean }

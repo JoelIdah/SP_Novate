@@ -1,5 +1,8 @@
 "use client";
 
+import Image from "next/image";
+import { useState } from "react";
+
 import { FieldLabel } from "./FieldLabel";
 import { Notice } from "../../ui/Notice";
 import { LocationTargetIcon } from "./icons";
@@ -18,9 +21,12 @@ type StepTwoAddressConfirmProps = {
   coordinates: LocationCoordinates | null;
   mode: "search" | "review";
   locationError: string;
+  placeId?: string;
   placePredictions: Array<{ description: string; placeId: string }>;
   placeQuery: string;
   requestingPlaceSearch: boolean;
+  source: "gps" | "search";
+  onChangeLocation?: () => void;
   onPlaceQueryChange: (value: string) => void;
   onSelectPlace: (placeId: string) => void;
 };
@@ -30,12 +36,17 @@ export function StepTwoAddressConfirm({
   coordinates,
   mode,
   locationError,
+  placeId,
   placePredictions,
   placeQuery,
   requestingPlaceSearch,
+  source,
+  onChangeLocation,
   onPlaceQueryChange,
   onSelectPlace,
 }: StepTwoAddressConfirmProps) {
+  const [failedMapUrl, setFailedMapUrl] = useState("");
+
   if (mode === "search") {
     return (
       <section className="mx-auto w-full max-w-[38.75rem] py-4 text-center">
@@ -59,7 +70,30 @@ export function StepTwoAddressConfirm({
     );
   }
 
-  const usingGps = coordinates !== null;
+  const usingGps = source === "gps";
+  const mapUrl = coordinates
+    ? `/api/places/map?latitude=${encodeURIComponent(coordinates.latitude)}&longitude=${encodeURIComponent(coordinates.longitude)}`
+    : placeId
+      ? `/api/places/map?placeId=${encodeURIComponent(placeId)}`
+      : "";
+  const mapFailed = Boolean(mapUrl && failedMapUrl === mapUrl);
+  const map = mapUrl && !mapFailed ? (
+    <div className="relative mt-3 aspect-[16/9] overflow-hidden rounded-xl border border-[#dfe3ec] bg-[#f5f7fb]">
+      <Image
+        alt={`Map showing ${addressForm.address || "the selected location"}`}
+        className="object-cover"
+        fill
+        onError={() => setFailedMapUrl(mapUrl)}
+        sizes="(max-width: 640px) calc(100vw - 3.5rem), 590px"
+        src={mapUrl}
+        unoptimized
+      />
+    </div>
+  ) : (
+    <div className="mt-3 flex aspect-[16/9] items-center justify-center rounded-xl border border-dashed border-[#d7dce7] bg-[#f7f8fb] px-5 text-center text-xs font-medium text-[#8a93a7]">
+      The map preview is unavailable. You can still confirm the selected location.
+    </div>
+  );
   return (
     <section className="mx-auto w-full max-w-[38.75rem] py-4 text-center">
       <div className="mx-auto mb-4 w-fit"><LocationTargetIcon /></div>
@@ -67,12 +101,26 @@ export function StepTwoAddressConfirm({
       <p className="mx-auto mt-2 max-w-[27rem] text-sm font-medium leading-relaxed text-[#8c93a7]">
         {usingGps ? "Your device location is ready to be saved." : "We’ll verify this address when you continue."}
       </p>
-      {!usingGps ? (
-        <div className="mt-5 rounded-2xl border border-[#e1e5ed] bg-white p-4 text-left shadow-[0_8px_24px_rgba(31,40,74,0.04)]">
-          <p className="text-xs font-medium text-[#8a93a7]">Selected address</p>
-          <p className="mt-1 text-sm font-semibold leading-relaxed text-[#35405a]">{addressForm.address}</p>
+      <div className="mt-5 rounded-2xl border border-[#e1e5ed] bg-white p-3 text-left shadow-[0_8px_24px_rgba(31,40,74,0.04)] sm:p-4">
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-xs font-medium text-[#8a93a7]">
+            {usingGps ? "Selected location" : "Selected address"}
+          </p>
+          {onChangeLocation ? (
+            <button
+              className="shrink-0 text-xs font-semibold text-brand-accent hover:underline"
+              onClick={onChangeLocation}
+              type="button"
+            >
+              Change
+            </button>
+          ) : null}
         </div>
-      ) : null}
+        {addressForm.address ? (
+          <p className="mt-1 text-sm font-semibold leading-relaxed text-[#35405a]">{addressForm.address}</p>
+        ) : null}
+        {map}
+      </div>
       {locationError ? <Notice className="mt-3 text-xs" role="alert">{locationError}</Notice> : null}
     </section>
   );

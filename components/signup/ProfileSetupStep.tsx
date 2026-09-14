@@ -519,11 +519,14 @@ export function ProfileSetupStep({
                   coordinates={mapCoordinates}
                   locationError={locationError}
                   mode={locationView}
+                  placeId={selectedPlaceId}
+                  onChangeLocation={handleLocationBack}
                   onPlaceQueryChange={handlePlaceQueryChange}
                   onSelectPlace={handleSelectPlace}
                   placePredictions={placePredictions}
                   placeQuery={placeQuery}
                   requestingPlaceSearch={requestingPlaceSearch}
+                  source={locationSource}
                 />
               )}
             </div>
@@ -613,14 +616,7 @@ export function ProfileSetupStep({
                 </Button>
               </div>
             ) : (
-              <div className="grid grid-cols-2 gap-2 sm:flex sm:shrink-0 sm:justify-end">
-                <button
-                  className="h-11 rounded-full border border-[#d8dde8] bg-white px-4 text-xs font-semibold text-[#3f4759] hover:bg-[#f8f9fb] sm:px-5 sm:text-sm"
-                  onClick={handleLocationBack}
-                  type="button"
-                >
-                  Choose another location
-                </button>
+              <div className="flex shrink-0 justify-end">
                 <button
                   className="h-11 rounded-full bg-brand-primary px-5 text-sm font-semibold text-white disabled:bg-[#b8b6cf]"
                   disabled={!locationReady || savingLocation}

@@ -81,9 +81,8 @@ export default function ChatWorkspace({ navbar, initialRecipientPublicId }: Chat
             {error ? <div className="mb-3 flex items-center justify-between rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700" role="alert"><span>{error}</span><button className="font-semibold" onClick={clearError} type="button">Dismiss</button></div> : null}
             <section className="grid h-full min-h-0 w-full gap-4 xl:grid-cols-[minmax(18rem,23rem)_minmax(0,1fr)] xl:gap-5">
               <aside className={`${hasOpenConversation ? "hidden xl:flex" : "flex"} min-h-0 flex-col overflow-hidden rounded-xl border border-ui-border bg-white shadow-[var(--ui-shadow-card)]`}>
-                <div className="flex items-center justify-between border-b border-[#edf0f6] px-4 py-4">
+                <div className="border-b border-[#edf0f6] px-4 py-4">
                   <h1 className="text-[1rem] font-medium text-[#858ea2]">Chat</h1>
-                  <span className={`text-[0.65rem] font-semibold ${connectionStatus === "connected" ? "text-brand-success" : "text-[#9a7314]"}`}>{connectionStatus === "connected" ? "Live" : connectionStatus === "connecting" ? "Connecting…" : "Reconnecting…"}</span>
                 </div>
                 <div className="border-b border-[#edf0f6] px-4 py-3">
                   <label className="relative block"><Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#aeb6c7]" /><input className="min-h-11 w-full rounded-full border border-ui-border bg-white pl-9 pr-3 text-sm text-ui-body outline-none placeholder:text-[#b1b8c8] focus:border-brand-accent md:min-h-10" onChange={(event) => setSearchQuery(event.target.value)} placeholder="Search conversations" type="search" value={searchQuery} /></label>

@@ -323,7 +323,7 @@ export default function TutorOnboardingFlow() {
     ...(personalForm.otherName.trim() ? { other_names: personalForm.otherName.trim() } : {}),
   };
   const personalSignature = JSON.stringify(personalPayload);
-  const savedIdentityDocuments = reviewData?.documents.filter(
+  const savedIdentityDocuments = reviewData?.identification?.documents.filter(
     (document) => document.purpose === "identification",
   ) ?? [];
   const hasIdentityDocuments = idFiles.length > 0 || savedIdentityDocuments.length > 0;
@@ -365,8 +365,7 @@ export default function TutorOnboardingFlow() {
     reviewData?.personal_details ||
     reviewData?.identification ||
     reviewData?.compensation ||
-    reviewData?.location ||
-    reviewData?.documents.length,
+    reviewData?.location,
   );
 
   const markCompleted = (item: SetupStage) =>
@@ -375,6 +374,10 @@ export default function TutorOnboardingFlow() {
     );
   const goNext = (current: SetupStage, next: SetupStage) => {
     markCompleted(current);
+    if (returnToReview) {
+      setReviewLoading(true);
+      setReviewError("");
+    }
     setStage(returnToReview ? "review" : next);
     setReturnToReview(false);
   };
@@ -417,6 +420,8 @@ export default function TutorOnboardingFlow() {
   const location = useTutorLocationSetup((summary) => {
     setLocationSummary(summary);
     markCompleted("location");
+    setReviewLoading(true);
+    setReviewError("");
     setStage("review");
     setReturnToReview(false);
   });
@@ -757,7 +762,9 @@ export default function TutorOnboardingFlow() {
     ? stages.findIndex((item) => item.id === activeSetupStage)
     : -1;
   const tutorStatus = reviewData?.tutor_status ?? "";
-  const applicationPending = applicationSubmitted || tutorStatus === "pending";
+  const applicationPending =
+    applicationSubmitted ||
+    tutorStatus === "pending_review";
   const applicationApproved = tutorStatus === "approved";
   const canSubmitApplication = Boolean(reviewData?.is_complete && tutorStatus === "in_progress");
   const applicationEditable = !applicationPending && !applicationApproved;
@@ -816,7 +823,7 @@ export default function TutorOnboardingFlow() {
               completed={completed}
               onSelect={setStage}
             />
-            <section className="w-full max-w-[42rem]">
+            <section className="min-w-0 w-full max-w-[42rem]">
               {stage === "personal" ? (
                 <>
                   <h1 className="text-xl font-bold text-[#252c3c]">
@@ -1172,10 +1179,10 @@ export default function TutorOnboardingFlow() {
                       <div className="space-y-2">
                         {idFiles.map((file) => (
                           <div
-                            className="flex items-center justify-between gap-3 rounded-xl border border-[#d9d7fb] bg-[#faf9ff] px-4 py-3 text-sm"
+                            className="flex min-w-0 items-center gap-3 rounded-xl border border-[#d9d7fb] bg-[#faf9ff] px-4 py-3 text-sm"
                             key={`${file.name}-${file.size}-${file.lastModified}`}
                           >
-                            <span className="min-w-0 truncate">
+                            <span className="min-w-0 flex-1 truncate">
                               {file.name}
                             </span>
                             <button
@@ -1452,11 +1459,14 @@ export default function TutorOnboardingFlow() {
                       coordinates={location.coordinates}
                       locationError={location.error}
                       mode={location.view}
+                      placeId={location.placeId}
+                      onChangeLocation={location.goBack}
                       onPlaceQueryChange={location.changeQuery}
                       onSelectPlace={location.selectPlace}
                       placePredictions={location.predictions}
                       placeQuery={location.query}
                       requestingPlaceSearch={location.requestingSearch}
+                      source={location.source}
                     />
                   )}
                 </>
@@ -1468,18 +1478,18 @@ export default function TutorOnboardingFlow() {
 
       {stage !== "overview" ? (
         <footer className="shrink-0 border-t border-[#e5e8f2] bg-white px-4 py-2 sm:px-[var(--dashboard-gutter)]">
-          <div className="mx-auto flex w-full max-w-[var(--dashboard-max-width)] items-center justify-between gap-3">
-            <span className="rounded-full border border-[#6d63ee] px-2.5 py-1 text-xs font-semibold text-[#5b4ded]">
+          <div className="mx-auto flex w-full max-w-[var(--dashboard-max-width)] items-center justify-between gap-2 sm:gap-3">
+            <span className="w-fit shrink-0 rounded-full border border-[#6d63ee] px-2.5 py-1 text-xs font-semibold text-[#5b4ded]">
               {stage === "review" ? "Review" : `Step ${stageIndex + 1}/4`}
             </span>
-            <div className="flex items-center gap-2">
+            <div className="flex min-w-0 items-center justify-end gap-2">
               {submissionMessage && stage !== "review" ? (
                 <span className="hidden text-xs font-medium text-[#8b5a20] sm:inline">
                   {submissionMessage}
                 </span>
               ) : null}
               <button
-                className="h-11 rounded-full border border-[#d8dde8] bg-white px-5 text-sm font-semibold"
+                className="h-11 shrink-0 rounded-full border border-[#d8dde8] bg-white px-4 text-sm font-semibold sm:px-5"
                 onClick={() => {
                   if (returnToReview && stage !== "review") {
                     setReturnToReview(false);
@@ -1489,8 +1499,10 @@ export default function TutorOnboardingFlow() {
                     router.push("/students/dashboard");
                   else if (stage === "identity") setStage("personal");
                   else if (stage === "compensation") setStage("identity");
-                  else if (location.view === "prompt") setStage("compensation");
-                  else location.goBack();
+                  else if (stage === "location") {
+                    if (location.view === "search") location.goBack();
+                    else setStage("compensation");
+                  }
                 }}
                 type="button"
               >
@@ -1527,7 +1539,7 @@ export default function TutorOnboardingFlow() {
                 location.view === "prompt" ? (
                   <>
                     <button
-                      className="h-11 rounded-full border border-[#d8dde8] px-5 text-sm font-semibold"
+                      className="h-11 min-w-0 rounded-full border border-[#d8dde8] px-3 text-sm font-semibold sm:px-5"
                       onClick={() => {
                         setLocationSummary(null);
                         markCompleted("location");
@@ -1542,31 +1554,27 @@ export default function TutorOnboardingFlow() {
                 ) : location.view === "search" ? null : (
                   <>
                     <button
-                      className="h-11 rounded-full border border-[#d8dde8] px-5 text-sm font-semibold"
-                      onClick={location.goBack}
-                      type="button"
-                    >
-                      Choose another location
-                    </button>
-                    <button
-                      className="h-11 rounded-full bg-brand-primary px-5 text-sm font-semibold text-white disabled:bg-[#b8b6cf]"
+                      className="h-11 min-w-0 rounded-full bg-brand-primary px-3 text-sm font-semibold text-white disabled:bg-[#b8b6cf] sm:px-5"
                       disabled={!location.ready || location.saving}
                       onClick={() => void location.confirm()}
                       type="button"
                     >
                       {location.saving
                         ? "Saving..."
-                        : "Confirm location"}
+                        : "Confirm"}
                     </button>
                   </>
                 )
               ) : applicationPending || applicationApproved ? (
                 <button
-                  className="h-11 rounded-full bg-brand-primary px-6 text-sm font-semibold text-white"
+                  className="h-11 rounded-full bg-brand-primary px-4 text-sm font-semibold text-white sm:px-6"
                   onClick={() => router.push(applicationApproved ? "/tutor/dashboard" : "/students/dashboard")}
                   type="button"
                 >
-                  {applicationApproved ? "Go to tutor dashboard" : "Return to student dashboard"}
+                  <span className="sm:hidden">Dashboard</span>
+                  <span className="hidden sm:inline">
+                    {applicationApproved ? "Go to tutor dashboard" : "Return to student dashboard"}
+                  </span>
                 </button>
               ) : (
                 <button

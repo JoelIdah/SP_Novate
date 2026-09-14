@@ -35,6 +35,7 @@ export function TutorReviewStep({ canSubmit, confirmed, editable, onConfirmedCha
 }) {
   const personal = review.personal_details;
   const identity = review.identification;
+  const identityDocuments = identity?.documents ?? [];
   const compensation = review.compensation;
   const location = review.location;
   const mapUrl = location
@@ -53,7 +54,30 @@ export function TutorReviewStep({ canSubmit, confirmed, editable, onConfirmedCha
         </ReviewCard>
 
         <ReviewCard editable={editable} icon={FileCheck2} onEdit={() => onEdit("identity")} title="Identification verification">
-          <div className="grid grid-cols-2 gap-x-5 gap-y-2.5">{uk ? <><ReviewField label="Employer share code" value={identity?.employer_share_code} /><ReviewField label="DBS certificate number" value={identity?.dbs_certificate_number} /></> : null}<ReviewField label="Country" value={identity?.country ? titleCase(identity.country) : undefined} /><ReviewField label="ID type" value={identity?.id_type ? titleCase(identity.id_type) : undefined} /><ReviewField label="Verification status" value={identity?.status ? titleCase(identity.status) : undefined} /><ReviewField label="ID documents" value={review.documents.map((document) => document.file_name).join(", ")} /></div>
+          <div className="grid grid-cols-2 gap-x-5 gap-y-2.5">
+            {uk ? <><ReviewField label="Employer share code" value={identity?.employer_share_code} /><ReviewField label="DBS certificate number" value={identity?.dbs_certificate_number} /></> : null}
+            <ReviewField label="Country" value={identity?.country ? titleCase(identity.country) : undefined} />
+            <ReviewField label="ID type" value={identity?.id_type ? titleCase(identity.id_type) : undefined} />
+            <ReviewField label="Verification status" value={identity?.status ? titleCase(identity.status) : "Not available"} />
+            <div className="col-span-2">
+              <p className="text-[0.68rem] font-medium text-[#8a93a7]">ID documents</p>
+              {identityDocuments.length ? (
+                <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1">
+                  {identityDocuments.map((document) => (
+                    <a
+                      className="break-all text-xs font-semibold text-brand-accent hover:underline"
+                      href={document.document_url}
+                      key={document.document_url}
+                      rel="noreferrer"
+                      target="_blank"
+                    >
+                      {document.file_name}
+                    </a>
+                  ))}
+                </div>
+              ) : <p className="mt-0.5 text-xs font-semibold text-[#35405a]">Not available</p>}
+            </div>
+          </div>
         </ReviewCard>
 
         <ReviewCard editable={editable} icon={CircleDollarSign} onEdit={() => onEdit("compensation")} title="Compensation details">

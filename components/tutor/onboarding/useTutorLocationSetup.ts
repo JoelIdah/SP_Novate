@@ -188,7 +188,7 @@ export function useTutorLocationSetup(onConfirmed: (summary: TutorLocationSummar
 
   return {
     address, changeQuery, confirm, coordinates, error, goBack, loadSavedLocation, openSearch,
-    predictions, query, ready, requestingLocation, requestingSearch,
+    placeId, predictions, query, ready, requestingLocation, requestingSearch, source,
     requestCurrentLocation, saving, selectPlace, view,
   };
 }

@@ -27,6 +27,14 @@ export type TutorIdentificationInput = {
 
 export type NigerianBank = { code: string; name: string; slug?: string };
 
+export type TutorReviewDocument = {
+  created_at: string;
+  document_url: string;
+  file_name: string;
+  file_type: string;
+  purpose: string;
+};
+
 export type TutorCompensationInput =
   | { country: "uk"; first_name: string; last_name: string; sort_code: string; account_number: string }
   | { country: "nigeria"; bank_name: string; bank_code: string; account_name: string; account_number: string };
@@ -42,9 +50,9 @@ export type TutorOnboardingReview = {
     last_name?: string;
     sort_code?: string;
   };
-  documents: Array<{ created_at: string; document_url: string; file_name: string; file_type: string; purpose: string }>;
   identification: null | {
     country: string;
+    documents: TutorReviewDocument[];
     id_type: string;
     status: string;
     employer_share_code?: string;
@@ -71,7 +79,7 @@ export type TutorOnboardingReview = {
     qualifications: string[];
     other_names?: string;
   };
-  tutor_status: string;
+  tutor_status: "approved" | "in_progress" | "pending_review" | "rejected";
 };
 
 async function onboardingRequest(path: string, init: RequestInit = {}) {
@@ -141,13 +149,13 @@ export async function saveTutorCompensation(input: TutorCompensationInput) {
 export async function getTutorOnboardingReview(signal?: AbortSignal) {
   const payload = await onboardingRequest("/api/tutor/set-up/review", { signal });
   const data = payload.data;
-  if (!isRecord(data) || typeof data.is_complete !== "boolean" || !Array.isArray(data.missing_steps) ||
-      !data.missing_steps.every((step) => typeof step === "string") ||
-      (data.documents !== undefined && !Array.isArray(data.documents)) ||
-      typeof data.tutor_status !== "string") {
+  if (!isRecord(data)) {
     throw new Error("We couldn’t load your application review. Please try again.");
   }
-  return { ...data, documents: data.documents ?? [] } as TutorOnboardingReview;
+  return {
+    ...data,
+    missing_steps: Array.isArray(data.missing_steps) ? data.missing_steps : [],
+  } as TutorOnboardingReview;
 }
 
 export async function submitTutorOnboardingConsent() {

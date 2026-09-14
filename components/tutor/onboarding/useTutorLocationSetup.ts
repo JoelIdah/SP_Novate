@@ -14,6 +14,14 @@ export type TutorLocationSummary = {
 type PlacePrediction = { description: string; placeId: string };
 type PlaceResponse = { message?: string; predictions?: PlacePrediction[] };
 type LocationSource = "gps" | "search";
+type SavedTutorLocation = {
+  accuracy?: number;
+  address: string;
+  latitude: number;
+  longitude: number;
+  place_id?: string;
+  source: string;
+};
 
 const emptyAddress: LocationAddressForm = { address: "", country: "", postcode: "", state: "", city: "" };
 const GPS_TIMEOUT_MS = 10000;
@@ -141,6 +149,18 @@ export function useTutorLocationSetup(onConfirmed: (summary: TutorLocationSummar
     setView("review");
   };
 
+  const loadSavedLocation = (savedLocation: SavedTutorLocation | null) => {
+    if (!savedLocation) return;
+    const savedSource: LocationSource = savedLocation.source === "gps" ? "gps" : "search";
+    setAddress({ ...emptyAddress, address: savedLocation.address });
+    setCoordinates({ latitude: savedLocation.latitude, longitude: savedLocation.longitude });
+    setGpsAccuracy(savedSource === "gps" ? (savedLocation.accuracy ?? null) : null);
+    setPlaceId(savedLocation.place_id ?? "");
+    setQuery(savedLocation.address);
+    setSource(savedSource);
+    setView("review");
+  };
+
   const confirm = async () => {
     if (!ready || saving) return;
     setSaving(true);
@@ -167,7 +187,7 @@ export function useTutorLocationSetup(onConfirmed: (summary: TutorLocationSummar
   };
 
   return {
-    address, changeQuery, confirm, coordinates, error, goBack, openSearch,
+    address, changeQuery, confirm, coordinates, error, goBack, loadSavedLocation, openSearch,
     predictions, query, ready, requestingLocation, requestingSearch,
     requestCurrentLocation, saving, selectPlace, view,
   };

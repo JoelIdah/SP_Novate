@@ -93,6 +93,18 @@ const identificationTypeValues: Record<string, string> = {
 };
 const acceptedIdentityFileName = /\.(?:jpe?g|png|webp|pdf)$/i;
 
+function formatDateForBackend(value: string) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  return match ? `${match[3]}-${match[2]}-${match[1]}` : value;
+}
+
+function formatDateForInput(value?: string) {
+  if (!value) return "";
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+  const match = /^(\d{2})-(\d{2})-(\d{4})$/.exec(value);
+  return match ? `${match[3]}-${match[2]}-${match[1]}` : "";
+}
+
 function FieldLabel({
   children,
   optional = false,
@@ -287,6 +299,7 @@ export default function TutorOnboardingFlow() {
   const personalComplete = Boolean(
     firstName.trim() &&
     lastName.trim() &&
+    personalForm.dateOfBirth &&
     emailValid &&
     phoneValid &&
     personalForm.country &&
@@ -297,18 +310,26 @@ export default function TutorOnboardingFlow() {
   const personalPayload: TutorPersonalDetailsInput = {
     bio: personalForm.experience.trim(),
     country_code: `+${getCountryCallingCode(phoneCountry)}`,
+    dob: formatDateForBackend(personalForm.dateOfBirth),
     email: email.trim(),
     first_name: firstName.trim(),
     last_name: lastName.trim(),
     occupation: personalForm.occupation.trim(),
     phone_number: parsedPhone?.nationalNumber ?? "",
-    qualifications: [personalForm.qualification.trim()],
+    qualifications: personalForm.qualification
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean),
     ...(personalForm.otherName.trim() ? { other_names: personalForm.otherName.trim() } : {}),
   };
   const personalSignature = JSON.stringify(personalPayload);
+  const savedIdentityDocuments = reviewData?.documents.filter(
+    (document) => document.purpose === "identification",
+  ) ?? [];
+  const hasIdentityDocuments = idFiles.length > 0 || savedIdentityDocuments.length > 0;
   const identityComplete = Boolean(
     idType &&
-    idFiles.length > 0 &&
+    hasIdentityDocuments &&
     idFiles.length <= 5 &&
     (personalForm.country !== "GB" || (shareCode.trim() && dbsNumber.trim())),
   );
@@ -407,6 +428,77 @@ export default function TutorOnboardingFlow() {
       .then((data) => {
         setReviewData(data);
         setReviewError("");
+        const savedCountry: OperatingCountry =
+          data.identification?.country === "nigeria" || data.compensation?.country === "nigeria"
+            ? "NG"
+            : data.identification?.country === "uk" || data.compensation?.country === "uk"
+              ? "GB"
+              : "";
+
+        if (data.personal_details) {
+          const savedPhone = parsePhoneNumberFromString(data.personal_details.phone_number);
+          if (savedPhone?.country) setPhoneCountry(savedPhone.country);
+          setPersonalForm((current) => ({
+            ...current,
+            firstName: data.personal_details?.first_name ?? current.firstName,
+            lastName: data.personal_details?.last_name ?? current.lastName,
+            otherName: data.personal_details?.other_names ?? "",
+            dateOfBirth:
+              formatDateForInput(data.personal_details?.dob) || current.dateOfBirth,
+            email: data.personal_details?.email ?? current.email,
+            phoneNumber: savedPhone?.nationalNumber ?? data.personal_details?.phone_number ?? "",
+            country: savedCountry || current.country,
+            occupation: data.personal_details?.occupation ?? "",
+            qualification: data.personal_details?.qualifications.join(", ") ?? "",
+            experience: data.personal_details?.bio ?? "",
+          }));
+        }
+
+        if (data.identification) {
+          const savedIdType = Object.entries(identificationTypeValues)
+            .find(([, value]) => value === data.identification?.id_type)?.[0] ?? data.identification.id_type;
+          setIdType(savedIdType);
+          setShareCode(data.identification.employer_share_code ?? "");
+          setDbsNumber(data.identification.dbs_certificate_number ?? "");
+          setSubmittedIdentitySignature(JSON.stringify({
+            country: savedCountry,
+            dbsNumber: data.identification.dbs_certificate_number ?? "",
+            files: [],
+            idType: savedIdType,
+            shareCode: data.identification.employer_share_code ?? "",
+          }));
+        }
+
+        if (data.compensation) {
+          const savedCompensation: CompensationForm = {
+            accountName: data.compensation.account_name ?? "",
+            accountNumber: data.compensation.account_number,
+            bankCode: data.compensation.bank_code ?? "",
+            bankName: data.compensation.bank_name ?? "",
+            firstName: data.compensation.first_name ?? "",
+            lastName: data.compensation.last_name ?? "",
+            sortCode: data.compensation.sort_code ?? "",
+          };
+          setCompensation(savedCompensation);
+          setSubmittedCompensationSignature(JSON.stringify({ ...savedCompensation, country: savedCountry }));
+          if (savedCompensation.bankCode && savedCompensation.accountNumber && savedCompensation.accountName) {
+            setVerifiedAccountSignature(`${savedCompensation.bankCode}:${savedCompensation.accountNumber}`);
+          }
+        }
+
+        if (data.location) {
+          setLocationSummary({
+            address: { address: data.location.address, city: "", country: "", postcode: "", state: "" },
+            coordinates: { latitude: data.location.latitude, longitude: data.location.longitude },
+          });
+          location.loadSavedLocation(data.location);
+        }
+
+        setCompleted(
+          stages
+            .filter((item) => !data.missing_steps.includes(item.id === "personal" ? "personal_details" : item.id))
+            .map((item) => item.id),
+        );
       })
       .catch((caught: unknown) => {
         if (caught instanceof DOMException && caught.name === "AbortError") return;
@@ -636,15 +728,13 @@ export default function TutorOnboardingFlow() {
   };
   const editReview = (section: SetupStage) => {
     setReviewConfirmed(false);
-    setReviewData(null);
     setReviewError("");
-    setReviewLoading(true);
     setReturnToReview(true);
     setStage(section);
-    if (section === "location") location.goBack();
+    if (section === "location") location.loadSavedLocation(reviewData?.location ?? null);
   };
   const submitReview = async () => {
-    if (!reviewConfirmed || !reviewData?.is_complete || consentSubmitting || applicationSubmitted) return;
+    if (!reviewConfirmed || !reviewData?.is_complete || reviewData.tutor_status !== "in_progress" || consentSubmitting || applicationSubmitted) return;
     setConsentSubmitting(true);
     setSubmissionMessage("");
     try {
@@ -666,6 +756,11 @@ export default function TutorOnboardingFlow() {
   const stageIndex = activeSetupStage
     ? stages.findIndex((item) => item.id === activeSetupStage)
     : -1;
+  const tutorStatus = reviewData?.tutor_status ?? "";
+  const applicationPending = applicationSubmitted || tutorStatus === "pending";
+  const applicationApproved = tutorStatus === "approved";
+  const canSubmitApplication = Boolean(reviewData?.is_complete && tutorStatus === "in_progress");
+  const applicationEditable = !applicationPending && !applicationApproved;
 
   return (
     <main className="flex min-h-[100svh] flex-col bg-white text-[#171c2a]">
@@ -712,7 +807,7 @@ export default function TutorOnboardingFlow() {
             {submissionMessage ? <p className={`mb-3 rounded-xl border px-4 py-3 text-sm font-medium ${applicationSubmitted ? "border-[#bde8d0] bg-[#effaf4] text-[#20784d]" : "border-[#f0d6b5] bg-[#fff9f1] text-[#8b5a20]"}`} role="status">{submissionMessage}</p> : null}
             {reviewLoading ? <div className="py-16 text-center text-sm font-medium text-[#8a93a7]">Loading your saved application…</div> : null}
             {!reviewLoading && reviewError ? <div className="flex flex-col items-center gap-3 py-16 text-center" role="alert"><p className="text-sm font-medium text-brand-danger">{reviewError}</p><button className="h-10 rounded-full bg-brand-primary px-5 text-sm font-semibold text-white" onClick={() => { setReviewLoading(true); setReviewError(""); setReviewRefreshKey((current) => current + 1); }} type="button">Try again</button></div> : null}
-            {!reviewLoading && reviewData ? <TutorReviewStep confirmed={reviewConfirmed} onConfirmedChange={(value) => { setReviewConfirmed(value); setSubmissionMessage(""); }} onEdit={editReview} review={reviewData} /> : null}
+            {!reviewLoading && reviewData ? <TutorReviewStep canSubmit={canSubmitApplication} confirmed={reviewConfirmed} editable={applicationEditable} onConfirmedChange={(value) => { setReviewConfirmed(value); setSubmissionMessage(""); }} onEdit={editReview} review={reviewData} /> : null}
           </div>
         ) : (
           <div className="mx-auto flex w-full max-w-[75rem] items-start justify-center gap-8 xl:gap-16">
@@ -772,8 +867,11 @@ export default function TutorOnboardingFlow() {
                       />
                     </label>
                     <label>
-                      <FieldLabel optional>Date of birth</FieldLabel>
+                      <FieldLabel>Date of birth</FieldLabel>
                       <input
+                        aria-invalid={
+                          validationVisible && !personalForm.dateOfBirth
+                        }
                         className={fieldClassName}
                         onChange={(e) =>
                           updatePersonal("dateOfBirth", e.target.value)
@@ -781,6 +879,11 @@ export default function TutorOnboardingFlow() {
                         type="date"
                         value={personalForm.dateOfBirth}
                       />
+                      <InlineFieldError
+                        show={validationVisible && !personalForm.dateOfBirth}
+                      >
+                        Enter your date of birth.
+                      </InlineFieldError>
                     </label>
                     <label>
                       <FieldLabel>Email</FieldLabel>
@@ -878,7 +981,7 @@ export default function TutorOnboardingFlow() {
                       </InlineFieldError>
                     </label>
                     <label>
-                      <FieldLabel>Highest qualification</FieldLabel>
+                      <FieldLabel>Qualifications</FieldLabel>
                       <input
                         aria-invalid={
                           validationVisible &&
@@ -888,6 +991,7 @@ export default function TutorOnboardingFlow() {
                         onChange={(e) =>
                           updatePersonal("qualification", e.target.value)
                         }
+                        placeholder="Separate multiple qualifications with commas"
                         value={personalForm.qualification}
                       />
                       <InlineFieldError
@@ -896,7 +1000,7 @@ export default function TutorOnboardingFlow() {
                           !personalForm.qualification.trim()
                         }
                       >
-                        Enter your highest qualification.
+                        Enter at least one qualification.
                       </InlineFieldError>
                     </label>
                     <label className="sm:col-span-2">
@@ -1023,14 +1127,16 @@ export default function TutorOnboardingFlow() {
                     <label>
                       <FieldLabel>Upload ID documents</FieldLabel>
                       <span
-                        className={`mt-1.5 flex min-h-28 cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed bg-[#fbfcff] ${identityValidationVisible && idFiles.length === 0 ? "border-brand-danger" : "border-[#cfd5e2]"}`}
+                        className={`mt-1.5 flex min-h-28 cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed bg-[#fbfcff] ${identityValidationVisible && !hasIdentityDocuments ? "border-brand-danger" : "border-[#cfd5e2]"}`}
                       >
                         <UploadCloud className="h-6 w-6 text-[#5652d2]" />
                         <span className="mt-2 text-sm font-semibold text-[#5652d2]">
                           Click to upload or drag and drop
                         </span>
                         <span className="text-xs text-[#9299a9]">
-                          Upload 1–5 JPG, PNG, WEBP, or PDF files
+                          {savedIdentityDocuments.length
+                            ? "Add replacement documents if needed"
+                            : "Upload 1–5 JPG, PNG, WEBP, or PDF files"}
                         </span>
                         <input
                           accept=".pdf,.jpg,.jpeg,.png,.webp"
@@ -1044,13 +1150,23 @@ export default function TutorOnboardingFlow() {
                         />
                       </span>
                       <InlineFieldError
-                        show={identityValidationVisible && idFiles.length === 0}
+                        show={identityValidationVisible && !hasIdentityDocuments}
                       >
                         Upload at least one identity document.
                       </InlineFieldError>
                     </label>
                     {fileError ? (
                       <p className="text-sm text-brand-danger">{fileError}</p>
+                    ) : null}
+                    {savedIdentityDocuments.length ? (
+                      <div className="space-y-2">
+                        <p className="text-xs font-semibold text-[#6f778c]">Previously uploaded documents</p>
+                        {savedIdentityDocuments.map((document) => (
+                          <div className="rounded-xl border border-[#dfe3ec] bg-[#f7f8fb] px-4 py-3 text-sm" key={document.document_url}>
+                            {document.file_name}
+                          </div>
+                        ))}
+                      </div>
                     ) : null}
                     {idFiles.length ? (
                       <div className="space-y-2">
@@ -1444,14 +1560,22 @@ export default function TutorOnboardingFlow() {
                     </button>
                   </>
                 )
+              ) : applicationPending || applicationApproved ? (
+                <button
+                  className="h-11 rounded-full bg-brand-primary px-6 text-sm font-semibold text-white"
+                  onClick={() => router.push(applicationApproved ? "/tutor/dashboard" : "/students/dashboard")}
+                  type="button"
+                >
+                  {applicationApproved ? "Go to tutor dashboard" : "Return to student dashboard"}
+                </button>
               ) : (
                 <button
                   className="h-11 rounded-full bg-brand-primary px-6 text-sm font-semibold text-white disabled:bg-[#b8b6cf]"
-                  disabled={!reviewConfirmed || !reviewData?.is_complete || consentSubmitting || applicationSubmitted}
+                  disabled={!reviewConfirmed || !canSubmitApplication || consentSubmitting}
                   onClick={() => void submitReview()}
                   type="button"
                 >
-                  {applicationSubmitted ? "Application submitted" : consentSubmitting ? "Submitting..." : "Finish setup"}
+                  {consentSubmitting ? "Submitting..." : "Finish setup"}
                 </button>
               )}
             </div>

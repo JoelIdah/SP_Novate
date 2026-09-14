@@ -5,6 +5,7 @@ import { isRecord, requestJson } from "../../auth/request";
 export type TutorPersonalDetailsInput = {
   bio: string;
   country_code: string;
+  dob: string;
   email: string;
   first_name: string;
   last_name: string;
@@ -61,6 +62,7 @@ export type TutorOnboardingReview = {
   missing_steps: string[];
   personal_details: null | {
     bio: string;
+    dob?: string;
     email: string;
     first_name: string;
     last_name: string;
@@ -140,11 +142,12 @@ export async function getTutorOnboardingReview(signal?: AbortSignal) {
   const payload = await onboardingRequest("/api/tutor/set-up/review", { signal });
   const data = payload.data;
   if (!isRecord(data) || typeof data.is_complete !== "boolean" || !Array.isArray(data.missing_steps) ||
-      !data.missing_steps.every((step) => typeof step === "string") || !Array.isArray(data.documents) ||
+      !data.missing_steps.every((step) => typeof step === "string") ||
+      (data.documents !== undefined && !Array.isArray(data.documents)) ||
       typeof data.tutor_status !== "string") {
     throw new Error("We couldn’t load your application review. Please try again.");
   }
-  return data as TutorOnboardingReview;
+  return { ...data, documents: data.documents ?? [] } as TutorOnboardingReview;
 }
 
 export async function submitTutorOnboardingConsent() {

@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
-import { ProtectedAppLayout } from "../../components/auth/ProtectedAppLayout";
+import { SignedInLayout } from "../../components/auth/SignedInLayout";
 
 export default function TutorLayout({ children }: { children: ReactNode }) {
-  return <ProtectedAppLayout>{children}</ProtectedAppLayout>;
+  return <SignedInLayout>{children}</SignedInLayout>;
 }

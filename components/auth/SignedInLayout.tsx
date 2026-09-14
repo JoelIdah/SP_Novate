@@ -2,11 +2,11 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 
+import { ChatConnection } from "../chat/ChatConnection";
 import { redirectToLoginForAuthentication, setAuthSession } from "./authSession";
 import { isAuthenticatedProfile } from "./profile";
-import { ChatConnection } from "../chat/ChatConnection";
 
-export function ProtectedAppLayout({ children }: { children: ReactNode }) {
+export function SignedInLayout({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [attempt, setAttempt] = useState(0);
 

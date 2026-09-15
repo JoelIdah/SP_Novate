@@ -81,7 +81,7 @@ export function TutorReviewStep({ canSubmit, confirmed, editable, onConfirmedCha
         </ReviewCard>
 
         <ReviewCard editable={editable} icon={CircleDollarSign} onEdit={() => onEdit("compensation")} title="Compensation details">
-          <div className="grid grid-cols-2 gap-x-5 gap-y-2.5">{uk ? <><ReviewField label="First name" value={compensation?.first_name} /><ReviewField label="Last name" value={compensation?.last_name} /><ReviewField label="Account number" value={compensation?.account_number} /><ReviewField label="Sort code" value={compensation?.sort_code} /></> : <><ReviewField label="Bank name" value={compensation?.bank_name} /><ReviewField label="Bank code" value={compensation?.bank_code} /><ReviewField label="Account number" value={compensation?.account_number} /><ReviewField label="Account holder name" value={compensation?.account_name} /></>}</div>
+          <div className="grid grid-cols-2 gap-x-5 gap-y-2.5">{uk ? <><ReviewField label="Payout provider" value="Stripe" /><ReviewField label="Payouts enabled" value={compensation?.stripe_payouts_enabled ? "Yes" : "Pending"} /></> : <><ReviewField label="Bank name" value={compensation?.bank_name} /><ReviewField label="Bank code" value={compensation?.bank_code} /><ReviewField label="Account number" value={compensation?.account_number} /><ReviewField label="Account holder name" value={compensation?.account_name} /></>}</div>
         </ReviewCard>
 
         <ReviewCard editable={editable} icon={MapPin} onEdit={() => onEdit("location")} title="Location access">

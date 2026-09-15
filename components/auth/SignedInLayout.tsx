@@ -2,7 +2,6 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 
-import { ChatConnection } from "../chat/ChatConnection";
 import { redirectToLoginForAuthentication, setAuthSession } from "./authSession";
 import { isAuthenticatedProfile } from "./profile";
 
@@ -43,7 +42,7 @@ export function SignedInLayout({ children }: { children: ReactNode }) {
     return () => controller.abort();
   }, [attempt]);
 
-  if (status === "ready") return <ChatConnection>{children}</ChatConnection>;
+  if (status === "ready") return children;
   if (status === "loading") return null;
 
   return (

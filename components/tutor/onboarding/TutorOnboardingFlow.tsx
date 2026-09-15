@@ -63,10 +63,7 @@ type CompensationForm = {
   bankCode: string;
   bankName: string;
   accountName: string;
-  firstName: string;
-  lastName: string;
   accountNumber: string;
-  sortCode: string;
 };
 
 const stages = [
@@ -267,10 +264,7 @@ export default function TutorOnboardingFlow() {
     bankCode: "",
     bankName: "",
     accountName: "",
-    firstName: "",
-    lastName: "",
     accountNumber: "",
-    sortCode: "",
   });
   const [banks, setBanks] = useState<NigerianBank[]>([]);
   const [banksLoading, setBanksLoading] = useState(false);
@@ -342,12 +336,7 @@ export default function TutorOnboardingFlow() {
   });
   const compensationComplete =
     personalForm.country === "GB"
-      ? Boolean(
-          compensation.firstName.trim() &&
-          compensation.lastName.trim() &&
-          compensation.accountNumber.trim().length >= 8 &&
-          compensation.sortCode.replace(/\D/g, "").length === 6,
-        )
+      ? true
       : Boolean(
           compensation.bankCode.trim() &&
           compensation.bankName.trim() &&
@@ -388,10 +377,6 @@ export default function TutorOnboardingFlow() {
     setPersonalSaveError("");
     setPersonalForm((current) => ({ ...current, [field]: value }));
   };
-  const updateCompensation = (field: keyof CompensationForm, value: string) => {
-    setCompensationSaveError("");
-    setCompensation((current) => ({ ...current, [field]: value }));
-  };
   const changeCountry = (country: OperatingCountry) => {
     if (country !== personalForm.country) {
       setShareCode("");
@@ -405,10 +390,7 @@ export default function TutorOnboardingFlow() {
         bankCode: "",
         bankName: "",
         accountName: "",
-        firstName: "",
-        lastName: "",
         accountNumber: "",
-        sortCode: "",
       });
       setVerifiedAccountSignature("");
       setAccountResolveError("");
@@ -477,12 +459,9 @@ export default function TutorOnboardingFlow() {
         if (data.compensation) {
           const savedCompensation: CompensationForm = {
             accountName: data.compensation.account_name ?? "",
-            accountNumber: data.compensation.account_number,
+            accountNumber: data.compensation.account_number ?? "",
             bankCode: data.compensation.bank_code ?? "",
             bankName: data.compensation.bank_name ?? "",
-            firstName: data.compensation.first_name ?? "",
-            lastName: data.compensation.last_name ?? "",
-            sortCode: data.compensation.sort_code ?? "",
           };
           setCompensation(savedCompensation);
           setSubmittedCompensationSignature(JSON.stringify({ ...savedCompensation, country: savedCountry }));
@@ -571,12 +550,6 @@ export default function TutorOnboardingFlow() {
     goNext("personal", "identity");
   };
   const advanceFromIdentity = () => {
-    if (personalForm.country === "GB")
-      setCompensation((current) => ({
-        ...current,
-        firstName: current.firstName || firstName,
-        lastName: current.lastName || lastName,
-      }));
     setIdentityValidationVisible(false);
     goNext("identity", "compensation");
   };
@@ -703,20 +676,21 @@ export default function TutorOnboardingFlow() {
       const payload: TutorCompensationInput =
         personalForm.country === "GB"
           ? {
-              account_number: compensation.accountNumber.trim(),
               country: "uk",
-              first_name: compensation.firstName.trim(),
-              last_name: compensation.lastName.trim(),
-              sort_code: compensation.sortCode.replace(/\D/g, ""),
+              refresh_url: `${window.location.origin}/tutor/onboarding`,
+              return_url: `${window.location.origin}/tutor/onboarding`,
             }
           : {
-              account_name: compensation.accountName,
               account_number: compensation.accountNumber,
               bank_code: compensation.bankCode,
               bank_name: compensation.bankName,
               country: "nigeria",
             };
-      await saveTutorCompensation(payload);
+      const result = await saveTutorCompensation(payload);
+      if (result.country === "uk") {
+        window.location.assign(result.stripe_onboarding_url);
+        return;
+      }
       setSubmittedCompensationSignature(compensationSignature);
     } catch (caught) {
       setCompensationSaveError(
@@ -1217,104 +1191,16 @@ export default function TutorOnboardingFlow() {
                   </h1>
                   <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
                     {personalForm.country === "GB" ? (
-                      <>
-                        <label>
-                          <FieldLabel>First name</FieldLabel>
-                          <input
-                            aria-invalid={
-                              compensationValidationVisible &&
-                              !compensation.firstName.trim()
-                            }
-                            className={fieldClassName}
-                            onChange={(e) =>
-                              updateCompensation("firstName", e.target.value)
-                            }
-                            value={compensation.firstName}
-                          />
-                          <InlineFieldError
-                            show={
-                              compensationValidationVisible &&
-                              !compensation.firstName.trim()
-                            }
-                          >
-                            Enter the account holder&apos;s first name.
-                          </InlineFieldError>
-                        </label>
-                        <label>
-                          <FieldLabel>Last name</FieldLabel>
-                          <input
-                            aria-invalid={
-                              compensationValidationVisible &&
-                              !compensation.lastName.trim()
-                            }
-                            className={fieldClassName}
-                            onChange={(e) =>
-                              updateCompensation("lastName", e.target.value)
-                            }
-                            value={compensation.lastName}
-                          />
-                          <InlineFieldError
-                            show={
-                              compensationValidationVisible &&
-                              !compensation.lastName.trim()
-                            }
-                          >
-                            Enter the account holder&apos;s last name.
-                          </InlineFieldError>
-                        </label>
-                        <label>
-                          <FieldLabel>Account number</FieldLabel>
-                          <input
-                            aria-invalid={
-                              compensationValidationVisible &&
-                              compensation.accountNumber.trim().length < 8
-                            }
-                            className={fieldClassName}
-                            inputMode="numeric"
-                            onChange={(e) =>
-                              updateCompensation(
-                                "accountNumber",
-                                e.target.value,
-                              )
-                            }
-                            value={compensation.accountNumber}
-                          />
-                          <InlineFieldError
-                            show={
-                              compensationValidationVisible &&
-                              compensation.accountNumber.trim().length < 8
-                            }
-                          >
-                            Enter an account number with at least 8 digits.
-                          </InlineFieldError>
-                        </label>
-                        <label>
-                          <FieldLabel>Sort code</FieldLabel>
-                          <input
-                            aria-invalid={
-                              compensationValidationVisible &&
-                              compensation.sortCode.replace(/\D/g, "")
-                                .length !== 6
-                            }
-                            className={fieldClassName}
-                            inputMode="numeric"
-                            onChange={(e) =>
-                              updateCompensation("sortCode", e.target.value)
-                            }
-                            placeholder="00-00-00"
-                            value={compensation.sortCode}
-                          />
-                          <InlineFieldError
-                            show={
-                              compensationValidationVisible &&
-                              compensation.sortCode.replace(/\D/g, "")
-                                .length !== 6
-                            }
-                          >
-                            Enter a valid 6-digit sort code.
-                          </InlineFieldError>
-                        </label>
-                      </>
+                      <div className="rounded-xl border border-[#dfe3ec] bg-[#f7f8fb] p-4 sm:col-span-2">
+                        <p className="text-sm font-semibold text-[#35405a]">
+                          Set up payouts securely with Stripe
+                        </p>
+                        <p className="mt-1 text-sm leading-6 text-[#687188]">
+                          Stripe will collect and verify your identity and bank
+                          details. You will return here when onboarding is
+                          complete.
+                        </p>
+                      </div>
                     ) : (
                       <>
                         <div>
@@ -1533,7 +1419,13 @@ export default function TutorOnboardingFlow() {
                   onClick={() => void continueCompensation()}
                   type="button"
                 >
-                  {compensationSubmitting ? "Saving..." : "Continue"}
+                  {personalForm.country === "GB"
+                    ? compensationSubmitting
+                      ? "Opening Stripe..."
+                      : "Continue to Stripe"
+                    : compensationSubmitting
+                      ? "Saving..."
+                      : "Continue"}
                 </button>
               ) : stage === "location" ? (
                 location.view === "prompt" ? (

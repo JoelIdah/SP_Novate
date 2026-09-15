@@ -36,19 +36,30 @@ export type TutorReviewDocument = {
 };
 
 export type TutorCompensationInput =
-  | { country: "uk"; first_name: string; last_name: string; sort_code: string; account_number: string }
-  | { country: "nigeria"; bank_name: string; bank_code: string; account_name: string; account_number: string };
+  | { country: "uk"; return_url: string; refresh_url: string }
+  | { country: "nigeria"; bank_name: string; bank_code: string; account_number: string };
+
+export type TutorCompensationResult =
+  | {
+      country: "uk";
+      stripe_onboarding_url: string;
+      stripe_payouts_enabled: boolean;
+    }
+  | {
+      country: "nigeria";
+      account_name: string;
+      account_number: string;
+      bank_name: string;
+    };
 
 export type TutorOnboardingReview = {
   compensation: null | {
     country: string;
-    account_number: string;
+    account_number?: string;
     account_name?: string;
     bank_code?: string;
     bank_name?: string;
-    first_name?: string;
-    last_name?: string;
-    sort_code?: string;
+    stripe_payouts_enabled?: boolean;
   };
   identification: null | {
     country: string;
@@ -143,7 +154,17 @@ export async function saveTutorCompensation(input: TutorCompensationInput) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
   });
-  return typeof payload.message === "string" ? payload.message : "";
+  if (!isRecord(payload.data) || payload.data.country !== input.country) {
+    throw new Error("We couldnâ€™t process your compensation details. Please try again.");
+  }
+  if (
+    input.country === "uk" &&
+    (typeof payload.data.stripe_onboarding_url !== "string" ||
+      !payload.data.stripe_onboarding_url)
+  ) {
+    throw new Error("We couldnâ€™t start Stripe onboarding. Please try again.");
+  }
+  return payload.data as TutorCompensationResult;
 }
 
 export async function getTutorOnboardingReview(signal?: AbortSignal) {

@@ -1,14 +1,17 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { AccountStep } from "./AccountStep";
 import { AuthCardHeader } from "./AuthCardHeader";
+import { AuthCard } from "./AuthPrimitives";
 import { AuthShell } from "./AuthShell";
 import { OtpStep } from "./OtpStep";
+import { clearProfileSetupSession, isProfileSetupActive, subscribeProfileSetupSession, useProfileSetupUser } from "./profileSetupSession";
 import { StudentFlow } from "./student/StudentFlow";
 import type { SetupMode, SetupStepId, SignUpFlowStage, SignUpView } from "./types";
+import { getSsoReturnPath } from "../auth/ssoReturn";
 
 type SignUpUrlState = {
   mode: SetupMode;
@@ -18,14 +21,6 @@ type SignUpUrlState = {
 };
 
 type AccountProfile = { email?: string; firstName?: string; lastName?: string };
-type SsoUser = {
-  role?: "student" | "tutor";
-  email?: string;
-  first_name?: string;
-  last_name?: string;
-  profile_photo?: string;
-  public_id?: string;
-};
 
 function parseView(value: string | null): SignUpView {
   return value === "account" || value === "otp" || value === "flow" ? value : "account";
@@ -36,7 +31,7 @@ function parseStage(value: string | null): SignUpFlowStage {
 }
 
 function parseStep(value: string | null): SetupStepId {
-  return value === "identification" || value === "compensation" || value === "location" ? value : "personal";
+  return value === "location" ? value : "personal";
 }
 
 function parseMode(value: string | null): SetupMode {
@@ -44,9 +39,6 @@ function parseMode(value: string | null): SetupMode {
 }
 
 function normalizeStep(step: SetupStepId): SetupStepId {
-  if (step === "identification" || step === "compensation") {
-    return "personal";
-  }
   return step;
 }
 
@@ -69,89 +61,58 @@ function readUrlState(searchParams: URLSearchParams): SignUpUrlState {
   };
 }
 
-export function SignUpFlow() {
+function useProfileSetupActive(): boolean {
+  return useSyncExternalStore(
+    subscribeProfileSetupSession,
+    isProfileSetupActive,
+    () => false,
+  );
+}
+
+export function SignUpFlow({ forceProfileSetup = false }: { forceProfileSetup?: boolean }) {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
 
   const urlState = useMemo(() => readUrlState(new URLSearchParams(searchParams.toString())), [searchParams]);
+  const ssoReturnPath = useMemo(() => getSsoReturnPath(searchParams), [searchParams]);
+  const profileSetupActive = useProfileSetupActive();
+  const profileSetupUser = useProfileSetupUser();
   const [accountProfile, setAccountProfile] = useState<AccountProfile>({});
-
-  const getAllowedReturnOrigins = (): string[] =>
-    (process.env.NEXT_PUBLIC_SPMEET_ALLOWED_CALLBACK_ORIGINS ?? "")
-      .split(",")
-      .map((value) => value.trim())
-      .filter(Boolean);
-
-  const resolveSafeReturnTo = (): string | null => {
-    const candidate = searchParams.get("returnTo")?.trim();
-    if (!candidate) return null;
-
-    try {
-      const parsed = new URL(candidate);
-      if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return null;
-      const allowedOrigins = getAllowedReturnOrigins();
-      if (!allowedOrigins.includes(parsed.origin)) return null;
-      return parsed.toString();
-    } catch {
-      return null;
-    }
+  const [profileSetupRouteReady, setProfileSetupRouteReady] = useState(!forceProfileSetup);
+  const setupProfile = {
+    email: accountProfile.email ?? profileSetupUser.email,
+    firstName: accountProfile.firstName ?? profileSetupUser.firstName,
+    lastName: accountProfile.lastName ?? profileSetupUser.lastName,
   };
 
-  const resolveState = (): string | null => {
-    const candidate = searchParams.get("state");
-    if (!candidate) return null;
-    const trimmed = candidate.trim();
-    return trimmed.length > 0 ? trimmed : null;
-  };
+  useEffect(() => {
+    if (!forceProfileSetup) return;
 
-  const resolveSafeNextPath = (): string => {
-    const candidate = searchParams.get("next");
-    if (!candidate) return "/";
-
-    const trimmed = candidate.trim();
-    if (!trimmed.startsWith("/") || trimmed.startsWith("//")) return "/";
-    if (trimmed.includes("://")) return "/";
-    return trimmed;
-  };
-
-  const encodeBase64Url = (value: string): string => {
-    const bytes = new TextEncoder().encode(value);
-    let binary = "";
-
-    for (let i = 0; i < bytes.length; i += 1) {
-      binary += String.fromCharCode(bytes[i]);
-    }
-
-    return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
-  };
-
-  const redirectToReturnTarget = (token: string, user?: SsoUser) => {
-    const returnTo = resolveSafeReturnTo();
-    const state = resolveState();
-
-    if (!returnTo || !state) return false;
-
-    const target = new URL(returnTo);
-    target.searchParams.set("token", token);
-    target.searchParams.set("next", resolveSafeNextPath());
-    target.searchParams.set("state", state);
-
-    if (user) {
-      const userPayload = {
-        role: user.role ?? "",
-        email: user.email ?? "",
-        first_name: user.first_name ?? "",
-        last_name: user.last_name ?? "",
-        profile_photo: user.profile_photo ?? "",
-        public_id: user.public_id ?? "",
-      };
-      target.searchParams.set("user", encodeBase64Url(JSON.stringify(userPayload)));
-    }
-
-    window.location.href = target.toString();
-    return true;
-  };
+    void fetch("/api/auth/session", { cache: "no-store" })
+      .then(async (response) => {
+        const payload = await response.json().catch(() => null) as {
+          authenticated?: boolean;
+          profileSetupRequired?: boolean | null;
+          user?: { email?: string; first_name?: string; last_name?: string } | null;
+        } | null;
+        if (!response.ok || !payload?.authenticated) {
+          router.replace("/login");
+          return;
+        }
+        if (payload.profileSetupRequired !== true) {
+          router.replace("/students/dashboard");
+          return;
+        }
+        setAccountProfile({
+          email: payload.user?.email ?? "",
+          firstName: payload.user?.first_name ?? "",
+          lastName: payload.user?.last_name ?? "",
+        });
+        setProfileSetupRouteReady(true);
+      })
+      .catch(() => router.replace("/login"));
+  }, [forceProfileSetup, router]);
 
   const redirectToLoginAfterVerification = (email: string) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -199,29 +160,42 @@ export function SignUpFlow() {
     router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
   };
 
-  if (urlState.view === "flow") {
+  const showProfileSetup = forceProfileSetup || profileSetupActive || urlState.view === "flow";
+
+  if (forceProfileSetup && !profileSetupRouteReady) return null;
+
+  if (showProfileSetup) {
     return (
       <StudentFlow
-        accountProfile={accountProfile}
+        accountProfile={setupProfile}
         onBackToAccount={() => {
           writeUrlState({ mode: "form", stage: "overview", step: "personal", view: "account" });
         }}
         onSetupStateChange={({ mode, stepId }) => {
-          writeUrlState({ mode, stage: "setup", step: stepId, view: "flow" });
+          if (!forceProfileSetup && !profileSetupActive) {
+            writeUrlState({ mode, stage: "setup", step: stepId, view: "flow" });
+          }
         }}
         onStageChange={(stage) => {
-          writeUrlState({ mode: "form", stage, view: "flow" });
+          if ((forceProfileSetup || profileSetupActive) && stage === "overview") {
+            clearProfileSetupSession();
+            router.push("/login");
+            return;
+          }
+          if (!forceProfileSetup && !profileSetupActive) {
+            writeUrlState({ mode: "form", stage, view: "flow" });
+          }
         }}
         setupMode={urlState.mode}
         setupStepId={urlState.step}
-        stage={urlState.stage}
+        stage={forceProfileSetup || profileSetupActive ? "setup" : urlState.stage}
       />
     );
   }
 
   return (
     <AuthShell>
-      <div className="auth-card relative rounded-[2em] border-[0.08em] border-[#d9dde8] bg-gradient-to-b from-white to-[#fcfdff] px-[1.5em] pb-[1.35em] pt-[1.3em] shadow-[0_14px_34px_rgba(23,30,63,0.11)]">
+      <AuthCard className="rounded-[2em]" tone="gradient">
         {urlState.view !== "otp" ? <AuthCardHeader /> : null}
         {urlState.view === "account" ? (
           <AccountStep
@@ -233,6 +207,7 @@ export function SignUpFlow() {
         ) : (
           <OtpStep
             email={accountProfile.email ?? ""}
+            establishSession={Boolean(ssoReturnPath)}
             onVerified={(payload) => {
               setAccountProfile((prev) => ({
                 email: payload.email || prev.email,
@@ -240,22 +215,8 @@ export function SignUpFlow() {
                 lastName: payload.lastName || prev.lastName,
               }));
 
-              if (
-                payload.token &&
-                redirectToReturnTarget(payload.token, {
-                  email: payload.email,
-                  first_name: payload.firstName,
-                  last_name: payload.lastName,
-                  role: payload.role,
-                  profile_photo: payload.profilePhoto,
-                  public_id: payload.publicId,
-                })
-              ) {
-                return;
-              }
-
-              if (!resolveSafeReturnTo() || !resolveState()) {
-                router.push("/coming-soon");
+              if (ssoReturnPath) {
+                window.location.assign(ssoReturnPath);
                 return;
               }
 
@@ -263,7 +224,7 @@ export function SignUpFlow() {
             }}
           />
         )}
-      </div>
+      </AuthCard>
     </AuthShell>
   );
 }

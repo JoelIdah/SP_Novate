@@ -29,11 +29,10 @@ export function StudentFlow({
         initialStepId={setupStepId}
         onBack={() => onStageChange("overview")}
         onStateChange={onSetupStateChange}
-        role="student"
       />
     );
   }
 
-  return <StudentOnboardingOverview onCancel={onBackToAccount} onContinue={() => onStageChange("setup")} />;
+  return <StudentOnboardingOverview onCancel={onBackToAccount} onContinue={() => onStageChange("setup")} profile={accountProfile} />;
 }
 

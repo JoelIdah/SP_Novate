@@ -33,8 +33,9 @@ function pickRandomPublicImage(seed: string) {
 export function Avatar({ initials, src, alt, className = "", style, children, randomImage = false, randomSeed }: AvatarProps) {
   const baseClass = className.trim();
   const resolvedSrc = src ?? (randomImage ? pickRandomPublicImage(randomSeed ?? `${alt ?? ""}-${initials ?? ""}`) : undefined);
+  const encodedSrc = resolvedSrc ? encodeURI(resolvedSrc) : undefined;
 
-  if (resolvedSrc) {
+  if (encodedSrc) {
     return (
       <div
         aria-label={alt}
@@ -42,7 +43,7 @@ export function Avatar({ initials, src, alt, className = "", style, children, ra
         role={alt ? "img" : undefined}
         style={{
           ...style,
-          backgroundImage: `url(${resolvedSrc})`,
+          backgroundImage: `url("${encodedSrc}")`,
           backgroundPosition: "center",
           backgroundSize: "cover",
         }}

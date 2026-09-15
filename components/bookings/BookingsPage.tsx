@@ -1,243 +1,343 @@
  "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { CalendarDays, ChevronDown, ChevronRight, ClipboardList, Compass, EllipsisVertical, MapPin, Search, Star } from "lucide-react";
+import { ChevronRight, ClipboardList, Compass, EllipsisVertical, LocateFixed, MapPin, Search, Star, X } from "lucide-react";
 
 import { StudentDashboardNavbar } from "../dashboard/StudentDashboardNavbar";
+import { DashboardShell } from "../layout/DashboardShell";
 import { Avatar } from "../ui/Avatar";
-import { Button } from "../ui/Button";
 import { Card } from "../ui/Card";
 import ResponsiveSheet from "../ui/ResponsiveSheet";
+import { DataTableShell } from "../ui/DataTableShell";
+import { Notice } from "../ui/Notice";
+import { SelectMenu } from "../ui/SelectMenu";
+import { TableFilters } from "../ui/TableFilters";
+import { InfiniteScrollTrigger } from "../ui/InfiniteScrollTrigger";
+import { getBookings, type BookingListItem, type BookingStatus } from "./bookings";
+import {
+  getCategories,
+  getTutors,
+  isLocationRequiredError,
+  isServiceUnavailableError,
+  updateCurrentLocation,
+  type StudentCategory,
+  type TutorSearchResult,
+} from "./tutorSearch";
 
 type TutorCard = {
+  publicId: string;
   name: string;
   title: string;
   rating: string;
-  location: string;
-  distance: string;
+  ratingCount: number;
+  location?: string;
+  distance?: string;
   subjects: string[];
-  avatarBg: string;
-  avatarText: string;
+  profilePhoto: string;
   initials: string;
 };
 
-type ManagedBookingRow = {
-  date: string;
-  tutor: string;
-  department: string;
-  subject: string;
-  time: string;
-  duration: string;
-  status: "On-going" | "Pending";
-};
+type BookingView = "explore" | "manage";
 
-const tutors: TutorCard[] = [
-  {
-    name: "Oluyinka Emmanuel",
-    title: "Software engineer - B.Sc, M.Sc",
-    rating: "4.5",
-    location: "Omni, Victoria Island",
-    distance: "5km from you",
-    subjects: ["Mathematics", "Physics", "Further mathematics"],
-    avatarBg: "linear-gradient(135deg, #d7b58f 0%, #f1d8b7 100%)",
-    avatarText: "#6a4a2e",
-    initials: "OE",
-  },
-  {
-    name: "Oluyinka Emmanuel",
-    title: "Software engineer - B.Sc, M.Sc",
-    rating: "4.5",
-    location: "Omni, Victoria Island",
-    distance: "5km from you",
-    subjects: ["Mathematics", "Physics", "Further mathematics"],
-    avatarBg: "linear-gradient(135deg, #1f3a8a 0%, #2d62ff 100%)",
-    avatarText: "#ffffff",
-    initials: "OE",
-  },
-  {
-    name: "Oluyinka Emmanuel",
-    title: "Software engineer - B.Sc, M.Sc",
-    rating: "4.5",
-    location: "Omni, Victoria Island",
-    distance: "5km from you",
-    subjects: ["Mathematics", "Physics", "Further mathematics"],
-    avatarBg: "linear-gradient(135deg, #134e4a 0%, #2dd4bf 100%)",
-    avatarText: "#ffffff",
-    initials: "OE",
-  },
-  {
-    name: "Oluyinka Emmanuel",
-    title: "Software engineer - B.Sc, M.Sc",
-    rating: "4.5",
-    location: "Omni, Victoria Island",
-    distance: "5km from you",
-    subjects: ["Mathematics", "Physics", "Further mathematics"],
-    avatarBg: "linear-gradient(135deg, #6d28d9 0%, #a78bfa 100%)",
-    avatarText: "#ffffff",
-    initials: "OE",
-  },
-  {
-    name: "Oluyinka Emmanuel",
-    title: "Software engineer - B.Sc, M.Sc",
-    rating: "4.5",
-    location: "Omni, Victoria Island",
-    distance: "5km from you",
-    subjects: ["Mathematics", "Physics", "Further mathematics"],
-    avatarBg: "linear-gradient(135deg, #111827 0%, #4b5563 100%)",
-    avatarText: "#ffffff",
-    initials: "OE",
-  },
-  {
-    name: "Oluyinka Emmanuel",
-    title: "Software engineer - B.Sc, M.Sc",
-    rating: "4.5",
-    location: "Omni, Victoria Island",
-    distance: "5km from you",
-    subjects: ["Mathematics", "Physics", "Further mathematics"],
-    avatarBg: "linear-gradient(135deg, #0f172a 0%, #60a5fa 100%)",
-    avatarText: "#ffffff",
-    initials: "OE",
-  },
-];
+function bookingStatusLabel(status: BookingStatus) {
+  return status.split("_").map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(" ");
+}
 
-const managedRows: ManagedBookingRow[] = [
-  { date: "March 16, 2026", tutor: "Mr. Oluyinka Alabi", department: "Academics", subject: "Information Technology", time: "4:00 PM", duration: "1 Hour", status: "On-going" },
-  { date: "March 16, 2026", tutor: "Mr. Oluyinka Alabi", department: "Academics", subject: "Information Technology", time: "4:00 PM", duration: "1 Hour", status: "On-going" },
-  { date: "March 17, 2026", tutor: "Mr. Oluyinka Alabi", department: "Academics", subject: "Information Technology", time: "4:00 PM", duration: "1 Hour", status: "Pending" },
-  { date: "March 17, 2026", tutor: "Mr. Oluyinka Alabi", department: "Academics", subject: "Information Technology", time: "4:00 PM", duration: "1 Hour", status: "Pending" },
-  { date: "March 17, 2026", tutor: "Mr. Oluyinka Alabi", department: "Academics", subject: "Information Technology", time: "4:00 PM", duration: "1 Hour", status: "Pending" },
-  { date: "March 17, 2026", tutor: "Mr. Oluyinka Alabi", department: "Academics", subject: "Information Technology", time: "4:00 PM", duration: "1 Hour", status: "Pending" },
-  { date: "March 18, 2026", tutor: "Mr. Oluyinka Alabi", department: "Academics", subject: "Information Technology", time: "4:00 PM", duration: "1 Hour", status: "Pending" },
-  { date: "March 18, 2026", tutor: "Mr. Oluyinka Alabi", department: "Academics", subject: "Information Technology", time: "4:00 PM", duration: "1 Hour", status: "Pending" },
-  { date: "March 18, 2026", tutor: "Mr. Oluyinka Alabi", department: "Academics", subject: "Information Technology", time: "4:00 PM", duration: "1 Hour", status: "Pending" },
-  { date: "March 18, 2026", tutor: "Mr. Oluyinka Alabi", department: "Academics", subject: "Information Technology", time: "4:00 PM", duration: "1 Hour", status: "Pending" },
-  { date: "March 18, 2026", tutor: "Mr. Oluyinka Alabi", department: "Academics", subject: "Information Technology", time: "4:00 PM", duration: "1 Hour", status: "Pending" },
-  { date: "March 18, 2026", tutor: "Mr. Oluyinka Alabi", department: "Academics", subject: "Information Technology", time: "4:00 PM", duration: "1 Hour", status: "Pending" },
-];
+function bookingStatusFromLabel(label: string): BookingStatus | "" {
+  if (label === "All") return "";
+  return label.toLowerCase().replaceAll(" ", "_") as BookingStatus;
+}
 
-const mobileRowsPerPage = 5;
+function bookingStatusColor(status: BookingStatus) {
+  if (status === "completed") return "bg-[#36a269]";
+  if (status === "ongoing") return "bg-[#9a5cff]";
+  if (status === "cancelled") return "bg-[#d35b5b]";
+  return "bg-[#e7c754]";
+}
 
-export default function BookingsPage() {
+function mapTutor(item: TutorSearchResult): TutorCard {
+  const name = item.name.trim();
+  const nameParts = name.split(/\s+/).filter(Boolean);
+  const titleParts = [item.occupation.trim(), item.qualifications.join(", ")].filter(Boolean);
+  return {
+    publicId: item.public_id.trim(),
+    name,
+    title: titleParts.join(" - "),
+    rating: item.average_rating.toFixed(1),
+    ratingCount: item.rating_count,
+    location: item.address?.trim() || undefined,
+    distance: typeof item.distance_km === "number" ? `${item.distance_km.toLocaleString(undefined, { maximumFractionDigits: 1 })} km` : undefined,
+    subjects: item.subjects.map((entry) => entry.subject),
+    profilePhoto: item.profile_photo.trim(),
+    initials: nameParts.slice(0, 2).map((part) => part.charAt(0).toUpperCase()).join(""),
+  };
+}
+
+export default function BookingsPage({ initialView = "explore", notice }: { initialView?: BookingView; notice?: string }) {
   const router = useRouter();
-  const [view, setView] = useState<"explore" | "manage">("explore");
+  const [view, setView] = useState<BookingView>(initialView);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [tutorQuery, setTutorQuery] = useState("");
+  const [debouncedTutorQuery, setDebouncedTutorQuery] = useState("");
+  const [tutorCards, setTutorCards] = useState<TutorCard[]>([]);
+  const [tutorsLoading, setTutorsLoading] = useState(true);
+  const [tutorsError, setTutorsError] = useState("");
+  const [tutorsUnavailable, setTutorsUnavailable] = useState(false);
+  const [locationRequired, setLocationRequired] = useState(false);
+  const [locationModalOpen, setLocationModalOpen] = useState(false);
+  const [tutorsPage, setTutorsPage] = useState(1);
+  const [tutorsTotalPages, setTutorsTotalPages] = useState(0);
+  const [tutorsRefreshKey, setTutorsRefreshKey] = useState(0);
+  const [bookings, setBookings] = useState<BookingListItem[]>([]);
+  const [bookingsLoading, setBookingsLoading] = useState(false);
+  const [bookingsError, setBookingsError] = useState("");
+  const [bookingsPage, setBookingsPage] = useState(1);
+  const [bookingsTotalPages, setBookingsTotalPages] = useState(0);
+  const [bookingsRefreshKey, setBookingsRefreshKey] = useState(0);
   const [subject, setSubject] = useState("");
   const [category, setCategory] = useState("");
-  const [location, setLocation] = useState("");
+  const [categories, setCategories] = useState<StudentCategory[]>([]);
+  const [categoriesError, setCategoriesError] = useState("");
+  const [categoriesUnavailable, setCategoriesUnavailable] = useState(false);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [days, setDays] = useState("");
-  const [time, setTime] = useState("");
   const [rating, setRating] = useState("");
-  const [isDateMenuOpen, setIsDateMenuOpen] = useState(false);
-  const [isStatusMenuOpen, setIsStatusMenuOpen] = useState(false);
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
-  const [selectedStatus, setSelectedStatus] = useState<ManagedBookingRow["status"] | "All">("All");
-  const [managePage, setManagePage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(8);
-  const desktopTableViewportRef = useRef<HTMLDivElement | null>(null);
-  const desktopTableRef = useRef<HTMLTableElement | null>(null);
+  const [draftSubject, setDraftSubject] = useState("");
+  const [draftCategory, setDraftCategory] = useState("");
+  const [draftDays, setDraftDays] = useState("");
+  const [draftRating, setDraftRating] = useState("");
+  const [bookingDate, setBookingDate] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState<BookingStatus | "">("");
 
   useEffect(() => {
-    const computeRowsPerPage = () => {
-      if (view !== "manage") return;
-      const viewport = desktopTableViewportRef.current;
-      const table = desktopTableRef.current;
-      if (!viewport || !table) return;
-      if (viewport.clientHeight <= 0 || table.offsetParent === null) return;
+    const timer = window.setTimeout(() => {
+      const nextQuery = tutorQuery.trim();
+      if (nextQuery) {
+        setSubject("");
+        setCategory("");
+        setDays("");
+        setRating("");
+      }
+      setTutorsPage(1);
+      setDebouncedTutorQuery(nextQuery);
+    }, 350);
+    return () => window.clearTimeout(timer);
+  }, [tutorQuery]);
 
-      const headHeight = table.tHead?.getBoundingClientRect().height ?? 40;
-      const firstRow = table.tBodies[0]?.rows[0];
-      const rowHeight = firstRow?.getBoundingClientRect().height ?? 40;
-      const availableHeight = viewport.clientHeight - headHeight;
-      const nextRowsPerPage = Math.max(1, Math.floor(availableHeight / Math.max(rowHeight, 1)));
+  useEffect(() => {
+    const controller = new AbortController();
 
-      setRowsPerPage((prev) => (prev === nextRowsPerPage ? prev : nextRowsPerPage));
+    const loadCategories = async () => {
+      setCategoriesLoading(true);
+      setCategoriesError("");
+      try {
+        setCategories(await getCategories(controller.signal));
+        setCategoriesUnavailable(false);
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+        setCategories([]);
+        if (isServiceUnavailableError(error)) {
+          setCategoriesUnavailable(true);
+          setCategoriesError("");
+        } else {
+          setCategoriesError(error instanceof Error ? error.message : "Could not load learning categories.");
+        }
+      } finally {
+        if (!controller.signal.aborted) setCategoriesLoading(false);
+      }
     };
 
-    computeRowsPerPage();
-    const resizeObserver = new ResizeObserver(computeRowsPerPage);
-    if (desktopTableViewportRef.current) resizeObserver.observe(desktopTableViewportRef.current);
-    if (desktopTableRef.current) resizeObserver.observe(desktopTableRef.current);
-    window.addEventListener("resize", computeRowsPerPage);
-    return () => {
-      resizeObserver.disconnect();
-      window.removeEventListener("resize", computeRowsPerPage);
-    };
-  }, [view, dateFrom, dateTo, selectedStatus]);
+    void loadCategories();
+    return () => controller.abort();
+  }, [tutorsRefreshKey]);
 
-  const activeFilterCount = useMemo(
-    () => [subject, category, location, days, time, rating].filter(Boolean).length,
-    [subject, category, location, days, time, rating]
+  useEffect(() => {
+    if (view !== "explore") return;
+    const controller = new AbortController();
+    const loadTutors = async () => {
+      setTutorsLoading(true);
+      setTutorsError("");
+      setLocationRequired(false);
+      try {
+        const tutorPage = await getTutors(
+          {
+            page: tutorsPage,
+            pageSize: 20,
+            name: debouncedTutorQuery || undefined,
+            department: category || undefined,
+            subject: subject || undefined,
+            day: days || undefined,
+            minimumRating: rating || undefined,
+          },
+          controller.signal,
+        );
+        const nextTutors = tutorPage.data.map(mapTutor);
+        setTutorCards((current) => {
+          if (tutorsPage === 1) return nextTutors;
+          const combined = [...current, ...nextTutors];
+          return combined.filter((tutor, index) => combined.findIndex((candidate) => candidate.publicId ? candidate.publicId === tutor.publicId : candidate.name === tutor.name) === index);
+        });
+        setTutorsTotalPages(tutorPage.total_pages);
+        setTutorsUnavailable(false);
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+        if (tutorsPage === 1) setTutorCards([]);
+        if (isServiceUnavailableError(error)) {
+          setTutorsUnavailable(true);
+          setTutorsError("");
+        } else if (isLocationRequiredError(error)) {
+          setLocationRequired(true);
+          setTutorsError("");
+        } else {
+          setTutorsError(error instanceof Error ? error.message : "Could not load tutors.");
+        }
+      } finally {
+        if (!controller.signal.aborted) setTutorsLoading(false);
+      }
+    };
+    void loadTutors();
+    return () => controller.abort();
+  }, [category, days, debouncedTutorQuery, rating, subject, tutorsPage, tutorsRefreshKey, view]);
+
+  useEffect(() => {
+    if (view !== "manage") return;
+    const controller = new AbortController();
+    const load = async () => {
+      setBookingsLoading(true);
+      setBookingsError("");
+      try {
+        const result = await getBookings({ date: bookingDate || undefined, page: bookingsPage, pageSize: 20, status: selectedStatus || undefined }, controller.signal);
+        setBookings((current) => bookingsPage === 1 ? result.data : [...current, ...result.data]);
+        setBookingsTotalPages(result.total_pages);
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+        if (bookingsPage === 1) setBookings([]);
+        setBookingsError(error instanceof Error ? error.message : "Could not load bookings.");
+      } finally {
+        if (!controller.signal.aborted) setBookingsLoading(false);
+      }
+    };
+    void load();
+    return () => controller.abort();
+  }, [bookingDate, bookingsPage, bookingsRefreshKey, selectedStatus, view]);
+
+  const categoryOptions = useMemo(() => categories.map((item) => item.department).filter(Boolean), [categories]);
+  const serviceUnavailable = categoriesUnavailable || tutorsUnavailable;
+  const selectedCategory = useMemo(() => categories.find((item) => item.department === category), [categories, category]);
+  const subjectOptions = useMemo(() => {
+    const source = selectedCategory ? selectedCategory.subjects : categories.flatMap((item) => item.subjects);
+    return [...new Set(source.map((item) => item.subject).filter(Boolean))].sort((first, second) => first.localeCompare(second));
+  }, [categories, selectedCategory]);
+  const draftSelectedCategory = useMemo(
+    () => categories.find((item) => item.department === draftCategory),
+    [categories, draftCategory],
   );
-  const filteredManagedRows = useMemo(() => {
-    return managedRows.filter((row) => {
-      const statusPass = selectedStatus === "All" ? true : row.status === selectedStatus;
-      const rowDate = new Date(row.date);
-      const from = dateFrom ? new Date(dateFrom) : null;
-      const to = dateTo ? new Date(dateTo) : null;
-      const fromPass = from ? rowDate >= from : true;
-      const toPass = to ? rowDate <= to : true;
-      const datePass = !Number.isNaN(rowDate.valueOf()) && fromPass && toPass;
-      return statusPass && datePass;
-    });
-  }, [dateFrom, dateTo, selectedStatus]);
+  const draftSubjectOptions = useMemo(() => {
+    const source = draftSelectedCategory
+      ? draftSelectedCategory.subjects
+      : categories.flatMap((item) => item.subjects);
+    return [...new Set(source.map((item) => item.subject))].sort((first, second) => first.localeCompare(second));
+  }, [categories, draftSelectedCategory]);
+  const activeFilterCount = useMemo(
+    () => [subject, category, days, rating].filter(Boolean).length,
+    [subject, category, days, rating]
+  );
+  const clearSearch = () => {
+    setTutorQuery("");
+    setDebouncedTutorQuery("");
+  };
 
-  const totalManagePages = Math.max(1, Math.ceil(filteredManagedRows.length / rowsPerPage));
-  const currentManagePage = Math.min(managePage, totalManagePages);
-  const paginatedManagedRows = useMemo(() => {
-    const start = (currentManagePage - 1) * rowsPerPage;
-    return filteredManagedRows.slice(start, start + rowsPerPage);
-  }, [currentManagePage, filteredManagedRows, rowsPerPage]);
-  const mobileTotalManagePages = Math.max(1, Math.ceil(filteredManagedRows.length / mobileRowsPerPage));
-  const mobileCurrentManagePage = Math.min(managePage, mobileTotalManagePages);
-  const mobilePaginatedManagedRows = useMemo(() => {
-    const start = (mobileCurrentManagePage - 1) * mobileRowsPerPage;
-    return filteredManagedRows.slice(start, start + mobileRowsPerPage);
-  }, [filteredManagedRows, mobileCurrentManagePage]);
+  const handleTutorQueryChange = (value: string) => {
+    setTutorQuery(value);
+  };
 
-  const formatRangeLabel = dateFrom || dateTo
-    ? `${dateFrom ? dateFrom.replaceAll("-", "/") : "..."} - ${dateTo ? dateTo.replaceAll("-", "/") : "..."}`
-    : "All dates";
+  const selectSubject = (nextSubject: string) => {
+    clearSearch();
+    setSubject(nextSubject);
+    setTutorsPage(1);
+  };
 
-  const resetFilters = () => {
-    setSubject("");
-    setCategory("");
-    setLocation("");
-    setDays("");
-    setTime("");
-    setRating("");
+  const selectDays = (nextDays: string) => {
+    clearSearch();
+    setDays(nextDays);
+    setTutorsPage(1);
+  };
+
+  const selectRating = (nextRating: string) => {
+    clearSearch();
+    setRating(nextRating);
+    setTutorsPage(1);
+  };
+
+  const selectCategory = (nextCategory: string) => {
+    clearSearch();
+    setCategory(nextCategory);
+    setTutorsPage(1);
+    const nextSubjects = categories.find((item) => item.department === nextCategory)?.subjects.map((item) => item.subject) ?? [];
+    if (subject && nextCategory && !nextSubjects.includes(subject)) setSubject("");
+  };
+
+  const openFilterSheet = () => {
+    setDraftSubject(subject);
+    setDraftCategory(category);
+    setDraftDays(days);
+    setDraftRating(rating);
+    setIsFilterOpen(true);
+  };
+
+  const selectDraftCategory = (nextCategory: string) => {
+    setDraftCategory(nextCategory);
+    const nextSubjects = categories.find((item) => item.department === nextCategory)?.subjects.map((item) => item.subject) ?? [];
+    if (draftSubject && nextCategory && !nextSubjects.includes(draftSubject)) setDraftSubject("");
+  };
+
+  const resetDraftFilters = () => {
+    setDraftSubject("");
+    setDraftCategory("");
+    setDraftDays("");
+    setDraftRating("");
+  };
+
+  const applyMobileFilters = () => {
+    clearSearch();
+    setSubject(draftSubject);
+    setCategory(draftCategory);
+    setDays(draftDays);
+    setRating(draftRating);
+    setTutorsPage(1);
+    setIsFilterOpen(false);
+  };
+
+  const changeView = (nextView: BookingView) => {
+    setView(nextView);
+    router.replace(nextView === "manage" ? "/students/bookings?view=manage" : "/students/bookings", { scroll: false });
   };
 
   return (
-    <main className="dashboard-screen bg-white text-[#2b3245]">
-      <div className="dashboard-shell">
-        <StudentDashboardNavbar active="Bookings" />
-        <section
-          className={`dashboard-main min-h-0 overflow-x-hidden ${
-            view === "explore" ? "scrollbar-hover overflow-y-auto" : "overflow-y-hidden"
-          }`}
-          style={{ overflowX: "hidden", overflowY: view === "explore" ? "auto" : "hidden" }}
-        >
-          <div className="dashboard-content-frame px-[var(--dashboard-gutter)]">
-            <section className={`w-full py-[1.2em] ${view === "manage" ? "flex h-full min-h-0 flex-col" : "space-y-[1.25em] 2xl:space-y-[1.4em]"}`}>
+    <>
+      <DashboardShell
+        mainClassName="scrollbar-hover"
+        navbar={<StudentDashboardNavbar active="Bookings" />}
+      >
+        <section className={`w-full py-4 md:py-5 ${view === "manage" ? "flex min-h-full flex-col" : "space-y-5 2xl:space-y-6"}`}>
         <div className="flex flex-wrap gap-[0.55em]">
           <button
-            className={`inline-flex items-center gap-[0.55em] rounded-full border px-[1em] py-[0.45em] text-[0.74em] font-semibold ${
+            className={`inline-flex min-h-11 items-center gap-[0.55em] rounded-full border px-[1em] py-[0.45em] text-[0.74em] font-semibold md:min-h-9 ${
               view === "explore" ? "border-[#cfd6ee] bg-[#eef1ff] text-[#3f3cc4]" : "border-[#e0e4ef] bg-white text-[#6b7280]"
             }`}
-            onClick={() => setView("explore")}
+            onClick={() => changeView("explore")}
             type="button"
           >
             <Compass className="h-[0.95em] w-[0.95em]" />
             Explore tutors
           </button>
           <button
-            className={`inline-flex items-center gap-[0.55em] rounded-full border px-[1em] py-[0.45em] text-[0.74em] font-semibold ${
+            className={`inline-flex min-h-11 items-center gap-[0.55em] rounded-full border px-[1em] py-[0.45em] text-[0.74em] font-semibold md:min-h-9 ${
               view === "manage" ? "border-[#cfd6ee] bg-[#eef1ff] text-[#3f3cc4]" : "border-[#e0e4ef] bg-white text-[#6b7280]"
             }`}
-            onClick={() => setView("manage")}
+            onClick={() => changeView("manage")}
             type="button"
           >
             <ClipboardList className="h-[0.95em] w-[0.95em]" />
@@ -256,7 +356,7 @@ export default function BookingsPage() {
           <div className="sticky top-0 z-20 md:hidden">
           <button
             className="flex w-full items-center justify-between rounded-xl border border-[#dce3f0] bg-white/95 px-3 py-2.5 text-left shadow-sm backdrop-blur"
-            onClick={() => setIsFilterOpen(true)}
+            onClick={openFilterSheet}
             type="button"
           >
             <span className="inline-flex items-center gap-2 text-[0.82em] font-semibold text-[#4a5166]">
@@ -272,13 +372,12 @@ export default function BookingsPage() {
 
         {view === "explore" ? (
           <div className="hidden rounded-2xl border border-[#e4e8f3] bg-[#f7f9fd] p-[1em] md:block">
-          <div className="grid gap-[0.7em] md:grid-cols-3">
-            <FilterSelect label="What do you want to learn" onSelect={setSubject} placeholder="Select subject" value={subject} />
-            <FilterSelect label="What is the field category?" onSelect={setCategory} placeholder="Select department" value={category} />
-            <FilterSelect label="Location" onSelect={setLocation} placeholder="Select department" value={location} />
-            <FilterSelect label="Available days" onSelect={setDays} placeholder="Enter your email" value={days} />
-            <FilterSelect label="Preferred time" onSelect={setTime} placeholder="Enter your email" value={time} />
-            <FilterSelect label="Tutor rating" onSelect={setRating} placeholder="Select department" value={rating} />
+          {categoriesError ? <Notice className="mb-3 text-xs" role="alert">{categoriesError}</Notice> : null}
+          <div className="grid gap-[0.7em] md:grid-cols-2 xl:grid-cols-4">
+            <FilterSelect disabled={categoriesLoading || subjectOptions.length === 0} label="What do you want to learn" onSelect={selectSubject} options={subjectOptions} placeholder={categoriesLoading ? "Loading subjects..." : "Select subject"} value={subject} />
+            <FilterSelect disabled={categoriesLoading || categoryOptions.length === 0} label="What is the field category?" onSelect={selectCategory} options={categoryOptions} placeholder={categoriesLoading ? "Loading categories..." : "Select category"} value={category} />
+            <FilterSelect label="Available days" onSelect={selectDays} options={["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]} placeholder="Select a day" value={days} />
+            <FilterSelect label="Tutor rating" onSelect={selectRating} options={["3", "4", "4.5"]} placeholder="Select minimum rating" value={rating} />
           </div>
           </div>
         ) : null}
@@ -293,6 +392,8 @@ export default function BookingsPage() {
                 className="h-[2.35em] w-full rounded-full border border-[#dfe4ee] bg-[#fbfcff] pl-[2.4em] pr-[0.9em] text-[0.74em] text-[#4a5265] placeholder:text-[#b1b7c6]"
                 placeholder="Search for tutors"
                 type="search"
+                onChange={(event) => handleTutorQueryChange(event.target.value)}
+                value={tutorQuery}
               />
             </div>
           </div>
@@ -301,21 +402,24 @@ export default function BookingsPage() {
 
         {view === "explore" ? (
             <div className="grid gap-[1.1em] xl:grid-cols-2 2xl:grid-cols-3">
-          {tutors.map((tutor, index) => (
-            <Link
-              key={`${tutor.name}-${index}`}
-              href="/students/bookings/tutor-profile"
+          {serviceUnavailable ? <div className="col-span-full flex flex-col items-start justify-between gap-3 rounded-2xl border border-[#e2e6ef] bg-[#f8f9fc] px-5 py-5 sm:flex-row sm:items-center" role="alert"><p className="text-sm font-medium text-[#626b80]">We couldn&apos;t load this right now.</p><button className="min-h-10 rounded-full bg-[#232066] px-5 text-sm font-semibold text-white" onClick={() => { setCategoriesUnavailable(false); setTutorsUnavailable(false); setTutorsRefreshKey((current) => current + 1); }} type="button">Try again</button></div> : null}
+          {locationRequired ? <div className="col-span-full flex flex-col items-start gap-4 rounded-2xl border border-[#dfe3f5] bg-[linear-gradient(135deg,#f8f9ff_0%,#f1f3ff_100%)] px-5 py-6 sm:flex-row sm:items-center sm:justify-between" role="status"><div className="flex items-start gap-3"><span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-[#514bc8] shadow-sm"><LocateFixed className="h-5 w-5" /></span><div><h3 className="text-sm font-semibold text-[#30375a]">Set your location to find tutors near you</h3><p className="mt-1 max-w-xl text-xs leading-relaxed text-[#757e96]">We use your location to calculate tutor distance and show relevant results. Your browser will ask for permission before anything is saved.</p></div></div><button className="inline-flex min-h-11 w-full shrink-0 items-center justify-center gap-2 rounded-full bg-[#232066] px-5 text-sm font-semibold text-white hover:bg-[#1c175f] sm:w-auto" onClick={() => setLocationModalOpen(true)} type="button"><MapPin className="h-4 w-4" />Get location</button></div> : null}
+          {tutorsError ? <div className="col-span-full flex items-center justify-between gap-3 rounded-xl border border-[#f0d6b5] bg-[#fff9f1] px-4 py-3 text-sm font-medium text-[#8b5a20]" role="alert"><span>{tutorsError}</span><button className="shrink-0 font-semibold underline" onClick={() => setTutorsRefreshKey((current) => current + 1)} type="button">Try again</button></div> : null}
+      {tutorsLoading && !locationRequired && !serviceUnavailable && tutorCards.length === 0 ? Array.from({ length: 4 }, (_, index) => <TutorCardSkeleton key={`tutor-skeleton-${index}`} />) : null}
+          {tutorCards.map((tutor) => (
+            <article
+              key={tutor.publicId}
               className="min-h-[10.5em] rounded-2xl border border-[#e8ecf3] bg-[#f6f8fc] p-[1em]"
             >
-              <Card className="px-[0.9em] py-[0.9em]">
+              <Link className="block rounded-xl" href={`/students/bookings/tutor-profile?tutorId=${encodeURIComponent(tutor.publicId)}`}>
+              <Card className="px-[0.9em] py-[0.9em] transition hover:border-[#cfd5e7]">
                 <div className="flex flex-col gap-[0.8em] sm:flex-row sm:items-start">
                   <div className="relative h-[3.6em] w-[3.6em] shrink-0">
                     <Avatar
                       alt={tutor.name}
                        className="h-[3.6em] w-[3.6em] overflow-hidden rounded-[0.7em]"
                       initials={tutor.initials}
-                      randomImage
-                      randomSeed={`${tutor.name}-${index}`}
+                      src={tutor.profilePhoto || undefined}
                     />
                     <span className="absolute -bottom-[0.55em] left-[0.7em] flex items-center gap-[0.25em] rounded-full bg-[#1b1848] px-[0.55em] py-[0.2em] text-[0.62em] font-semibold text-white shadow">
                       <Star className="h-[0.85em] w-[0.85em] text-[#f7c845]" fill="currentColor" strokeWidth={1} />
@@ -327,7 +431,7 @@ export default function BookingsPage() {
                      <div className="flex flex-wrap items-start justify-between gap-[0.7em]">
                       <div>
                         <h3 className="text-[0.9em] font-semibold text-[#2d3448]">{tutor.name}</h3>
-                        <p className="text-[0.7em] text-[#8a92a6]">{tutor.title}</p>
+                        {tutor.title ? <p className="text-[0.7em] text-[#8a92a6]">{tutor.title}</p> : null}
 
                         <div className="mt-[0.45em] flex flex-wrap gap-[0.35em]">
                           {tutor.subjects.map((subject) => (
@@ -340,17 +444,17 @@ export default function BookingsPage() {
                           ))}
                         </div>
 
-                        <div className="mt-[0.45em] flex flex-wrap items-center gap-[0.4em] text-[0.7em] text-[#7b8197]">
-                          <span className="inline-flex items-center gap-1">
+                        {tutor.location || tutor.distance ? <div className="mt-[0.45em] flex flex-wrap items-center gap-[0.4em] text-[0.7em] text-[#7b8197]">
+                          {tutor.location ? <span className="inline-flex items-center gap-1">
                             <MapPin className="h-[0.95em] w-[0.95em] text-[#6f6dd5]" />
                             {tutor.location}
-                          </span>
-                          <span className="text-[#a0a7b8]">-</span>
-                          <span className="inline-flex items-center gap-1">
+                          </span> : null}
+                          {tutor.location && tutor.distance ? <span className="text-[#a0a7b8]">-</span> : null}
+                          {tutor.distance ? <span className="inline-flex items-center gap-1">
                             <span className="font-semibold text-[#4f566b]">{tutor.distance}</span>
                             <span>from you</span>
-                          </span>
-                        </div>
+                          </span> : null}
+                        </div> : null}
                       </div>
 
                       <span className="inline-flex items-center gap-1 text-[0.7em] font-semibold text-[#4f46e5]">
@@ -361,25 +465,29 @@ export default function BookingsPage() {
                   </div>
                 </div>
               </Card>
+              </Link>
 
-               <div className="mt-[0.7em] flex flex-wrap justify-end gap-[0.45em] px-[0.2em]" onClick={(e) => e.preventDefault()}>
-                <Button className="min-w-[8.5em] px-[0.95em] py-[0.55em] text-[0.72em] font-semibold" variant="secondary">
+               <div className="mt-[0.7em] flex flex-wrap justify-end gap-[0.45em] px-[0.2em]">
+                <Link className="inline-flex min-h-11 min-w-[8.5em] items-center justify-center rounded-full border border-ui-border bg-white px-[0.95em] py-[0.55em] text-[0.72em] font-semibold text-ui-body hover:bg-[#f7f8fb] md:min-h-10" href={`/students/chat?contact=${encodeURIComponent(tutor.publicId)}`}>
                   Send message
-                </Button>
-                <Button className="min-w-[8.5em] px-[0.95em] py-[0.55em] text-[0.72em] font-semibold" variant="primary">
+                </Link>
+                <Link className="inline-flex min-h-11 min-w-[8.5em] items-center justify-center rounded-full border border-brand-primary bg-brand-primary px-[0.95em] py-[0.55em] text-[0.72em] font-semibold text-white hover:bg-[#1c175f] md:min-h-10" href={`/students/bookings/tutor-profile?tutorId=${encodeURIComponent(tutor.publicId)}&book=1`}>
                   Book tutor
-                </Button>
+                </Link>
               </div>
-            </Link>
+            </article>
           ))}
+          {!tutorsLoading && !tutorsError && !serviceUnavailable && tutorCards.length === 0 ? <p className="col-span-full rounded-2xl border border-dashed border-[#d9deea] bg-[#fafbfe] px-4 py-10 text-center text-sm text-[#747d92]">{debouncedTutorQuery ? "No tutors match that name." : "No tutors match the selected filters."}</p> : null}
+          {tutorsLoading && tutorCards.length > 0 ? <p className="col-span-full flex items-center justify-center gap-2 py-3 text-xs text-[#8a93a7]" role="status"><span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[#d6daf0] border-t-[#4d43d7]" />Loading more tutors</p> : null}
+          <InfiniteScrollTrigger className="col-span-full" enabled={!tutorsLoading && tutorsPage < tutorsTotalPages} onVisible={() => setTutorsPage((current) => current + 1)} />
           </div>
         ) : (
-          <section className="flex h-full min-h-0 flex-col space-y-4">
+          <section className="flex flex-col space-y-4">
             <div className="flex items-center justify-between gap-3">
               <h1 className="text-[2em] font-semibold leading-none text-[#2f3547]">Manage booking</h1>
               <button
                 className="inline-flex h-10 items-center gap-1 rounded-full bg-[#232066] px-4 text-[0.78em] font-semibold text-white"
-                onClick={() => setView("explore")}
+                onClick={() => changeView("explore")}
                 type="button"
               >
                 <Star className="h-3.5 w-3.5" fill="currentColor" strokeWidth={1} />
@@ -387,108 +495,17 @@ export default function BookingsPage() {
               </button>
             </div>
 
-            <div className="flex items-center justify-between gap-3">
-              <div className="relative w-full max-w-[230px] md:max-w-[280px] xl:max-w-[360px] 2xl:max-w-[440px] [@media(min-width:2100px)]:max-w-[860px]">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#9aa1b4]" />
-                <input
-                  className="h-7 w-full rounded-full border border-[#e0e5f0] bg-white pl-9 pr-3 text-[0.76em] text-[#4a5265] placeholder:text-[#b1b7c6]"
-                  placeholder="Search tutor name or booking ID"
-                  type="search"
-                />
-              </div>
-              <button className="inline-flex h-8 items-center gap-1 rounded-lg border border-[#e1e6f1] bg-white px-2.5 text-[0.68em] font-semibold text-[#7a8299]" type="button">
-                <CalendarDays className="h-3.5 w-3.5" />
-                Sort
-              </button>
-            </div>
+            {notice === "booking_submitted" ? (
+              <p className="rounded-xl border border-[#bde8d0] bg-[#effaf4] px-4 py-3 text-sm font-medium text-[#20784d]" role="status">Your booking request was submitted. You can track it here.</p>
+            ) : null}
 
-            <div className="relative flex flex-wrap items-center gap-2 border-b border-[#e7ebf4] pb-3 md:gap-2.5">
-              <div className="relative">
-                <button
-                  className="inline-flex h-7 items-center gap-1 rounded-full border border-[#e2e7f2] bg-white px-3 text-[0.68em] font-semibold text-[#747e95]"
-                  onClick={() => {
-                    setIsDateMenuOpen((prev) => !prev);
-                    setIsStatusMenuOpen(false);
-                  }}
-                  type="button"
-                >
-                  Date
-                  <ChevronDown className="h-3 w-3" />
-                </button>
-                {isDateMenuOpen ? (
-                  <div className="absolute left-0 top-[calc(100%+0.45rem)] z-30 w-[16.25rem] rounded-xl border border-[#dfe4ef] bg-white p-3 shadow-[0_10px_28px_rgba(32,41,78,0.18)] 2xl:w-[19rem] 2xl:p-4">
-                    <p className="mb-2 text-[0.78rem] font-semibold text-[#55607a] 2xl:mb-2.5 2xl:text-[0.92rem]">Pick date range</p>
-                    <label className="mb-2 block text-[0.72rem] font-semibold text-[#7a8299] 2xl:mb-2.5 2xl:text-[0.84rem]">
-                      From
-                      <input
-                        className="mt-1 h-9 w-full rounded-md border border-[#d8deea] px-2 text-[0.78rem] 2xl:mt-1.5 2xl:h-10 2xl:text-[0.9rem]"
-                        onChange={(e) => {
-                          setDateFrom(e.target.value);
-                          setManagePage(1);
-                        }}
-                        type="date"
-                        value={dateFrom}
-                      />
-                    </label>
-                    <label className="block text-[0.72rem] font-semibold text-[#7a8299] 2xl:text-[0.84rem]">
-                      To
-                      <input
-                        className="mt-1 h-9 w-full rounded-md border border-[#d8deea] px-2 text-[0.78rem] 2xl:mt-1.5 2xl:h-10 2xl:text-[0.9rem]"
-                        onChange={(e) => {
-                          setDateTo(e.target.value);
-                          setManagePage(1);
-                        }}
-                        type="date"
-                        value={dateTo}
-                      />
-                    </label>
-                  </div>
-                ) : null}
-              </div>
-              <span className="inline-flex h-7 items-center rounded-full bg-[#3236ad] px-3 text-[0.68em] font-semibold text-white">{formatRangeLabel}</span>
-              <div className="relative">
-                <button
-                  className="inline-flex h-7 items-center gap-1 rounded-full border border-[#e2e7f2] bg-white px-3 text-[0.68em] font-semibold text-[#747e95]"
-                  onClick={() => {
-                    setIsStatusMenuOpen((prev) => !prev);
-                    setIsDateMenuOpen(false);
-                  }}
-                  type="button"
-                >
-                  Statuses
-                  <ChevronDown className="h-3 w-3" />
-                </button>
-                {isStatusMenuOpen ? (
-                  <div className="absolute left-0 top-[calc(100%+0.45rem)] z-30 w-[11.9rem] rounded-xl border border-[#dfe4ef] bg-white p-2 shadow-[0_10px_28px_rgba(32,41,78,0.18)] 2xl:w-[13.8rem] 2xl:p-2.5">
-                    {(["All", "On-going", "Pending"] as const).map((status) => (
-                      <button
-                        key={status}
-                        className={`flex w-full items-center justify-between rounded-md px-2 py-1.5 text-[0.78rem] 2xl:px-2.5 2xl:py-2 2xl:text-[0.92rem] ${
-                          selectedStatus === status ? "bg-[#eef0ff] text-[#2f34aa]" : "text-[#5f667b]"
-                        }`}
-                        onClick={() => {
-                          setSelectedStatus(status);
-                          setManagePage(1);
-                          setIsStatusMenuOpen(false);
-                        }}
-                        type="button"
-                      >
-                        {status}
-                        {selectedStatus === status ? <span>{"\u2713"}</span> : null}
-                      </button>
-                    ))}
-                  </div>
-                ) : null}
-              </div>
-              <span className="inline-flex h-7 items-center gap-1 rounded-full bg-[#3236ad] px-3 text-[0.68em] font-semibold text-white">
-                {selectedStatus}
-                <span className="h-1.5 w-1.5 rounded-full bg-white" />
-              </span>
-            </div>
+            <TableFilters date={bookingDate} filters={[{ label: "Status", value: selectedStatus ? bookingStatusLabel(selectedStatus) : "All", options: ["All", "Pending", "Awaiting approval", "Ongoing", "Completed", "Cancelled"], onChange: (value) => { setSelectedStatus(bookingStatusFromLabel(value)); setBookingsPage(1); } }]} onDateChange={(value) => { setBookingDate(value); setBookingsPage(1); }} />
 
-            <div className="hidden min-h-0 flex-1 overflow-hidden rounded-xl border border-[#e3e8f2] bg-white md:flex md:flex-col">
-              <div className="min-h-0 flex-1 overflow-x-auto" ref={desktopTableViewportRef}>
-                <table className="w-full min-w-[920px] border-collapse text-left text-[0.74em] text-[#5f667b]" ref={desktopTableRef}>
+            {bookingsError ? <div className="flex items-center justify-between gap-3 rounded-xl border border-[#f0d6b5] bg-[#fff9f1] px-4 py-3 text-sm font-medium text-[#8b5a20]" role="alert"><span>{bookingsError}</span><button className="shrink-0 underline" onClick={() => setBookingsRefreshKey((current) => current + 1)} type="button">Try again</button></div> : null}
+            {bookingsLoading && bookingsPage === 1 ? <p className="py-4 text-center text-sm text-[#7a8299]" role="status">Loading bookings...</p> : null}
+
+            {!bookingsLoading && bookings.length ? <DataTableShell>
+                <table className="w-full min-w-[920px] border-collapse text-left text-[0.74em] text-[#5f667b]">
                   <thead className="bg-[#f2f5fa] text-[#676f85]">
                     <tr>
                       {["Date", "Tutor", "Department", "Subject", "Time", "Duration", "Status", ""].map((head) => (
@@ -497,26 +514,22 @@ export default function BookingsPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {paginatedManagedRows.map((row, index) => {
-                      const rowIndex = (currentManagePage - 1) * rowsPerPage + index;
-                      return (
+                    {bookings.map((row) => (
                       <tr
-                        key={`${row.date}-${rowIndex}`}
+                        key={row.public_id}
                         className="cursor-pointer border-t border-[#edf0f6] hover:bg-[#fafbff]"
-                        onClick={() => {
-                          router.push(`/students/bookings/manage/${rowIndex + 1}`);
-                        }}
+                        onClick={() => router.push(`/students/bookings/manage/${encodeURIComponent(row.public_id)}?status=${row.status}`)}
                       >
                         <td className="px-3 py-2.5">{row.date}</td>
-                        <td className="px-3 py-2.5">{row.tutor}</td>
+                        <td className="px-3 py-2.5">{row.tutor_name}</td>
                         <td className="px-3 py-2.5">{row.department}</td>
                         <td className="px-3 py-2.5">{row.subject}</td>
                         <td className="px-3 py-2.5">{row.time}</td>
                         <td className="px-3 py-2.5">{row.duration}</td>
                         <td className="px-3 py-2.5">
                           <span className="inline-flex items-center gap-1">
-                            <span className={`h-1.5 w-1.5 rounded-full ${row.status === "On-going" ? "bg-[#9a5cff]" : "bg-[#e7c754]"}`} />
-                            {row.status}
+                            <span className={`h-1.5 w-1.5 rounded-full ${bookingStatusColor(row.status)}`} />
+                            {bookingStatusLabel(row.status)}
                           </span>
                         </td>
                         <td className="px-3 py-2.5 text-right">
@@ -529,58 +542,31 @@ export default function BookingsPage() {
                           </button>
                         </td>
                       </tr>
-                      );
-                    })}
+                    ))}
                   </tbody>
                 </table>
-              </div>
+            </DataTableShell> : null}
 
-              <div className="flex items-center justify-between border-t border-[#edf0f6] px-3 py-2.5 text-[0.68em] text-[#6f768c]">
-                <div className="flex items-center gap-1.5">
-                  <button
-                    className="rounded-md border border-[#e2e7f2] px-2 py-1 text-[#5f667b] disabled:cursor-not-allowed disabled:opacity-50"
-                    disabled={currentManagePage === 1}
-                    onClick={() => setManagePage((prev) => Math.max(1, prev - 1))}
-                    type="button"
-                  >
-                    Previous
-                  </button>
-                  <button
-                    className="rounded-md border border-[#e2e7f2] px-2 py-1 text-[#5f667b] disabled:cursor-not-allowed disabled:opacity-50"
-                    disabled={currentManagePage >= totalManagePages}
-                    onClick={() => setManagePage((prev) => Math.min(totalManagePages, prev + 1))}
-                    type="button"
-                  >
-                    Next
-                  </button>
-                </div>
-                <span>Page {currentManagePage} of {totalManagePages}</span>
-              </div>
-            </div>
-
-            <div className="space-y-1.5 pb-6 md:hidden">
-              {mobilePaginatedManagedRows.map((row, index) => {
-                const originalIndex = managedRows.indexOf(row);
-                const rowIndex = originalIndex >= 0 ? originalIndex : index;
-                return (
+            {!bookingsLoading && bookings.length ? <div className="space-y-1.5 pb-6 md:hidden">
+              {bookings.map((row) => (
                 <Link
-                  key={`${row.date}-${rowIndex}`}
+                  key={row.public_id}
                   className="block rounded-lg border border-[#e6eaf3] bg-white px-2.5 py-2"
-                  href={`/students/bookings/manage/${rowIndex + 1}`}
+                  href={`/students/bookings/manage/${encodeURIComponent(row.public_id)}?status=${row.status}`}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <p className="truncate text-[0.78em] font-semibold text-[#2f3547]">{row.tutor}</p>
+                      <p className="truncate text-[0.78em] font-semibold text-[#2f3547]">{row.tutor_name}</p>
                       <p className="mt-0.5 truncate text-[0.64em] text-[#7a8299]">{row.subject} - {row.time}</p>
                     </div>
                     <div className="flex shrink-0 items-center gap-1.5">
                       <span className="inline-flex items-center gap-1 text-[0.66em] text-[#5f667b]">
-                        <span className={`h-1.5 w-1.5 rounded-full ${row.status === "On-going" ? "bg-[#9a5cff]" : "bg-[#e7c754]"}`} />
-                        {row.status}
+                        <span className={`h-1.5 w-1.5 rounded-full ${bookingStatusColor(row.status)}`} />
+                        {bookingStatusLabel(row.status)}
                       </span>
-                      <button className="inline-flex h-6 w-6 items-center justify-center rounded-md text-[#6f768c]" type="button">
+                      <span className="inline-flex h-8 w-8 items-center justify-center rounded-md text-[#6f768c]" aria-hidden>
                         <EllipsisVertical className="h-3.5 w-3.5" />
-                      </button>
+                      </span>
                     </div>
                   </div>
                   <div className="mt-1.5 flex items-center justify-between text-[0.66em] text-[#596177]">
@@ -588,84 +574,118 @@ export default function BookingsPage() {
                     <span>{row.duration}</span>
                   </div>
                 </Link>
-                );
-              })}
-              <div className="flex items-center justify-between border-t border-[#edf0f6] pt-2 text-[0.72em] text-[#6f768c]">
-                <button
-                  className="rounded-md border border-[#e2e7f2] px-2 py-1 text-[#5f667b] disabled:cursor-not-allowed disabled:opacity-50"
-                  disabled={mobileCurrentManagePage === 1}
-                  onClick={() => setManagePage((prev) => Math.max(1, prev - 1))}
-                  type="button"
-                >
-                  Previous
-                </button>
-                <span>Page {mobileCurrentManagePage} of {mobileTotalManagePages}</span>
-                <button
-                  className="rounded-md border border-[#e2e7f2] px-2 py-1 text-[#5f667b] disabled:cursor-not-allowed disabled:opacity-50"
-                  disabled={mobileCurrentManagePage >= mobileTotalManagePages}
-                  onClick={() => setManagePage((prev) => Math.min(mobileTotalManagePages, prev + 1))}
-                  type="button"
-                >
-                  Next
-                </button>
-              </div>
-            </div>
+              ))}
+            </div> : null}
+            {!bookingsLoading && !bookingsError && bookings.length === 0 ? <p className="rounded-xl border border-dashed border-[#d9deea] bg-[#fafbfe] px-4 py-10 text-center text-sm text-[#747d92]">No bookings match these filters.</p> : null}
+            {bookingsLoading && bookingsPage > 1 ? <p className="py-3 text-center text-xs text-[#8a93a7]" role="status">Loading more bookings...</p> : null}
+            <InfiniteScrollTrigger enabled={!bookingsLoading && bookingsPage < bookingsTotalPages} onVisible={() => setBookingsPage((current) => current + 1)} />
           </section>
         )}
-            </section>
-          </div>
         </section>
-      </div>
+      </DashboardShell>
 
       <ResponsiveSheet mobileOnly open={view === "explore" && isFilterOpen} onClose={() => setIsFilterOpen(false)}>
             <div className="mx-auto mb-2 h-1.5 w-10 rounded-full bg-[#d8dde8]" />
             <div className="mb-3 flex items-center justify-between">
               <h3 className="text-[0.95em] font-semibold text-[#3f4670]">Filter tutors</h3>
-              <button className="text-[0.75em] font-semibold text-[#7c8498]" onClick={resetFilters} type="button">Reset</button>
+              <button className="text-[0.75em] font-semibold text-[#7c8498]" onClick={resetDraftFilters} type="button">Reset</button>
             </div>
             <div className="grid gap-3 overflow-y-auto pb-3">
-              <FilterSelect label="What do you want to learn" onSelect={setSubject} placeholder="Select subject" value={subject} />
-              <FilterSelect label="What is the field category?" onSelect={setCategory} placeholder="Select department" value={category} />
-              <FilterSelect label="Location" onSelect={setLocation} placeholder="Select department" value={location} />
-              <FilterSelect label="Available days" onSelect={setDays} placeholder="Enter your email" value={days} />
-              <FilterSelect label="Preferred time" onSelect={setTime} placeholder="Enter your email" value={time} />
-              <FilterSelect label="Tutor rating" onSelect={setRating} placeholder="Select department" value={rating} />
+              {categoriesError ? <Notice className="text-xs" role="alert">{categoriesError}</Notice> : null}
+              <FilterSelect disabled={categoriesLoading || draftSubjectOptions.length === 0} label="What do you want to learn" onSelect={setDraftSubject} options={draftSubjectOptions} placeholder={categoriesLoading ? "Loading subjects..." : "Select subject"} value={draftSubject} />
+              <FilterSelect disabled={categoriesLoading || categoryOptions.length === 0} label="What is the field category?" onSelect={selectDraftCategory} options={categoryOptions} placeholder={categoriesLoading ? "Loading categories..." : "Select category"} value={draftCategory} />
+              <FilterSelect label="Available days" onSelect={setDraftDays} options={["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]} placeholder="Select a day" value={draftDays} />
+              <FilterSelect label="Tutor rating" onSelect={setDraftRating} options={["3", "4", "4.5"]} placeholder="Select minimum rating" value={draftRating} />
             </div>
             <div className="mt-auto flex gap-2 border-t border-[#eef1f6] bg-white py-3">
               <button className="h-11 flex-1 rounded-full bg-[#ececef] text-[0.82em] font-semibold text-[#4e576d]" onClick={() => setIsFilterOpen(false)} type="button">
                 Cancel
               </button>
-              <button className="h-11 flex-1 rounded-full bg-[#232066] text-[0.82em] font-semibold text-white" onClick={() => setIsFilterOpen(false)} type="button">
+              <button className="h-11 flex-1 rounded-full bg-[#232066] text-[0.82em] font-semibold text-white" onClick={applyMobileFilters} type="button">
                 Apply
               </button>
             </div>
       </ResponsiveSheet>
-    </main>
+      {locationModalOpen ? <LocationRequiredModal onClose={() => setLocationModalOpen(false)} onSaved={() => { setLocationModalOpen(false); setLocationRequired(false); setTutorsPage(1); setTutorsRefreshKey((current) => current + 1); }} /> : null}
+    </>
   );
 }
 
+function LocationRequiredModal({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = previousOverflow; };
+  }, []);
+
+  const getLocation = async () => {
+    if (!navigator.geolocation) {
+      setError("Location access is not supported by this browser.");
+      return;
+    }
+
+    setSaving(true);
+    setError("");
+    try {
+      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          maximumAge: 0,
+          timeout: 15000,
+        });
+      });
+      if (!Number.isFinite(position.coords.accuracy) || position.coords.accuracy > 50) {
+        throw new Error("We could not get a precise location. Please move somewhere with a clearer GPS signal and try again.");
+      }
+      await updateCurrentLocation({
+        accuracy: position.coords.accuracy,
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+      });
+      onSaved();
+    } catch (caught) {
+      if (caught && typeof caught === "object" && !(caught instanceof Error) && "code" in caught) {
+        const geolocationError = caught as GeolocationPositionError;
+        setError(geolocationError.code === geolocationError.PERMISSION_DENIED
+          ? "Location permission was denied. Allow location access in your browser and try again."
+          : "We could not get your location. Please try again.");
+      } else {
+        setError(caught instanceof Error ? caught.message : "Could not save your location.");
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#11152f]/50 px-4 py-6 backdrop-blur-[2px]" onClick={saving ? undefined : onClose}><section aria-labelledby="location-required-title" aria-modal="true" className="w-full max-w-md rounded-2xl border border-[#e2e5f0] bg-white p-5 shadow-2xl sm:p-6" onClick={(event) => event.stopPropagation()} role="dialog"><div className="flex items-start justify-between gap-4"><span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-[#eff1ff] text-[#4c47c6]"><LocateFixed className="h-6 w-6" /></span><button aria-label="Close location prompt" className="inline-flex h-10 w-10 items-center justify-center rounded-full text-[#747d91] hover:bg-[#f3f4f8] disabled:opacity-50" disabled={saving} onClick={onClose} type="button"><X className="h-4 w-4" /></button></div><h2 className="mt-4 text-xl font-semibold text-[#293047]" id="location-required-title">Find tutors near you</h2><p className="mt-2 text-sm leading-relaxed text-[#747d91]">Allow SP Novate to get your current location. We need a precise location to show accurate tutor distances.</p>{error ? <p className="mt-4 rounded-xl border border-[#f0d6b5] bg-[#fff9f1] px-3 py-2.5 text-sm font-medium text-[#8b5a20]" role="alert">{error}</p> : null}<div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"><button className="min-h-11 rounded-full border border-[#d8dde8] bg-white px-5 text-sm font-semibold text-[#596177] disabled:opacity-50" disabled={saving} onClick={onClose} type="button">Not now</button><button className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-[#232066] px-5 text-sm font-semibold text-white hover:bg-[#1c175f] disabled:cursor-wait disabled:opacity-70" disabled={saving} onClick={() => void getLocation()} type="button"><MapPin className="h-4 w-4" />{saving ? "Getting location..." : "Get location"}</button></div></section></div>;
+}
+
+function TutorCardSkeleton() {
+  return <div className="animate-pulse rounded-2xl border border-[#e8ecf3] bg-[#f6f8fc] p-4"><div className="rounded-xl border border-[#e8ecf3] bg-white p-4"><div className="flex gap-3"><span className="h-14 w-14 shrink-0 rounded-xl bg-[#e9edf4]" /><div className="flex-1"><span className="block h-3 w-2/5 rounded-full bg-[#e9edf4]" /><span className="mt-2 block h-2.5 w-3/5 rounded-full bg-[#f0f2f6]" /><div className="mt-3 flex gap-2"><span className="h-5 w-20 rounded-md bg-[#f0f2f6]" /><span className="h-5 w-16 rounded-md bg-[#f0f2f6]" /></div><span className="mt-3 block h-2.5 w-1/2 rounded-full bg-[#f0f2f6]" /></div></div></div><div className="mt-3 flex justify-end gap-2"><span className="h-10 w-28 rounded-full bg-[#e9edf4]" /><span className="h-10 w-28 rounded-full bg-[#dddff0]" /></div></div>;
+}
+
 function FilterSelect({
+  disabled = false,
   label,
   placeholder,
   value,
+  options,
   onSelect,
 }: {
+  disabled?: boolean;
   label: string;
   placeholder: string;
   value: string;
+  options: string[];
   onSelect: (next: string) => void;
 }) {
   return (
     <label className="text-[0.74em] font-semibold text-[#8891a7]">
       <span className="mb-[0.35em] block">{label}</span>
-      <button
-        className="flex h-[2.35em] w-full items-center justify-between rounded-lg border border-[#dfe5f2] bg-white px-[0.8em] py-[0.45em] text-[0.78em] font-medium text-[#7a8195]"
-        onClick={() => onSelect(value ? "" : placeholder)}
-        type="button"
-      >
-        <span>{value || placeholder}</span>
-        <ChevronDown className="h-4 w-4 text-[#9aa1b4]" />
-      </button>
+      <SelectMenu ariaLabel={label} buttonClassName="text-[0.78em] md:h-[2.65em]" disabled={disabled} indicatorClassName="!h-[1.15rem] !w-[1.15rem] !rounded-[0.3rem]" onChange={onSelect} options={options.map((option) => ({ label: `${option}${label === "Tutor rating" ? "+ stars" : ""}`, value: option }))} placeholder={placeholder} value={value} />
     </label>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { LocationAddressForm, LocationCoordinates } from "../../signup/profile-setup/StepTwoAddressConfirm";
 import { saveTutorLocation } from "./tutorOnboarding";
@@ -149,7 +149,7 @@ export function useTutorLocationSetup(onConfirmed: (summary: TutorLocationSummar
     setView("review");
   };
 
-  const loadSavedLocation = (savedLocation: SavedTutorLocation | null) => {
+  const loadSavedLocation = useCallback((savedLocation: SavedTutorLocation | null) => {
     if (!savedLocation) return;
     const savedSource: LocationSource = savedLocation.source === "gps" ? "gps" : "search";
     setAddress({ ...emptyAddress, address: savedLocation.address });
@@ -159,7 +159,7 @@ export function useTutorLocationSetup(onConfirmed: (summary: TutorLocationSummar
     setQuery(savedLocation.address);
     setSource(savedSource);
     setView("review");
-  };
+  }, []);
 
   const confirm = async () => {
     if (!ready || saving) return;

@@ -25,10 +25,7 @@ import { StepTwoLocationPrompt } from "../../signup/profile-setup/StepTwoLocatio
 import { Notice } from "../../ui/Notice";
 import { SelectMenu } from "../../ui/SelectMenu";
 import { TutorReviewStep } from "./TutorReviewStep";
-import {
-  useTutorLocationSetup,
-  type TutorLocationSummary,
-} from "./useTutorLocationSetup";
+import { useTutorLocationSetup } from "./useTutorLocationSetup";
 import {
   getNigerianBanks,
   getTutorOnboardingReview,
@@ -278,9 +275,6 @@ export default function TutorOnboardingFlow() {
   const [compensationSaveError, setCompensationSaveError] = useState("");
   const [submittedCompensationSignature, setSubmittedCompensationSignature] =
     useState("");
-  const [locationSummary, setLocationSummary] =
-    useState<TutorLocationSummary | null>(null);
-
   const firstName = personalForm.firstName ?? sessionUser?.firstName ?? "";
   const lastName = personalForm.lastName ?? sessionUser?.lastName ?? "";
   const email = personalForm.email ?? sessionUser?.email ?? "";
@@ -399,14 +393,14 @@ export default function TutorOnboardingFlow() {
     }
     updatePersonal("country", country);
   };
-  const location = useTutorLocationSetup((summary) => {
-    setLocationSummary(summary);
+  const location = useTutorLocationSetup(() => {
     markCompleted("location");
     setReviewLoading(true);
     setReviewError("");
     setStage("review");
     setReturnToReview(false);
   });
+  const loadSavedLocation = location.loadSavedLocation;
 
   useEffect(() => {
     if (stage !== "overview" && stage !== "review") return;
@@ -471,11 +465,7 @@ export default function TutorOnboardingFlow() {
         }
 
         if (data.location) {
-          setLocationSummary({
-            address: { address: data.location.address, city: "", country: "", postcode: "", state: "" },
-            coordinates: { latitude: data.location.latitude, longitude: data.location.longitude },
-          });
-          location.loadSavedLocation(data.location);
+          loadSavedLocation(data.location);
         }
 
         setCompleted(
@@ -493,7 +483,7 @@ export default function TutorOnboardingFlow() {
         if (!controller.signal.aborted) setReviewLoading(false);
       });
     return () => controller.abort();
-  }, [reviewRefreshKey, stage]);
+  }, [loadSavedLocation, reviewRefreshKey, stage]);
 
   const handleFiles = (selectedFiles?: FileList | null) => {
     setFileError("");
@@ -1433,7 +1423,6 @@ export default function TutorOnboardingFlow() {
                     <button
                       className="h-11 min-w-0 rounded-full border border-[#d8dde8] px-3 text-sm font-semibold sm:px-5"
                       onClick={() => {
-                        setLocationSummary(null);
                         markCompleted("location");
                         setStage("review");
                         setReturnToReview(false);

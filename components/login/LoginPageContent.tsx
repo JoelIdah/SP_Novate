@@ -67,16 +67,6 @@ export function LoginPageContent() {
         : notice === "session_expired"
           ? "Your session expired. Sign in to continue."
         : "";
-  const resolveSafeNextPath = (): string => {
-    const candidate = searchParams.get("next");
-    if (!candidate) return "/";
-
-    const trimmed = candidate.trim();
-    if (!trimmed.startsWith("/") || trimmed.startsWith("//")) return "/";
-    if (trimmed.includes("://")) return "/";
-    return trimmed;
-  };
-
   const returnToSpMeet = () => {
     const path = getSsoReturnPath(searchParams);
     if (!path) return false;
@@ -138,12 +128,6 @@ export function LoginPageContent() {
       }
 
       setAuthSession(profile);
-
-      const nextPath = resolveSafeNextPath();
-      if (nextPath !== "/") {
-        router.push(nextPath);
-        return;
-      }
 
       router.push("/students/dashboard");
     } catch (error) {
@@ -261,12 +245,6 @@ export function LoginPageContent() {
       }
 
       setAuthSession(profile);
-
-      const nextPath = resolveSafeNextPath();
-      if (nextPath !== "/") {
-        router.push(nextPath);
-        return;
-      }
 
       router.push("/students/dashboard");
     } finally {

@@ -1,6 +1,7 @@
 "use client";
 
 import { isRecord, requestJson } from "../../auth/request";
+import type { TutorStatus } from "../../auth/profile";
 
 export type TutorPersonalDetailsInput = {
   bio: string;
@@ -90,7 +91,7 @@ export type TutorOnboardingReview = {
     qualifications: string[];
     other_names?: string;
   };
-  tutor_status: "approved" | "in_progress" | "pending" | "rejected";
+  tutor_status: TutorStatus;
 };
 
 async function onboardingRequest(path: string, init: RequestInit = {}) {

@@ -18,6 +18,7 @@ import {
   X,
 } from "lucide-react";
 import { signOut, useSessionUser } from "../auth/authSession";
+import type { TutorStatus } from "../auth/profile";
 
 type DashboardRole = "student" | "tutor";
 type NavLabel = "Home" | "Bookings" | "Transactions" | "Resources" | "Chat";
@@ -65,20 +66,80 @@ const roleConfig = {
   items: Array<{ label: NavLabel; href: string; icon: typeof Home }>;
 }>;
 
+type TutorEntryStatus = TutorStatus | "unknown";
+
+const tutorEntryConfig = {
+  unknown: {
+    label: "Become a tutor",
+    mobileLabel: "Become a tutor",
+    title: "Become a tutor?",
+    text: "Set up your tutor profile and submit it for evaluation while keeping your student account.",
+    href: "/tutor/onboarding",
+    confirmLabel: "Start tutor setup",
+  },
+  not_started: {
+    label: "Become a tutor",
+    mobileLabel: "Become a tutor",
+    title: "Become a tutor?",
+    text: "Set up your tutor profile and submit it for evaluation while keeping your student account.",
+    href: "/tutor/onboarding",
+    confirmLabel: "Start tutor setup",
+  },
+  in_progress: {
+    label: "Continue tutor setup",
+    mobileLabel: "Continue tutor setup",
+    title: "Continue tutor setup?",
+    text: "Continue your tutor application from where you stopped.",
+    href: "/tutor/onboarding",
+    confirmLabel: "Continue setup",
+  },
+  pending: {
+    label: "Tutor application pending",
+    mobileLabel: "View pending application",
+    title: "Tutor application pending",
+    text: "Your tutor application is under review. You can view its current status.",
+    href: "/tutor/onboarding",
+    confirmLabel: "View application",
+  },
+  rejected: {
+    label: "Review tutor application",
+    mobileLabel: "Review tutor application",
+    title: "Review tutor application?",
+    text: "Review your tutor application, update the required information, and submit it again.",
+    href: "/tutor/onboarding",
+    confirmLabel: "Review application",
+  },
+  approved: {
+    label: "Switch to tutor dashboard",
+    mobileLabel: "Switch to tutor dashboard",
+    title: "Switch to tutor dashboard?",
+    text: "You are about to switch from student view to tutor view. Do you want to continue?",
+    href: "/tutor/dashboard",
+    confirmLabel: "Yes, switch",
+  },
+} satisfies Record<TutorEntryStatus, {
+  label: string;
+  mobileLabel: string;
+  title: string;
+  text: string;
+  href: string;
+  confirmLabel: string;
+}>;
+
 export function DashboardNavbar({ role, active = "Home" }: { role: DashboardRole; active?: NavLabel | "Settings" }) {
   const router = useRouter();
   const config = roleConfig[role];
   const sessionUser = useSessionUser();
   const profileName = [sessionUser?.firstName, sessionUser?.lastName].filter(Boolean).join(" ") || sessionUser?.email || "Student";
   const profileInitial = profileName.charAt(0).toUpperCase();
-  const hasTutorAccount = sessionUser?.role === "tutor";
-  const switchLabel = role === "student" && !hasTutorAccount ? "Become a tutor" : config.switchLabel;
-  const switchMobileLabel = role === "student" && !hasTutorAccount ? "Become a tutor" : config.switchMobileLabel;
-  const switchTitle = role === "student" && !hasTutorAccount ? "Become a tutor?" : config.switchTitle;
-  const switchText = role === "student" && !hasTutorAccount
-    ? "Set up your tutor profile and submit it for evaluation while keeping your student account."
-    : config.switchText;
-  const switchHref = role === "student" && !hasTutorAccount ? "/tutor/onboarding" : config.switchHref;
+  const tutorEntry = tutorEntryConfig[sessionUser?.tutorStatus || "unknown"];
+  const studentView = role === "student";
+  const switchLabel = studentView ? tutorEntry.label : config.switchLabel;
+  const switchMobileLabel = studentView ? tutorEntry.mobileLabel : config.switchMobileLabel;
+  const switchTitle = studentView ? tutorEntry.title : config.switchTitle;
+  const switchText = studentView ? tutorEntry.text : config.switchText;
+  const switchHref = studentView ? tutorEntry.href : config.switchHref;
+  const switchConfirmLabel = studentView ? tutorEntry.confirmLabel : "Yes, switch";
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMenuMounted, setIsMenuMounted] = useState(false);
   const [isSwitchModalOpen, setIsSwitchModalOpen] = useState(false);
@@ -266,7 +327,7 @@ export function DashboardNavbar({ role, active = "Home" }: { role: DashboardRole
             <p className="mt-2 text-sm leading-relaxed text-ui-body">{switchText}</p>
             <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
               <button className="min-h-11 rounded-full border border-ui-border bg-white px-4 text-sm font-semibold text-ui-body" onClick={() => setIsSwitchModalOpen(false)} type="button">Cancel</button>
-              <button className="min-h-11 rounded-full bg-brand-primary px-4 text-sm font-semibold text-white" onClick={() => router.push(switchHref)} type="button">{role === "student" && !hasTutorAccount ? "Start tutor setup" : "Yes, switch"}</button>
+              <button className="min-h-11 rounded-full bg-brand-primary px-4 text-sm font-semibold text-white" onClick={() => router.push(switchHref)} type="button">{switchConfirmLabel}</button>
             </div>
           </section>
         </div>

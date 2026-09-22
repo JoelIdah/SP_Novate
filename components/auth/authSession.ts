@@ -1,6 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import type { TutorStatus } from "./profile";
 
 export type SessionUser = {
   email: string;
@@ -9,6 +10,7 @@ export type SessionUser = {
   profilePhoto: string;
   publicId: string;
   role: "student" | "tutor" | "";
+  tutorStatus: TutorStatus | "";
 };
 
 type SessionUserInput = {
@@ -18,6 +20,7 @@ type SessionUserInput = {
   profile_photo?: string;
   public_id?: string;
   role?: "student" | "tutor";
+  tutor_status?: TutorStatus;
 };
 
 const SESSION_USER_KEY = "sp_session_user";
@@ -49,6 +52,7 @@ export function setAuthSession(user?: SessionUserInput) {
         profilePhoto: user.profile_photo?.trim() ?? "",
         publicId: user.public_id?.trim() ?? "",
         role: user.role ?? "",
+        tutorStatus: user.tutor_status ?? "",
       } satisfies SessionUser),
     );
   } else {

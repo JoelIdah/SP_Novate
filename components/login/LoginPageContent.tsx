@@ -28,6 +28,7 @@ import { saveProfileSetupUser } from "../signup/profileSetupSession";
 import { setAuthSession } from "../auth/authSession";
 import {
   fetchAuthenticatedProfile,
+  isAuthenticatedProfile,
   type AuthenticatedProfile,
 } from "../auth/profile";
 import { getSsoReturnPath } from "../auth/ssoReturn";
@@ -37,6 +38,7 @@ type LoginResponse = {
   data?: {
     profile_setup_required?: boolean;
     token?: string;
+    user?: unknown;
   };
 };
 
@@ -65,23 +67,12 @@ export function LoginPageContent() {
         : notice === "session_expired"
           ? "Your session expired. Sign in to continue."
         : "";
-  const resolveSafeNextPath = (): string => {
-    const candidate = searchParams.get("next");
-    if (!candidate) return "/";
-
-    const trimmed = candidate.trim();
-    if (!trimmed.startsWith("/") || trimmed.startsWith("//")) return "/";
-    if (trimmed.includes("://")) return "/";
-    return trimmed;
-  };
-
   const returnToSpMeet = () => {
     const path = getSsoReturnPath(searchParams);
     if (!path) return false;
     window.location.assign(path);
     return true;
   };
-
   const buildProfileSetupHref = (): string => {
     const params = new URLSearchParams(searchParams.toString());
     params.delete("view");
@@ -124,9 +115,11 @@ export function LoginPageContent() {
         return;
       }
 
-      const profile = await fetchAuthenticatedProfile();
-
       if (returnToSpMeet()) return;
+
+      const profile = isAuthenticatedProfile(result.user)
+        ? result.user
+        : await fetchAuthenticatedProfile();
 
       if (result.profileSetupRequired) {
         storeProfileSetupSession(profile);
@@ -135,12 +128,6 @@ export function LoginPageContent() {
       }
 
       setAuthSession(profile);
-
-      const nextPath = resolveSafeNextPath();
-      if (nextPath !== "/") {
-        router.push(nextPath);
-        return;
-      }
 
       router.push("/students/dashboard");
     } catch (error) {
@@ -221,13 +208,11 @@ export function LoginPageContent() {
       }
 
       let profileSetupRequired: boolean;
-      let profile: AuthenticatedProfile;
       try {
         if (typeof data?.data?.profile_setup_required !== "boolean") {
           throw new Error("We couldn’t finish signing you in. Please try again.");
         }
         profileSetupRequired = data.data.profile_setup_required;
-        profile = await fetchAuthenticatedProfile();
       } catch (error) {
         setFormError(
           error instanceof Error
@@ -239,6 +224,20 @@ export function LoginPageContent() {
 
       if (returnToSpMeet()) return;
 
+      let profile: AuthenticatedProfile;
+      try {
+        profile = isAuthenticatedProfile(data?.data?.user)
+          ? data.data.user
+          : await fetchAuthenticatedProfile();
+      } catch (error) {
+        setFormError(
+          error instanceof Error
+            ? error.message
+            : "Could not complete login. Please try again.",
+        );
+        return;
+      }
+
       if (profileSetupRequired) {
         storeProfileSetupSession(profile);
         router.push(buildProfileSetupHref());
@@ -246,12 +245,6 @@ export function LoginPageContent() {
       }
 
       setAuthSession(profile);
-
-      const nextPath = resolveSafeNextPath();
-      if (nextPath !== "/") {
-        router.push(nextPath);
-        return;
-      }
 
       router.push("/students/dashboard");
     } finally {

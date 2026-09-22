@@ -1,3 +1,10 @@
+export type TutorStatus =
+  | "not_started"
+  | "in_progress"
+  | "pending"
+  | "approved"
+  | "rejected";
+
 export type AuthenticatedProfile = {
   public_id: string;
   first_name: string;
@@ -5,6 +12,7 @@ export type AuthenticatedProfile = {
   email: string;
   profile_photo: string;
   role: "student" | "tutor";
+  tutor_status?: TutorStatus;
   phone_number?: string;
   occupation?: string;
   average_rating?: number;
@@ -15,6 +23,14 @@ export type AuthenticatedProfile = {
     longitude: number;
   };
 };
+
+const tutorStatuses = new Set<TutorStatus>([
+  "not_started",
+  "in_progress",
+  "pending",
+  "approved",
+  "rejected",
+]);
 
 type ProfileResponse = {
   status?: string;
@@ -31,7 +47,10 @@ export function isAuthenticatedProfile(value: unknown): value is AuthenticatedPr
     typeof profile.last_name === "string" &&
     typeof profile.email === "string" &&
     typeof profile.profile_photo === "string" &&
-    (profile.role === "student" || profile.role === "tutor")
+    (profile.role === "student" || profile.role === "tutor") &&
+    (profile.tutor_status === undefined ||
+      (typeof profile.tutor_status === "string" &&
+        tutorStatuses.has(profile.tutor_status as TutorStatus)))
   );
 }
 

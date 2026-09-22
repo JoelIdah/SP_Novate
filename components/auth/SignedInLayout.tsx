@@ -1,13 +1,26 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
+import { usePathname, useRouter } from "next/navigation";
 
 import { redirectToLoginForAuthentication, setAuthSession } from "./authSession";
-import { isAuthenticatedProfile } from "./profile";
+import {
+  isAuthenticatedProfile,
+  type AuthenticatedProfile,
+} from "./profile";
 
-export function SignedInLayout({ children }: { children: ReactNode }) {
+export function SignedInLayout({
+  children,
+  protectTutorArea = false,
+}: {
+  children: ReactNode;
+  protectTutorArea?: boolean;
+}) {
+  const pathname = usePathname();
+  const router = useRouter();
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [attempt, setAttempt] = useState(0);
+  const [profile, setProfile] = useState<AuthenticatedProfile | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -33,6 +46,7 @@ export function SignedInLayout({ children }: { children: ReactNode }) {
           return;
         }
         setAuthSession(payload.data);
+        setProfile(payload.data);
         setStatus("ready");
       })
       .catch((error: unknown) => {
@@ -42,7 +56,19 @@ export function SignedInLayout({ children }: { children: ReactNode }) {
     return () => controller.abort();
   }, [attempt]);
 
-  if (status === "ready") return children;
+  const redirectPath = profile
+    ? protectTutorArea &&
+      profile.tutor_status !== "approved" &&
+      !pathname.startsWith("/tutor/onboarding")
+      ? "/tutor/onboarding"
+      : null
+    : null;
+
+  useEffect(() => {
+    if (redirectPath) router.replace(redirectPath);
+  }, [redirectPath, router]);
+
+  if (status === "ready" && !redirectPath) return children;
   if (status === "loading") return null;
 
   return (

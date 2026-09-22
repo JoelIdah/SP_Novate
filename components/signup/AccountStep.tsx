@@ -28,6 +28,7 @@ import {
 import { setAuthSession } from "../auth/authSession";
 import {
   fetchAuthenticatedProfile,
+  isAuthenticatedProfile,
   type AuthenticatedProfile,
 } from "../auth/profile";
 import { getSsoReturnPath } from "../auth/ssoReturn";
@@ -73,7 +74,6 @@ export function AccountStep({
     window.location.assign(path);
     return true;
   };
-
   const isIgnorableSocialError = (message: string) => {
     const lower = message.toLowerCase();
     return lower.includes("timeout") || lower.includes("timed out");
@@ -141,9 +141,11 @@ export function AccountStep({
         return;
       }
 
-      const profile = await fetchAuthenticatedProfile();
-
       if (returnToSpMeet()) return;
+
+      const profile = isAuthenticatedProfile(result.user)
+        ? result.user
+        : await fetchAuthenticatedProfile();
 
       if (result.profileSetupRequired) {
         storeProfileSetupSession(profile);

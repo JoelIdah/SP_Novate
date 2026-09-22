@@ -54,15 +54,6 @@ export async function POST(request: Request) {
       );
     }
 
-    const profileResponse = await fetch(`${backendUrl}/v1/profile`, {
-      headers: { Accept: "application/json", Authorization: `Bearer ${token}` },
-      cache: "no-store",
-    });
-    const profilePayload = await profileResponse.json().catch(() => null) as { data?: unknown } | null;
-    if (!profileResponse.ok) {
-      return NextResponse.json(profilePayload ?? {}, { status: profileResponse.status });
-    }
-
     const profileSetupRequired = payload?.data?.profile_setup_required;
     const response = NextResponse.json({
       status: payload?.status,
@@ -70,7 +61,7 @@ export async function POST(request: Request) {
       code: payload?.code,
       data: {
         profile_setup_required: profileSetupRequired,
-        user: profilePayload?.data ?? null,
+        user: payload?.data?.user ?? null,
       },
     });
     setAuthCookie(response, token);

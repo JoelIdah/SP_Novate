@@ -100,7 +100,7 @@ export default function TutorSettingsPage({ initialTab = "account" }: { initialT
       await updateTutorAccount({ first_name: accountDraft.firstName.trim(), last_name: accountDraft.lastName.trim(), middle_name: accountDraft.middleName.trim(), email: accountDraft.email.trim(), occupation: accountDraft.occupation.trim(), qualifications: accountDraft.qualifications.split(",").map((item) => item.trim()).filter(Boolean), ...(accountDraft.dbsNumber.trim() ? { dbs_certificate_number: accountDraft.dbsNumber.trim() } : {}) });
       const updated = await getTutorAccount();
       setAccount(updated);
-      setAuthSession({ email: updated.email, first_name: updated.first_name, last_name: updated.last_name, profile_photo: updated.profile_photo, public_id: sessionUser?.publicId, role: sessionUser?.role || undefined });
+      setAuthSession({ email: updated.email, first_name: updated.first_name, last_name: updated.last_name, profile_photo: updated.profile_photo, public_id: sessionUser?.publicId, role: sessionUser?.role || undefined, tutor_status: sessionUser?.tutorStatus || undefined });
       setAccountEditing(false); setMessage("Account details updated.");
     } catch (error) { setMessage(error instanceof Error ? error.message : "Account details could not be updated."); }
     finally { setSaving(false); }

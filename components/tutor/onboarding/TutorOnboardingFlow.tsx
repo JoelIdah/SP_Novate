@@ -311,7 +311,7 @@ export default function TutorOnboardingFlow() {
     ...(personalForm.otherName.trim() ? { other_names: personalForm.otherName.trim() } : {}),
   };
   const personalSignature = JSON.stringify(personalPayload);
-  const savedIdentityDocuments = reviewData?.identification?.documents.filter(
+  const savedIdentityDocuments = reviewData?.documents.filter(
     (document) => document.purpose === "identification",
   ) ?? [];
   const hasIdentityDocuments = idFiles.length > 0 || savedIdentityDocuments.length > 0;
@@ -703,7 +703,14 @@ export default function TutorOnboardingFlow() {
     if (section === "location") location.loadSavedLocation(reviewData?.location ?? null);
   };
   const submitReview = async () => {
-    if (!reviewConfirmed || !reviewData?.is_complete || reviewData.tutor_status !== "in_progress" || consentSubmitting || applicationSubmitted) return;
+    if (
+      !reviewConfirmed ||
+      !reviewData?.is_complete ||
+      reviewData.tutor_status === "pending" ||
+      reviewData.tutor_status === "approved" ||
+      consentSubmitting ||
+      applicationSubmitted
+    ) return;
     setConsentSubmitting(true);
     setSubmissionMessage("");
     try {
@@ -728,9 +735,11 @@ export default function TutorOnboardingFlow() {
   const tutorStatus = reviewData?.tutor_status ?? "";
   const applicationPending =
     applicationSubmitted ||
-    tutorStatus === "pending_review";
+    tutorStatus === "pending";
   const applicationApproved = tutorStatus === "approved";
-  const canSubmitApplication = Boolean(reviewData?.is_complete && tutorStatus === "in_progress");
+  const canSubmitApplication = Boolean(
+    reviewData?.is_complete && !applicationPending && !applicationApproved,
+  );
   const applicationEditable = !applicationPending && !applicationApproved;
 
   return (
@@ -1088,12 +1097,6 @@ export default function TutorOnboardingFlow() {
                       >
                         Select an identification type.
                       </InlineFieldError>
-                      <span className="mt-1 block text-xs text-[#8a93a7]">
-                        Accepted:{" "}
-                        {personalForm.country === "GB"
-                          ? "Passport or Driver's Licence"
-                          : "NIN, Passport, Voter's Card, or Driver's Licence"}
-                      </span>
                     </label>
                     <label>
                       <FieldLabel>Upload ID documents</FieldLabel>
@@ -1107,7 +1110,7 @@ export default function TutorOnboardingFlow() {
                         <span className="text-xs text-[#9299a9]">
                           {savedIdentityDocuments.length
                             ? "Add replacement documents if needed"
-                            : "Upload 1–5 JPG, PNG, WEBP, or PDF files"}
+                            : "Supported formats: PDF, JPG, PNG, and WEBP"}
                         </span>
                         <input
                           accept=".pdf,.jpg,.jpeg,.png,.webp"
@@ -1177,18 +1180,19 @@ export default function TutorOnboardingFlow() {
               ) : stage === "compensation" ? (
                 <>
                   <h1 className="text-xl font-bold text-[#252c3c]">
-                    Payment details
+                    Payout setup
                   </h1>
                   <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
                     {personalForm.country === "GB" ? (
                       <div className="rounded-xl border border-[#dfe3ec] bg-[#f7f8fb] p-4 sm:col-span-2">
                         <p className="text-sm font-semibold text-[#35405a]">
-                          Set up payouts securely with Stripe
+                          Set up how you’ll receive your earnings
                         </p>
                         <p className="mt-1 text-sm leading-6 text-[#687188]">
-                          Stripe will collect and verify your identity and bank
-                          details. You will return here when onboarding is
-                          complete.
+                          You’ll continue to Stripe to securely provide your
+                          bank and identity details. Stripe will verify your
+                          information and return you to SP Novate when you’re
+                          finished.
                         </p>
                       </div>
                     ) : (

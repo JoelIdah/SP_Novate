@@ -182,7 +182,7 @@ export function useTutorLocationSetup(onConfirmed: (summary: TutorLocationSummar
   const goBack = () => {
     setError("");
     stopSearch();
-    if (view === "review") setView(source === "search" ? "search" : "prompt");
+    if (view === "review") setView("prompt");
     else if (view === "search") setView("prompt");
   };
 

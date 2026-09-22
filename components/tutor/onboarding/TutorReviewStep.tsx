@@ -35,7 +35,7 @@ export function TutorReviewStep({ canSubmit, confirmed, editable, onConfirmedCha
 }) {
   const personal = review.personal_details;
   const identity = review.identification;
-  const identityDocuments = identity?.documents ?? [];
+  const identityDocuments = review.documents;
   const compensation = review.compensation;
   const location = review.location;
   const mapUrl = location

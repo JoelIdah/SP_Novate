@@ -14,6 +14,7 @@ type BackendAuthResponse = {
   data?: {
     profile_setup_required?: boolean;
     token?: string;
+    user?: unknown;
   };
 };
 
@@ -44,7 +45,6 @@ export async function POST(request: Request) {
       { status: 400 },
     );
   }
-
   try {
     const loginResponse = await fetch(`${backendUrl}/v1/auth/login`, {
       method: "POST",
@@ -66,18 +66,6 @@ export async function POST(request: Request) {
       );
     }
 
-    const profileResponse = await fetch(`${backendUrl}/v1/profile`, {
-      headers: { Accept: "application/json", Authorization: `Bearer ${token}` },
-      cache: "no-store",
-    });
-    const profilePayload = await profileResponse.json().catch(() => null) as {
-      data?: unknown;
-      message?: string;
-    } | null;
-    if (!profileResponse.ok) {
-      return NextResponse.json(profilePayload ?? {}, { status: profileResponse.status });
-    }
-
     const profileSetupRequired = loginPayload?.data?.profile_setup_required;
     const response = NextResponse.json({
       status: loginPayload?.status,
@@ -85,7 +73,7 @@ export async function POST(request: Request) {
       code: loginPayload?.code,
       data: {
         profile_setup_required: profileSetupRequired,
-        user: profilePayload?.data ?? null,
+        user: loginPayload?.data?.user ?? null,
       },
     });
     setAuthCookie(response, token);

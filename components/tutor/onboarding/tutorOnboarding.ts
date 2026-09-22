@@ -63,12 +63,12 @@ export type TutorOnboardingReview = {
   };
   identification: null | {
     country: string;
-    documents: TutorReviewDocument[];
     id_type: string;
     status: string;
     employer_share_code?: string;
     dbs_certificate_number?: string;
   };
+  documents: TutorReviewDocument[];
   is_complete: boolean;
   location: null | {
     accuracy?: number;
@@ -90,7 +90,7 @@ export type TutorOnboardingReview = {
     qualifications: string[];
     other_names?: string;
   };
-  tutor_status: "approved" | "in_progress" | "pending_review" | "rejected";
+  tutor_status: "approved" | "in_progress" | "pending" | "rejected";
 };
 
 async function onboardingRequest(path: string, init: RequestInit = {}) {
@@ -175,6 +175,7 @@ export async function getTutorOnboardingReview(signal?: AbortSignal) {
   }
   return {
     ...data,
+    documents: Array.isArray(data.documents) ? data.documents : [],
     missing_steps: Array.isArray(data.missing_steps) ? data.missing_steps : [],
   } as TutorOnboardingReview;
 }

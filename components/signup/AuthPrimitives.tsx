@@ -28,7 +28,7 @@ export function AuthCard({
   return (
     <div
       className={cx(
-        "auth-card relative rounded-[1.35em] border-[0.08em] border-[#d9dde8] px-[1.5em] pb-[1.35em] pt-[1.3em]",
+        "auth-card relative rounded-[1.35em] border-[0.08em] border-ui-border px-[1.5em] pb-[1.35em] pt-[1.3em]",
         tone === "gradient"
           ? "bg-gradient-to-b from-white to-[#fcfdff] shadow-[0_14px_34px_rgba(23,30,63,0.11)]"
           : "bg-white/95 shadow-[0_9px_26px_rgba(23,30,63,0.09)]",
@@ -59,9 +59,9 @@ export function AuthForm({
 export function AuthDivider({ className }: { className?: string }) {
   return (
     <div className={cx("auth-divider my-[0.8em] flex items-center gap-[0.9em]", className)}>
-      <span className="h-px flex-1 bg-[#d9deea]" />
+      <span className="h-px flex-1 bg-brand-line" />
       <span className="text-[0.68em] font-semibold uppercase text-[#9ba2b4]">or</span>
-      <span className="h-px flex-1 bg-[#d9deea]" />
+      <span className="h-px flex-1 bg-brand-line" />
     </div>
   );
 }
@@ -74,8 +74,20 @@ export function AuthFieldError({ message }: { message?: string }) {
         message ? "mt-[0.25em] max-h-[1.6em] opacity-100" : "max-h-0 opacity-0"
       )}
     >
-      <span className="block text-[0.64em] font-medium leading-tight text-[#d04b4b]">{message}</span>
+      <span className="block text-[0.64em] font-medium leading-tight text-brand-danger">{message}</span>
     </div>
+  );
+}
+
+export function AuthFormError({ message }: { message?: string }) {
+  if (!message) return null;
+  return (
+    <p
+      className="rounded-[0.55em] bg-[#fff4f4] px-[0.85em] py-[0.7em] text-center text-[0.7em] font-medium text-brand-danger"
+      role="alert"
+    >
+      {message}
+    </p>
   );
 }
 
@@ -87,7 +99,7 @@ export const AuthTextInput = forwardRef<
     <input
       className={cx(
         "auth-text-input mt-[0.4em] h-[2.9em] w-full rounded-[0.5em] border px-[1em] text-[0.82em] font-semibold text-[#4f5980] outline-none",
-        invalid ? "border-[#d04b4b]" : "border-[#d8dde8]",
+        invalid ? "border-brand-danger" : "border-ui-border",
         className
       )}
       data-invalid={invalid}
@@ -110,7 +122,7 @@ export function AuthPasswordShell({
     <div
       className={cx(
         "auth-input-shell mt-[0.4em] flex h-[2.9em] items-center rounded-[0.5em] border px-[1em]",
-        invalid ? "border-[#d04b4b]" : "border-[#d8dde8]",
+        invalid ? "border-brand-danger" : "border-ui-border",
         className
       )}
       data-invalid={invalid}
@@ -140,7 +152,7 @@ export function AuthPrimaryButton({
   return (
     <button
       className={cx(
-        "auth-primary-action h-[3em] w-full rounded-full bg-[#231d71] text-[0.84em] font-semibold text-white hover:bg-[#1c175f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8b88f5] focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:cursor-not-allowed disabled:opacity-70",
+        "auth-primary-action h-[3em] w-full rounded-full bg-brand-primary text-[0.84em] font-semibold text-white hover:bg-[#1c175f] disabled:cursor-not-allowed disabled:opacity-70",
         className
       )}
       {...props}
@@ -158,7 +170,7 @@ export function AuthPrimaryLink({
   return (
     <Link
       className={cx(
-        "auth-primary-action inline-flex h-[3em] w-full items-center justify-center rounded-full bg-[#231d71] text-[0.84em] font-semibold text-white hover:bg-[#1c175f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8b88f5] focus-visible:ring-offset-2 focus-visible:ring-offset-white",
+        "auth-primary-action inline-flex h-[3em] w-full items-center justify-center rounded-full bg-brand-primary text-[0.84em] font-semibold text-white hover:bg-[#1c175f]",
         className
       )}
       {...props}

@@ -22,11 +22,11 @@ export function AuthCardHeader({
         <div className="overflow-hidden rounded-[0.7em] shadow-[0_9px_20px_rgba(53,49,177,0.25)]">
           <Image
             alt="SP Novate"
-            className="h-[2.7em] w-auto"
-            height={54}
+            className="h-[2.7em] w-[2.7em]"
+            height={80}
             priority
             src="/logo/logo.png"
-            width={54}
+            width={80}
           />
         </div>
       </div>

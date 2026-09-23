@@ -50,7 +50,7 @@ export function startGoogleAuth(options: { onToken: (token: string) => void; onE
   const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
   if (!googleClientId) {
-    options.onError("Google auth is not configured. Add NEXT_PUBLIC_GOOGLE_CLIENT_ID.");
+    options.onError("Google sign-in is temporarily unavailable.");
     return;
   }
 

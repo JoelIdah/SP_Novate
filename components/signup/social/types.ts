@@ -1,10 +1,9 @@
-export type SocialProvider = "google" | "facebook" | "apple";
+export type SocialProvider = "google" | "facebook";
 
 export type SocialAuthResult =
   | {
       kind: "success";
       message: string;
-      token?: string;
       user?: {
         role?: "student" | "tutor";
         email?: string;

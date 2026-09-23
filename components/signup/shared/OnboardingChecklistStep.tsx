@@ -1,10 +1,10 @@
-import Image from "next/image";
-
+import { OnboardingNavbar } from "../OnboardingNavbar";
+import { Button } from "../../ui/Button";
 import { getStepIconKindFromLabel, StepItemIcon } from "./StepItemIcon";
 
 type OnboardingChecklistStepProps = {
   items: string[];
-  stepLabel: string;
+  profile?: { email?: string; firstName?: string };
   subtitle: string;
   onCancel: () => void;
   onContinue: () => void;
@@ -12,60 +12,42 @@ type OnboardingChecklistStepProps = {
 
 export function OnboardingChecklistStep({
   items,
-  stepLabel,
+  profile,
   subtitle,
   onCancel,
   onContinue,
 }: OnboardingChecklistStepProps) {
+  const firstName = profile?.firstName?.trim();
+
   return (
-    <main className="h-[100svh] overflow-hidden bg-[#f8f9fc] text-[#1f2430]">
-      <header className="flex h-14 items-center justify-between border-b border-[#e6e9f2] bg-white px-4 sm:px-6">
-        <Image alt="SP Novate" className="h-8 w-auto" height={32} src="/logo/logo.png" width={32} />
-        <button className="flex items-center gap-2 rounded-full border border-[#e2e6ef] bg-[#fbfcff] px-2 py-1.5 text-left" type="button">
-          <span className="inline-flex h-6.5 w-6.5 items-center justify-center rounded-full bg-[#3d3bb8] text-[0.7rem] font-semibold text-white">O</span>
-          <span className="leading-tight">
-            <span className="block text-[0.76rem] font-semibold text-[#3d3bb8]">Welcome back, Oluyinka!</span>
-            <span className="block text-[0.62rem] text-[#6d758a]">Oluyinka@dotsandsstrokesstudio.com</span>
-          </span>
-          <span className="ml-1 text-[0.65rem] text-[#6d758a]">v</span>
-        </button>
-      </header>
+    <main className="flex h-[100svh] flex-col overflow-hidden bg-white text-[#1f2430]">
+      <OnboardingNavbar email={profile?.email ?? ""} name={firstName ?? ""} />
 
-      <section className="flex h-[calc(100svh-112px)] items-start justify-center px-4 pt-16">
-        <div className="w-full max-w-[540px] text-center">
-          <h1 className="text-[2.55rem] font-bold tracking-[-0.02em] text-[#1f2430]">Welcome Oluyinka!</h1>
-          <p className="mt-1.5 text-[0.78rem] font-medium text-[#8c93a7]">{subtitle}</p>
+      <section className="flex min-h-0 flex-1 items-center justify-center overflow-y-auto px-4 py-8 sm:px-6">
+        <div className="w-full max-w-[33.75rem] text-center">
+          <h1 className="text-2xl font-bold tracking-[-0.02em] text-[#1f2430] sm:text-3xl">
+            {firstName ? `Welcome, ${firstName}!` : "Welcome!"}
+          </h1>
+          <p className="mx-auto mt-2 max-w-[29rem] text-sm font-medium leading-relaxed text-[#7d869c]">{subtitle}</p>
 
-          <div className="mx-auto mt-6 w-full max-w-[380px] space-y-2 text-left">
+          <div className="mx-auto mt-7 w-full max-w-[25rem] space-y-3 text-left">
             {items.map((item) => (
-              <div key={item} className="flex h-11 items-center gap-2 rounded-[0.58rem] bg-[#e4effa] px-2.5">
+              <div className="flex min-h-12 items-center gap-3 rounded-xl border border-[#dce3ef] bg-[#f5f8fc] px-4" key={item}>
                 <StepItemIcon kind={getStepIconKindFromLabel(item)} />
-                <span className="text-[0.78rem] font-semibold text-[#38445e]">{item}</span>
+                <span className="text-sm font-semibold text-[#38445e]">{item}</span>
               </div>
             ))}
           </div>
 
-          <div className="mx-auto mt-4 flex w-full max-w-[380px] justify-start">
-            <button className="inline-flex h-8.5 items-center gap-2 rounded-full bg-[#231d71] px-4 text-[0.76rem] font-semibold text-white hover:bg-[#1c175f]" onClick={onContinue} type="button">
-              <span aria-hidden>?</span>
+          <div className="mx-auto mt-7 grid w-full max-w-[25rem] grid-cols-[auto_1fr] gap-2 sm:flex sm:justify-center">
+            <Button onClick={onCancel} size="lg" variant="secondary">Back</Button>
+            <Button onClick={onContinue} size="lg" variant="primary">
               Let&apos;s get started
-            </button>
+              <span aria-hidden>→</span>
+            </Button>
           </div>
         </div>
       </section>
-
-      <footer className="flex h-14 items-center justify-between border-t border-[#e6e9f2] bg-white/95 px-3 sm:px-5">
-        <div className="flex items-center gap-2 text-[0.72rem] text-[#5f6780]">
-          <span className="rounded-full border border-[#c7cdfd] bg-[#f2f3ff] px-2 py-1 font-semibold text-[#5852ce]">{stepLabel}</span>
-          <span>›</span>
-          <span className="font-medium">Profile set up</span>
-        </div>
-        <div className="flex items-center gap-2.5">
-          <button className="h-8.5 rounded-full border border-[#d8dde8] px-5 text-[0.78rem] font-semibold text-[#6f778c]" onClick={onCancel} type="button">Cancel</button>
-          <button className="h-8.5 rounded-full bg-[#918ed8] px-6 text-[0.78rem] font-semibold text-white" onClick={onContinue} type="button">Continue</button>
-        </div>
-      </footer>
     </main>
   );
 }
-

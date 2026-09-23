@@ -1,7 +1,6 @@
 import Script from "next/script";
 
-import { AppleIcon, FacebookIcon, GoogleIcon } from "../icons";
-import { initializeAppleSdk } from "./apple";
+import { FacebookIcon, GoogleIcon } from "../icons";
 import { initializeFacebookSdk } from "./facebook";
 import type { SocialProvider } from "./types";
 
@@ -9,14 +8,10 @@ export function SocialAuthButtons({
   activeSocialProvider,
   onGoogleClick,
   onFacebookClick,
-  onAppleClick,
-  enableApple = true,
 }: {
   activeSocialProvider: SocialProvider | null;
   onGoogleClick: () => void;
   onFacebookClick: () => void;
-  onAppleClick?: () => void;
-  enableApple?: boolean;
 }) {
   return (
     <>
@@ -28,15 +23,6 @@ export function SocialAuthButtons({
           initializeFacebookSdk();
         }}
       />
-      {enableApple ? (
-        <Script
-          src="https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js"
-          strategy="afterInteractive"
-          onLoad={() => {
-            initializeAppleSdk();
-          }}
-        />
-      ) : null}
       <div className="auth-social-buttons space-y-[0.55em]">
         <button
           className="auth-social-button flex h-[3em] w-full items-center justify-center gap-[0.7em] rounded-[0.5em] border border-[#d5dae7] bg-white text-[0.84em] font-semibold text-[#596379] disabled:cursor-not-allowed disabled:opacity-70"
@@ -56,17 +42,6 @@ export function SocialAuthButtons({
           <FacebookIcon />
           {activeSocialProvider === "facebook" ? "Connecting Facebook..." : "Continue with Facebook"}
         </button>
-        {enableApple ? (
-          <button
-            className="auth-social-button flex h-[3em] w-full items-center justify-center gap-[0.7em] rounded-[0.5em] border border-[#d5dae7] bg-white text-[0.84em] font-semibold text-[#596379] disabled:cursor-not-allowed disabled:opacity-70"
-            disabled={Boolean(activeSocialProvider)}
-            onClick={onAppleClick}
-            type="button"
-          >
-            <AppleIcon />
-            {activeSocialProvider === "apple" ? "Connecting Apple..." : "Continue with Apple"}
-          </button>
-        ) : null}
       </div>
     </>
   );

@@ -1,8 +1,13 @@
 "use client";
 
+import { ChatConnection } from "../chat/ChatConnection";
 import ChatWorkspace from "../chat/ChatWorkspace";
 import { TutorNavbar } from "./TutorNavbar";
 
 export default function TutorChatPage() {
-  return <ChatWorkspace navbar={<TutorNavbar active="Chat" />} role="tutor" />;
+  return (
+    <ChatConnection>
+      <ChatWorkspace navbar={<TutorNavbar active="Chat" />} />
+    </ChatConnection>
+  );
 }

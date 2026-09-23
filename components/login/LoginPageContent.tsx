@@ -9,6 +9,7 @@ import {
   AuthCard,
   AuthDivider,
   AuthFieldError,
+  AuthFormError,
   AuthForm,
   AuthPasswordInput,
   AuthPasswordShell,
@@ -20,25 +21,24 @@ import { SocialAuthButtons } from "../signup/social/SocialAuthButtons";
 import { startFacebookAuth } from "../signup/social/facebook";
 import { startGoogleAuth } from "../signup/social/google";
 
-import { socialAuthApi } from "../signup/social/socialAuthApi";
+import { signInWithProvider } from "../signup/social/signInWithProvider";
 import type { SocialProvider } from "../signup/social/types";
 import { AuthShell } from "../signup/AuthShell";
-import { DIRECT_ONBOARDING_ENABLED } from "../../config/featureFlags";
-
-type LoginUser = {
-  role?: "student" | "tutor";
-  email?: string;
-  first_name?: string;
-  last_name?: string;
-  profile_photo?: string;
-  public_id?: string;
-};
+import { saveProfileSetupUser } from "../signup/profileSetupSession";
+import { setAuthSession } from "../auth/authSession";
+import {
+  fetchAuthenticatedProfile,
+  isAuthenticatedProfile,
+  type AuthenticatedProfile,
+} from "../auth/profile";
+import { getSsoReturnPath } from "../auth/ssoReturn";
 
 type LoginResponse = {
   message?: string;
   data?: {
+    profile_setup_required?: boolean;
     token?: string;
-    user?: LoginUser;
+    user?: unknown;
   };
 };
 
@@ -50,182 +50,92 @@ export function LoginPageContent() {
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [socialError, setSocialError] = useState("");
-  const [activeSocialProvider, setActiveSocialProvider] = useState<SocialProvider | null>(null);
+  const [activeSocialProvider, setActiveSocialProvider] =
+    useState<SocialProvider | null>(null);
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
-  const [redirectError, setRedirectError] = useState("");
-  const isDirectOnboardingDisabled = !DIRECT_ONBOARDING_ENABLED;
-  const signupHref = searchParams.toString() ? `/signup?${searchParams.toString()}` : "/signup";
+  const [formError, setFormError] = useState("");
+  const signupHref = searchParams.toString()
+    ? `/signup?${searchParams.toString()}`
+    : "/signup";
   const notice = searchParams.get("notice");
   const statusNotice =
     notice === "account_exists"
       ? "This account already exists. Sign in with your password to continue."
       : notice === "email_verified"
         ? "Email verified. Sign in with your password to continue."
+        : notice === "session_expired"
+          ? "Your session expired. Sign in to continue."
         : "";
-  const redirectToComingSoon = () => {
-    router.push("/coming-soon");
-  };
-
-  const getAllowedReturnOrigins = (): string[] =>
-    (process.env.NEXT_PUBLIC_SPMEET_ALLOWED_CALLBACK_ORIGINS ?? "")
-      .split(",")
-      .map((value) => value.trim())
-      .filter(Boolean);
-
-  const resolveSafeReturnTo = (): string | null => {
-    const candidate = searchParams.get("returnTo")?.trim();
-    if (!candidate) return null;
-
-    try {
-      const parsed = new URL(candidate);
-      if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return null;
-      const allowedOrigins = getAllowedReturnOrigins();
-      if (!allowedOrigins.includes(parsed.origin)) return null;
-      return parsed.toString();
-    } catch {
-      return null;
-    }
-  };
-
-  const resolveState = (): string | null => {
-    const candidate = searchParams.get("state");
-    if (!candidate) return null;
-    const trimmed = candidate.trim();
-    return trimmed.length > 0 ? trimmed : null;
-  };
-
-  const resolveSafeNextPath = (): string => {
-    const candidate = searchParams.get("next");
-    if (!candidate) return "/";
-
-    const trimmed = candidate.trim();
-    if (!trimmed.startsWith("/") || trimmed.startsWith("//")) return "/";
-    if (trimmed.includes("://")) return "/";
-    return trimmed;
-  };
-
-  const encodeBase64Url = (value: string): string => {
-    const bytes = new TextEncoder().encode(value);
-    let binary = "";
-
-    for (let i = 0; i < bytes.length; i += 1) {
-      binary += String.fromCharCode(bytes[i]);
-    }
-
-    return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
-  };
-
-  const redirectToReturnTarget = (
-    token: string,
-    user?: LoginUser
-  ) => {
-    const requestedReturnTo = searchParams.get("returnTo");
-    const allowedOrigins = getAllowedReturnOrigins();
-    const returnTo = resolveSafeReturnTo();
-    const state = resolveState();
-
-    if (requestedReturnTo && allowedOrigins.length === 0) {
-      setRedirectError("SSO callback origins are not configured.");
-      return false;
-    }
-
-    if (requestedReturnTo && !returnTo) {
-      setRedirectError("Untrusted or invalid callback URL.");
-      return false;
-    }
-
-    if (requestedReturnTo && !state) {
-      setRedirectError("Missing SSO state. Please retry login from SPMeet.");
-      return false;
-    }
-
-    if (!returnTo) return false;
-
-    const nextPath = resolveSafeNextPath();
-    const target = new URL(returnTo);
-    target.searchParams.set("token", token);
-    target.searchParams.set("next", nextPath);
-    target.searchParams.set("state", state!);
-
-    if (user) {
-      const userPayload = {
-        role: user.role ?? "",
-        email: user.email ?? "",
-        first_name: user.first_name ?? "",
-        last_name: user.last_name ?? "",
-        profile_photo: user.profile_photo ?? "",
-        public_id: user.public_id ?? "",
-      };
-      target.searchParams.set("user", encodeBase64Url(JSON.stringify(userPayload)));
-    }
-
-    window.location.href = target.toString();
+  const returnToSpMeet = () => {
+    const path = getSsoReturnPath(searchParams);
+    if (!path) return false;
+    window.location.assign(path);
     return true;
   };
+  const buildProfileSetupHref = (): string => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("view");
+    params.delete("stage");
+    params.delete("step");
+    params.delete("mode");
+    params.delete("notice");
+    params.delete("email");
+    params.delete("firstName");
+    params.delete("lastName");
+    const query = params.toString();
+    return query ? `/profile-setup?${query}` : "/profile-setup";
+  };
 
-  const getJwtPurpose = (token: string): string | null => {
-    try {
-      const parts = token.split(".");
-      if (parts.length < 2) return null;
-      const payload = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/"))) as { purpose?: string };
-      return payload.purpose ?? null;
-    } catch {
-      return null;
-    }
+  const storeProfileSetupSession = (user: AuthenticatedProfile) => {
+    saveProfileSetupUser({
+      email: user.email,
+      firstName: user.first_name,
+      lastName: user.last_name,
+    });
   };
 
   const handleSocialAuth = async (provider: SocialProvider, token: string) => {
     const cleanToken = token.trim();
     if (!cleanToken) {
-      setSocialError(`Missing ${provider} token. Authenticate with the ${provider} SDK first.`);
+      setSocialError(
+        `Missing ${provider} token. Authenticate with the ${provider} SDK first.`,
+      );
       return;
     }
 
     setActiveSocialProvider(provider);
     setSocialError("");
-    setRedirectError("");
 
     try {
-      const result = await socialAuthApi({ provider, token: cleanToken });
+      const result = await signInWithProvider({ provider, token: cleanToken });
 
       if (result.kind === "error") {
         setSocialError(result.message);
         return;
       }
 
+      if (returnToSpMeet()) return;
+
+      const profile = isAuthenticatedProfile(result.user)
+        ? result.user
+        : await fetchAuthenticatedProfile();
+
       if (result.profileSetupRequired) {
-        if (result.token && redirectToReturnTarget(result.token, result.user)) {
-          return;
-        }
-
-        if (isDirectOnboardingDisabled) {
-          redirectToComingSoon();
-          return;
-        }
-
-        if (result.token) {
-          localStorage.setItem("sp_profile_setup_token", result.token);
-        }
-        router.push("/signup?view=flow&stage=setup&step=personal&mode=form");
+        storeProfileSetupSession(profile);
+        router.push(buildProfileSetupHref());
         return;
       }
 
-      if (result.token) {
-        localStorage.setItem("sp_access_token", result.token);
-        if (redirectToReturnTarget(result.token, result.user)) {
-          return;
-        }
+      setAuthSession(profile);
 
-        if (isDirectOnboardingDisabled) {
-          redirectToComingSoon();
-          return;
-        }
-      } else if (isDirectOnboardingDisabled) {
-        redirectToComingSoon();
-        return;
-      }
       router.push("/students/dashboard");
+    } catch (error) {
+      setSocialError(
+        error instanceof Error
+          ? error.message
+          : "Authentication failed. Please try again.",
+      );
     } finally {
       setActiveSocialProvider(null);
     }
@@ -237,8 +147,8 @@ export function LoginPageContent() {
     let hasError = false;
     setEmailError("");
     setPasswordError("");
+    setFormError("");
     setSocialError("");
-    setRedirectError("");
 
     if (!email.trim()) {
       setEmailError("Email is required.");
@@ -258,18 +168,18 @@ export function LoginPageContent() {
       let response: Response;
 
       try {
-        response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/v1/auth/login`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            email: email.trim(),
-            password,
-          }),
-        });
+        response = await fetch("/api/auth/login", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              email: email.trim(),
+              password,
+            }),
+          });
       } catch {
-        setPasswordError("Could not reach login service. Please try again.");
+        setFormError("We couldn’t sign you in right now. Please try again.");
         return;
       }
 
@@ -292,49 +202,49 @@ export function LoginPageContent() {
         } else if (lower.includes("password")) {
           setPasswordError(message);
         } else {
-          setPasswordError(message);
+          setFormError(message);
         }
         return;
       }
 
-      const token = data?.data?.token;
-      const user = data?.data?.user;
-      if (token) {
-        localStorage.setItem("sp_access_token", token);
-        const purpose = getJwtPurpose(token);
-
-        if (purpose === "profile_setup") {
-          if (redirectToReturnTarget(token, user)) {
-            return;
-          }
-
-          if (isDirectOnboardingDisabled) {
-            redirectToComingSoon();
-            return;
-          }
-
-          const params = new URLSearchParams({
-            view: "flow",
-            stage: "setup",
-            step: "personal",
-            mode: "form",
-          });
-          router.push(`/signup?${params.toString()}`);
-          return;
+      let profileSetupRequired: boolean;
+      try {
+        if (typeof data?.data?.profile_setup_required !== "boolean") {
+          throw new Error("We couldn’t finish signing you in. Please try again.");
         }
-
-        if (redirectToReturnTarget(token, user)) {
-          return;
-        }
-
-        if (isDirectOnboardingDisabled) {
-          redirectToComingSoon();
-          return;
-        }
-      } else if (isDirectOnboardingDisabled) {
-        redirectToComingSoon();
+        profileSetupRequired = data.data.profile_setup_required;
+      } catch (error) {
+        setFormError(
+          error instanceof Error
+            ? error.message
+            : "Could not complete login. Please try again.",
+        );
         return;
       }
+
+      if (returnToSpMeet()) return;
+
+      let profile: AuthenticatedProfile;
+      try {
+        profile = isAuthenticatedProfile(data?.data?.user)
+          ? data.data.user
+          : await fetchAuthenticatedProfile();
+      } catch (error) {
+        setFormError(
+          error instanceof Error
+            ? error.message
+            : "Could not complete login. Please try again.",
+        );
+        return;
+      }
+
+      if (profileSetupRequired) {
+        storeProfileSetupSession(profile);
+        router.push(buildProfileSetupHref());
+        return;
+      }
+
+      setAuthSession(profile);
 
       router.push("/students/dashboard");
     } finally {
@@ -348,7 +258,9 @@ export function LoginPageContent() {
         <AuthCardHeader showPrompt={false} title="Log in to your account" />
 
         <AuthForm className="login-auth-form" onSubmit={handleSubmit}>
-          <p className="text-center text-[0.78em] font-medium text-[#8d95a8]">Welcome back! Please enter your details.</p>
+          <p className="text-center text-[0.78em] font-medium text-[#8d95a8]">
+            Welcome back! Please enter your details.
+          </p>
           {statusNotice ? (
             <p className="mt-[0.75em] rounded-[0.65em] border border-[#b9d8c8] bg-[#f1fbf6] px-[0.9em] py-[0.7em] text-center text-[0.72em] font-medium text-[#247f57]">
               {statusNotice}
@@ -358,7 +270,6 @@ export function LoginPageContent() {
           <div className="mt-[0.9em]">
             <SocialAuthButtons
               activeSocialProvider={activeSocialProvider}
-              enableApple={false}
               onFacebookClick={() => {
                 setSocialError("");
                 startFacebookAuth({
@@ -380,17 +291,14 @@ export function LoginPageContent() {
             />
             <div
               className={`overflow-hidden transition-all duration-200 ease-out ${
-                socialError ? "mt-[0.25em] max-h-[1.6em] opacity-100" : "max-h-0 opacity-0"
+                socialError
+                  ? "mt-[0.25em] max-h-[1.6em] opacity-100"
+                  : "max-h-0 opacity-0"
               }`}
             >
-              <p className="text-[0.7em] font-medium text-[#d04b4b]">{socialError}</p>
-            </div>
-            <div
-              className={`overflow-hidden transition-all duration-200 ease-out ${
-                redirectError ? "mt-[0.25em] max-h-[2.4em] opacity-100" : "max-h-0 opacity-0"
-              }`}
-            >
-              <p className="text-[0.7em] font-medium text-[#d04b4b]">{redirectError}</p>
+              <p className="text-[0.7em] font-medium text-[#d04b4b]">
+                {socialError}
+              </p>
             </div>
           </div>
 
@@ -400,8 +308,13 @@ export function LoginPageContent() {
             <label className="block text-[0.78em] font-semibold text-[#6f778c]">
               Email
               <AuthTextInput
+                autoComplete="email"
                 invalid={Boolean(emailError)}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (emailError) setEmailError("");
+                  if (formError) setFormError("");
+                }}
                 placeholder="Enter your email"
                 type="email"
                 value={email}
@@ -413,7 +326,12 @@ export function LoginPageContent() {
               Password
               <AuthPasswordShell invalid={Boolean(passwordError)}>
                 <AuthPasswordInput
-                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="current-password"
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (passwordError) setPasswordError("");
+                    if (formError) setFormError("");
+                  }}
                   placeholder="Enter your password"
                   type={showPassword ? "text" : "password"}
                   value={password}
@@ -430,21 +348,34 @@ export function LoginPageContent() {
               <AuthFieldError message={passwordError} />
             </label>
 
+            <AuthFormError message={formError} />
+
             <Link
               className="inline-block text-[0.72em] font-semibold text-[#6f8fb5] hover:text-[#17679f]"
-              href={email.trim() ? `/forgot-password?email=${encodeURIComponent(email.trim())}` : "/forgot-password"}
+              href={
+                email.trim()
+                  ? `/forgot-password?email=${encodeURIComponent(email.trim())}`
+                  : "/forgot-password"
+              }
             >
               Forgot your password?
             </Link>
           </div>
 
-          <AuthPrimaryButton className="mt-[0.95em]" disabled={isSubmitting} type="submit">
+          <AuthPrimaryButton
+            className="mt-[0.95em]"
+            disabled={isSubmitting}
+            type="submit"
+          >
             {isSubmitting ? "Continuing..." : "Continue with email"}
           </AuthPrimaryButton>
 
           <p className="mt-[0.95em] text-center text-[0.78em] font-medium text-[#8d95a8]">
             Don&apos;t have an account?{" "}
-            <Link href={signupHref} className="font-semibold text-[#2187d3] transition-colors hover:text-[#17679f]">
+            <Link
+              href={signupHref}
+              className="font-semibold text-[#2187d3] transition-colors hover:text-[#17679f]"
+            >
               Sign up
             </Link>
           </p>
@@ -453,7 +384,3 @@ export function LoginPageContent() {
     </AuthShell>
   );
 }
-
-
-
-

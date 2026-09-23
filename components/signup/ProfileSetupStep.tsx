@@ -1,91 +1,73 @@
 "use client";
 
-import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
-import { LocationTargetIcon } from "./profile-setup/icons";
-import { ReviewInformationStep } from "./profile-setup/ReviewInformationStep";
+import {
+  setAuthSession,
+  waitForAuthenticationRedirect,
+} from "../auth/authSession";
+import { fetchAuthenticatedProfile } from "../auth/profile";
+import { OnboardingNavbar } from "./OnboardingNavbar";
+import {
+  markProfileDetailsSubmitted,
+  useProfileDetailsSubmitted,
+} from "./profileSetupSession";
 import { SetupSuccessView } from "./profile-setup/SetupSuccessView";
-import { getStepIconKindFromLabel, StepItemIcon } from "./shared/StepItemIcon";
-import type { SetupMode, SetupStepId, SignUpRole } from "./types";
-import { parseReverseGeocodeResult, type AddressState } from "./utils";
+import {
+  StepTwoAddressConfirm,
+  type LocationAddressForm,
+  type LocationCoordinates,
+} from "./profile-setup/StepTwoAddressConfirm";
+import { StepOneProfileForm } from "./profile-setup/StepOneProfileForm";
+import { StepTwoLocationPrompt } from "./profile-setup/StepTwoLocationPrompt";
+import { Button } from "../ui/Button";
+import type { SetupMode, SetupStepId } from "./types";
+import {
+  initialProfileForm,
+  formatPhoneNumberE164,
+  isStepOneValid,
+  type ProfileFormState,
+} from "./utils";
 
-type PersonalFormState = {
-  lastName: string;
-  firstName: string;
-  otherName: string;
-  dob: string;
-  email: string;
-  phoneNumber: string;
-  occupation: string;
-  qualification: string;
-  bio: string;
-  password: string;
-  confirmPassword: string;
+type SetupStep = "personal" | "location";
+type LocationView = "prompt" | "search" | "review";
+type LocationSource = "gps" | "search";
+const GPS_BROWSER_TIMEOUT_MS = 10000;
+
+type PlacePrediction = {
+  description: string;
+  placeId: string;
 };
-
-type IdentificationFormState = {
-  employerShareCode: string;
-  dbsCertificateNumber: string;
-  idType: string;
-  idDocumentName: string;
+type LocationUpdateResponse = {
+  message?: string;
+  data?: {
+    address?: string;
+    country?: string;
+    postcode?: string;
+    postal_code?: string;
+    state?: string;
+    city?: string;
+    placeId?: string;
+    latitude?: number;
+    longitude?: number;
+  } | null;
 };
-
-type CompensationFormState = {
-  lastName: string;
-  firstName: string;
-  accountNumber: string;
-  sortCode: string;
+type ProfileSetupResponse = {
+  message?: string;
 };
+type ProfileField = "email" | "firstName" | "lastName" | "otherName" | "phoneNumber";
 
-type LocationView = "prompt" | "map" | "edit";
+function profileFieldForMessage(message: string): ProfileField | null {
+  const value = message.toLowerCase();
+  if (value.includes("phone") || value.includes("mobile")) return "phoneNumber";
+  if (value.includes("email")) return "email";
+  if (value.includes("first name") || value.includes("first_name")) return "firstName";
+  if (value.includes("last name") || value.includes("last_name")) return "lastName";
+  if (value.includes("other name") || value.includes("other_names")) return "otherName";
+  return null;
+}
 
-type StepMeta = {
-  id: SetupStepId;
-  label: string;
-};
-
-const studentSteps: StepMeta[] = [
-  { id: "personal", label: "Personal Information" },
-  { id: "location", label: "Location access" },
-];
-
-const tutorSteps: StepMeta[] = [
-  { id: "personal", label: "Personal Information" },
-  { id: "identification", label: "Identification verification" },
-  { id: "compensation", label: "Compensation Details" },
-  { id: "location", label: "Location access" },
-];
-
-const initialPersonalForm: PersonalFormState = {
-  lastName: "Alabi",
-  firstName: "Oluyinka",
-  otherName: "",
-  dob: "",
-  email: "Oluyinka@gmail.com",
-  phoneNumber: "",
-  occupation: "",
-  qualification: "",
-  bio: "",
-  password: "",
-  confirmPassword: "",
-};
-
-const initialIdentificationForm: IdentificationFormState = {
-  employerShareCode: "",
-  dbsCertificateNumber: "",
-  idType: "",
-  idDocumentName: "",
-};
-
-const initialCompensationForm: CompensationFormState = {
-  lastName: "",
-  firstName: "",
-  accountNumber: "",
-  sortCode: "",
-};
-
-const initialAddress: AddressState = {
+const emptyAddressForm: LocationAddressForm = {
   address: "",
   country: "",
   postcode: "",
@@ -93,69 +75,13 @@ const initialAddress: AddressState = {
   city: "",
 };
 
-function FieldLabel({ children }: { children: React.ReactNode }) {
-  return <span className="text-[0.72rem] font-semibold text-[#5d6479]">{children}</span>;
-}
+const steps: Array<{ id: SetupStep; label: string }> = [
+  { id: "personal", label: "Profile setup" },
+  { id: "location", label: "Location access" },
+];
 
-function SectionTitle({ children }: { children: React.ReactNode }) {
-  return <h3 className="border-b border-[#e8ebf2] pb-1 text-[0.78rem] font-semibold text-[#6f778c]">{children}</h3>;
-}
-
-function StatusIndicator({ done, active }: { done: boolean; active: boolean }) {
-  if (done) {
-    return (
-      <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-[#24cbb8]">
-        <svg aria-hidden className="h-2.5 w-2.5" fill="none" viewBox="0 0 10 10" xmlns="http://www.w3.org/2000/svg">
-          <path d="M2 5.2L4.1 7.3L8 3.4" stroke="#fff" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.6" />
-        </svg>
-      </span>
-    );
-  }
-
-  if (active) {
-    return (
-      <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-[#6f778c]">
-        <svg aria-hidden className="h-2.5 w-2.5" fill="none" viewBox="0 0 10 10" xmlns="http://www.w3.org/2000/svg">
-          <path d="M2 5.2L4.1 7.3L8 3.4" stroke="#fff" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.6" />
-        </svg>
-      </span>
-    );
-  }
-
-  return <span className="inline-flex h-4 w-4 rounded-full border border-[#b8c1d4]" />;
-}
-
-function EyeIcon({ open }: { open: boolean }) {
-  if (open) {
-    return (
-      <svg aria-hidden className="h-4 w-4" fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-        <path d="M3 3L21 21" stroke="currentColor" strokeLinecap="round" strokeWidth="1.7" />
-        <path
-          d="M10.58 10.58C10.21 10.95 10 11.46 10 12C10 13.1 10.9 14 12 14C12.54 14 13.05 13.79 13.42 13.42"
-          stroke="currentColor"
-          strokeLinecap="round"
-          strokeWidth="1.7"
-        />
-        <path
-          d="M9.88 5.09C10.56 4.94 11.27 4.86 12 4.86C16.14 4.86 19.63 7.35 21 11.99C20.57 13.44 19.87 14.68 18.96 15.69M14.12 18.91C13.44 19.06 12.73 19.14 12 19.14C7.86 19.14 4.37 16.65 3 12.01C3.58 10.07 4.67 8.5 6.04 7.31"
-          stroke="currentColor"
-          strokeLinecap="round"
-          strokeWidth="1.7"
-        />
-      </svg>
-    );
-  }
-
-  return (
-    <svg aria-hidden className="h-4 w-4" fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-      <path
-        d="M3 12.01C4.37 7.35 7.86 4.86 12 4.86C16.14 4.86 19.63 7.35 21 12.01C19.63 16.65 16.14 19.14 12 19.14C7.86 19.14 4.37 16.65 3 12.01Z"
-        stroke="currentColor"
-        strokeWidth="1.7"
-      />
-      <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.7" />
-    </svg>
-  );
+function toSetupStep(stepId?: SetupStepId): SetupStep {
+  return stepId === "location" ? "location" : "personal";
 }
 
 export function ProfileSetupStep({
@@ -164,464 +90,546 @@ export function ProfileSetupStep({
   initialProfile,
   onBack,
   onStateChange,
-  role,
 }: {
   initialMode?: SetupMode;
   initialStepId?: SetupStepId;
   initialProfile?: { email?: string; firstName?: string; lastName?: string };
   onBack: () => void;
   onStateChange?: (state: { mode: SetupMode; stepId: SetupStepId }) => void;
-  role: SignUpRole | null;
 }) {
-  const steps = role === "tutor" ? tutorSteps : studentSteps;
-  const stepIndexFromUrl = useMemo(() => {
-    const fallbackId = steps[0]?.id ?? "personal";
-    const targetId = initialStepId ?? fallbackId;
-    const index = steps.findIndex((step) => step.id === targetId);
-    return index >= 0 ? index : 0;
-  }, [initialStepId, steps]);
-
-  const [activeStepIndex, setActiveStepIndex] = useState(stepIndexFromUrl);
-  const [completedSteps, setCompletedSteps] = useState<SetupStepId[]>([]);
+  const initialStep = toSetupStep(initialStepId);
+  const [activeStep, setActiveStep] = useState<SetupStep>(initialStep);
+  const profileDetailsSubmitted = useProfileDetailsSubmitted();
   const [setupComplete, setSetupComplete] = useState(initialMode === "success");
-  const [showReview, setShowReview] = useState(initialMode === "review");
-  const [reviewConfirmed, setReviewConfirmed] = useState(false);
-
-  const [personalForm, setPersonalForm] = useState<PersonalFormState>({
-    ...initialPersonalForm,
-    email: initialProfile?.email ?? initialPersonalForm.email,
-    firstName: initialProfile?.firstName ?? initialPersonalForm.firstName,
-    lastName: initialProfile?.lastName ?? initialPersonalForm.lastName,
+  const [profileForm, setProfileForm] = useState<ProfileFormState>(() => {
+    return {
+      ...initialProfileForm,
+      email: initialProfile?.email ?? initialProfileForm.email,
+      firstName: initialProfile?.firstName ?? initialProfileForm.firstName,
+      lastName: initialProfile?.lastName ?? initialProfileForm.lastName,
+    };
   });
-  const [identificationForm, setIdentificationForm] = useState<IdentificationFormState>(initialIdentificationForm);
-  const [compensationForm, setCompensationForm] = useState<CompensationFormState>(initialCompensationForm);
-  const [addressForm, setAddressForm] = useState<AddressState>(initialAddress);
-
-  const [locationView, setLocationView] = useState<LocationView>("prompt");
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [coords, setCoords] = useState<{ lat: number; lon: number } | null>(null);
   const [requestingLocation, setRequestingLocation] = useState(false);
+  const [requestingPlaceSearch, setRequestingPlaceSearch] = useState(false);
+  const [savingLocation, setSavingLocation] = useState(false);
+  const [locationView, setLocationView] = useState<LocationView>("prompt");
+  const [locationSource, setLocationSource] =
+    useState<LocationSource>("gps");
   const [locationError, setLocationError] = useState("");
-  const [addressConfirmed, setAddressConfirmed] = useState(false);
+  const [profileValidationVisible, setProfileValidationVisible] =
+    useState(false);
+  const [profileSubmitting, setProfileSubmitting] = useState(false);
+  const [profileError, setProfileSaveError] = useState("");
+  const [profileFieldErrors, setProfileFieldErrors] = useState<Partial<Record<ProfileField, string>>>({});
+  const [addressForm, setAddressForm] =
+    useState<LocationAddressForm>(emptyAddressForm);
+  const [mapCoordinates, setMapCoordinates] =
+    useState<LocationCoordinates | null>(null);
+  const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null);
+  const [selectedPlaceId, setSelectedPlaceId] = useState("");
+  const [placeQuery, setPlaceQuery] = useState("");
+  const [placePredictions, setPlacePredictions] = useState<PlacePrediction[]>(
+    [],
+  );
+  const locationRequestIdRef = useRef(0);
+  const placeSearchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+  const placeSearchAbortRef = useRef<AbortController | null>(null);
 
-  const currentStep = steps[activeStepIndex]?.id ?? "personal";
-  const isLastStep = activeStepIndex === steps.length - 1;
-  const showReviewScreen = !setupComplete && showReview;
+  const displayedStep: SetupStep = profileDetailsSubmitted
+    ? "location"
+    : activeStep;
+  const activeStepIndex = displayedStep === "location" ? 1 : 0;
+  const profileValid = isStepOneValid(profileForm);
+  const locationReady = locationSource === "gps"
+    ? Boolean(mapCoordinates && gpsAccuracy !== null)
+    : Boolean(selectedPlaceId);
+  const greetingName =
+    profileForm.firstName.trim() ||
+    initialProfile?.firstName?.trim() ||
+    "there";
+  const userEmail = profileForm.email.trim();
 
   useEffect(() => {
     if (!onStateChange) return;
-    const mode: SetupMode = setupComplete ? "success" : showReview ? "review" : "form";
-    onStateChange({ mode, stepId: currentStep });
-  }, [currentStep, onStateChange, setupComplete, showReview]);
+    onStateChange({
+      mode: setupComplete ? "success" : "form",
+      stepId: displayedStep,
+    });
+  }, [displayedStep, onStateChange, setupComplete]);
 
-  const personalValid = useMemo(() => {
-    const base =
-      personalForm.lastName.trim().length > 0 &&
-      personalForm.firstName.trim().length > 0 &&
-      personalForm.email.trim().length > 0 &&
-      personalForm.phoneNumber.trim().length >= 7 &&
-      personalForm.password.length >= 8 &&
-      personalForm.password === personalForm.confirmPassword;
+  useEffect(() => {
+    return () => {
+      locationRequestIdRef.current += 1;
+      if (placeSearchTimeoutRef.current !== null) {
+        clearTimeout(placeSearchTimeoutRef.current);
+      }
+      placeSearchAbortRef.current?.abort();
+    };
+  }, []);
 
-    if (role === "tutor") {
-      return base && personalForm.bio.trim().length >= 10 && personalForm.occupation.trim().length > 0;
+  const updateProfileField = (field: keyof ProfileFormState, value: string) => {
+    setProfileSaveError("");
+    const errorField = field === "phoneCountry" || field === "countryCode" ? "phoneNumber" : field;
+    if (errorField in profileFieldErrors) {
+      setProfileFieldErrors((current) => ({ ...current, [errorField]: undefined }));
+    }
+    setProfileForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const submitLocationUpdate = async (
+    payload: Record<string, string | number>,
+  ) => {
+    const response = await fetch("/api/user/locations/update", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+    const raw = await response.text();
+    let data: LocationUpdateResponse | null = null;
+    if (raw) {
+      try {
+        data = JSON.parse(raw) as LocationUpdateResponse;
+      } catch {
+        data = null;
+      }
     }
 
-    return base;
-  }, [personalForm, role]);
+    if (response.status === 401) return waitForAuthenticationRedirect();
+    if (!response.ok) {
+      throw new Error(data?.message ?? "Could not save location.");
+    }
 
-  const identificationValid = useMemo(() => {
-    return (
-      identificationForm.employerShareCode.trim().length > 0 &&
-      identificationForm.dbsCertificateNumber.trim().length > 0 &&
-      identificationForm.idType.trim().length > 0 &&
-      identificationForm.idDocumentName.trim().length > 0
-    );
-  }, [identificationForm]);
+    return data ?? { message: "Location saved.", data: null };
+  };
 
-  const compensationValid = useMemo(() => {
-    return (
-      compensationForm.lastName.trim().length > 0 &&
-      compensationForm.firstName.trim().length > 0 &&
-      compensationForm.accountNumber.trim().length >= 8 &&
-      compensationForm.sortCode.trim().length >= 6
-    );
-  }, [compensationForm]);
+  const stopLocationRequest = () => {
+    locationRequestIdRef.current += 1;
+  };
 
-  const addressFilled = useMemo(() => {
-    return (
-      addressForm.address.trim().length > 0 &&
-      addressForm.country.trim().length > 0 &&
-      addressForm.postcode.trim().length > 0 &&
-      addressForm.state.trim().length > 0 &&
-      addressForm.city.trim().length > 0
-    );
-  }, [addressForm]);
+  const stopPlaceSearchRequest = () => {
+    if (placeSearchTimeoutRef.current !== null) {
+      clearTimeout(placeSearchTimeoutRef.current);
+      placeSearchTimeoutRef.current = null;
+    }
+    placeSearchAbortRef.current?.abort();
+    placeSearchAbortRef.current = null;
+    setRequestingPlaceSearch(false);
+    setPlacePredictions([]);
+  };
 
-  const stepValid =
-    currentStep === "personal"
-      ? personalValid
-      : currentStep === "identification"
-        ? identificationValid
-        : currentStep === "compensation"
-          ? compensationValid
-          : addressConfirmed;
-
-  const markStepDone = (step: SetupStepId) => {
-    setCompletedSteps((prev) => (prev.includes(step) ? prev : [...prev, step]));
+  const openAddressSearch = (errorMessage = "") => {
+    stopLocationRequest();
+    setRequestingLocation(false);
+    setSelectedPlaceId("");
+    setGpsAccuracy(null);
+    setMapCoordinates(null);
+    setLocationView("search");
+    setLocationError(errorMessage);
+    window.requestAnimationFrame(() => {
+      document.querySelector<HTMLInputElement>('input[type="search"]')?.focus();
+    });
   };
 
   const handleAllowLocation = () => {
     if (typeof window === "undefined" || !navigator.geolocation) {
-      setLocationError("Location is not supported on this browser.");
+      setLocationError("Current location is not available in this browser. You can search for your address instead.");
       return;
     }
 
     setRequestingLocation(true);
+    setSelectedPlaceId("");
+    setGpsAccuracy(null);
     setLocationError("");
+    const requestId = locationRequestIdRef.current + 1;
+    locationRequestIdRef.current = requestId;
 
     navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        try {
-          const lat = position.coords.latitude;
-          const lon = position.coords.longitude;
-
-          const response = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&accept-language=en`,
-          );
-
-          if (!response.ok) throw new Error("Could not fetch address details.");
-
-          const data = await response.json();
-          setCoords({ lat, lon });
-          setAddressForm(parseReverseGeocodeResult(data, lat, lon));
-          setLocationView("map");
-          setAddressConfirmed(false);
-        } catch (error) {
-          setLocationError(error instanceof Error ? error.message : "Could not fetch your address.");
-        } finally {
+      (position) => {
+        if (locationRequestIdRef.current !== requestId) return;
+        const accuracy = position.coords.accuracy;
+        if (!Number.isFinite(accuracy) || accuracy > 50) {
           setRequestingLocation(false);
+          setLocationError("Your device could not provide a precise enough location. You can try again or search for your address.");
+          return;
         }
-      },
-      () => {
-        setLocationError("Location permission was denied or unavailable.");
+        setLocationSource("gps");
+        setLocationView("review");
+        setAddressForm(emptyAddressForm);
+        setMapCoordinates({ latitude: position.coords.latitude, longitude: position.coords.longitude });
+        setGpsAccuracy(accuracy);
+        setLocationError("");
         setRequestingLocation(false);
       },
-      { enableHighAccuracy: true, maximumAge: 60000, timeout: 15000 },
+      (error) => {
+        if (locationRequestIdRef.current !== requestId) return;
+        const message =
+          error.code === error.PERMISSION_DENIED
+            ? "Location permission was denied. Search for your address instead."
+            : "We couldn't get your location. Search for your address instead.";
+        setRequestingLocation(false);
+        setLocationError(message);
+      },
+      {
+        enableHighAccuracy: true,
+        maximumAge: 0,
+        timeout: GPS_BROWSER_TIMEOUT_MS,
+      },
     );
   };
 
-  const mapEmbedUrl = useMemo(() => {
-    if (!coords) return "";
+  const handleContinue = async () => {
+    setProfileValidationVisible(true);
+    setProfileSaveError("");
+    setProfileFieldErrors({});
+    if (!profileValid) {
+      window.requestAnimationFrame(() => {
+        document.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
+      });
+      return;
+    }
+    setProfileSubmitting(true);
+    try {
+      const response = await fetch("/api/auth/profile-setup", {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            bio: profileForm.bio.trim() || undefined,
+            email: profileForm.email.trim(),
+            first_name: profileForm.firstName.trim(),
+            last_name: profileForm.lastName.trim(),
+            other_names: profileForm.otherName.trim() || undefined,
+            phone_number: formatPhoneNumberE164(profileForm),
+          }),
+        });
+      const result = (await response
+        .json()
+        .catch(() => null)) as ProfileSetupResponse | null;
+      if (response.status === 401) await waitForAuthenticationRedirect();
+      if (!response.ok) {
+        const message = result?.message ?? "Could not complete profile setup.";
+        const field = profileFieldForMessage(message);
+        if (field) {
+          setProfileFieldErrors({ [field]: message });
+          window.requestAnimationFrame(() => {
+            document.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
+          });
+          return;
+        }
+        throw new Error(message);
+      }
+      const profile = await fetchAuthenticatedProfile();
+      setAuthSession(profile);
+      markProfileDetailsSubmitted();
+      setActiveStep("location");
+      setLocationView("prompt");
+      setProfileValidationVisible(false);
+    } catch (error) {
+      setProfileSaveError(
+        error instanceof Error
+          ? error.message
+          : "Could not complete profile setup.",
+      );
+    } finally {
+      setProfileSubmitting(false);
+    }
+  };
 
-    const delta = 0.02;
-    const left = coords.lon - delta;
-    const right = coords.lon + delta;
-    const top = coords.lat + delta;
-    const bottom = coords.lat - delta;
+  const handleSkipLocation = () => {
+    stopLocationRequest();
+    stopPlaceSearchRequest();
+    setSetupComplete(true);
+  };
 
-    return `https://www.openstreetmap.org/export/embed.html?bbox=${left}%2C${bottom}%2C${right}%2C${top}&layer=mapnik&marker=${coords.lat}%2C${coords.lon}`;
-  }, [coords]);
-
-  const handleContinue = () => {
-    if (!stepValid) return;
-
-    markStepDone(currentStep);
-
-    if (isLastStep) {
+  const handleFinishSetup = async () => {
+    if (!locationReady || savingLocation) return;
+    stopLocationRequest();
+    stopPlaceSearchRequest();
+    setSavingLocation(true);
+    setLocationError("");
+    try {
+      let payload: Record<string, string | number>;
+      if (locationSource === "gps") {
+        if (!mapCoordinates || gpsAccuracy === null) {
+          throw new Error("Please request your current location again.");
+        }
+        payload = {
+          accuracy: gpsAccuracy,
+          latitude: mapCoordinates.latitude,
+          longitude: mapCoordinates.longitude,
+          source: "gps",
+        };
+      } else {
+        if (!selectedPlaceId) {
+          throw new Error("Please search for and select your address again.");
+        }
+        payload = { placeId: selectedPlaceId, source: "search" };
+      }
+      await submitLocationUpdate(payload);
       setSetupComplete(true);
+    } catch (error) {
+      setLocationError(
+        error instanceof Error
+          ? error.message
+          : "Could not save the reviewed address.",
+      );
+    } finally {
+      setSavingLocation(false);
+    }
+  };
+
+  const handleLocationBack = () => {
+    stopLocationRequest();
+    stopPlaceSearchRequest();
+    setRequestingLocation(false);
+    setLocationError("");
+
+    if (locationView === "review") {
+      setLocationView(locationSource === "search" ? "search" : "prompt");
       return;
     }
 
-    setActiveStepIndex((prev) => prev + 1);
-  };
-
-  const jumpToStep = (step: SetupStepId, nextLocationView: LocationView = "map") => {
-    const index = steps.findIndex((item) => item.id === step);
-    if (index >= 0) {
-      setActiveStepIndex(index);
+    if (locationView === "search") {
+      setLocationView("prompt");
+      return;
     }
-    if (step === "location") {
-      setLocationView(nextLocationView);
+
+    setActiveStep("personal");
+  };
+
+  const handlePlaceQueryChange = (value: string) => {
+    setSelectedPlaceId("");
+    setGpsAccuracy(null);
+    if (
+      value !== placeQuery &&
+      Object.values(addressForm).some((field) => field.trim())
+    ) {
+      setAddressForm(emptyAddressForm);
+      setMapCoordinates(null);
     }
-    setShowReview(false);
-    setReviewConfirmed(false);
-  };
+    setPlaceQuery(value);
+    setLocationError("");
+    setPlacePredictions([]);
 
-  const openReviewScreen = () => {
-    setAddressConfirmed(true);
-    markStepDone("location");
-    setReviewConfirmed(false);
-    setShowReview(true);
-  };
+    if (placeSearchTimeoutRef.current !== null) {
+      clearTimeout(placeSearchTimeoutRef.current);
+    }
+    placeSearchAbortRef.current?.abort();
 
-  const greetingName = personalForm.firstName.trim() || "there";
-  const fullAddress = [addressForm.address, addressForm.city, addressForm.state, addressForm.postcode, addressForm.country].filter(Boolean).join(", ");
+    const input = value.trim();
+    if (input.length < 3) {
+      setRequestingPlaceSearch(false);
+      return;
+    }
 
-  const stepLabel = `Step ${activeStepIndex + 1}/${steps.length}`;
-  const footerHasContinue = !setupComplete && !showReviewScreen && currentStep !== "location";
-  return (
-    <main className={`${showReviewScreen ? "h-[100svh] overflow-y-auto" : "h-[100svh] overflow-hidden"} bg-[#f8f9fc] text-[#1f2430]`}>
-      <header className="flex h-14 items-center justify-between border-b border-[#e6e9f2] bg-white px-4 sm:px-6">
-        <Image alt="SP Novate" className="h-8 w-auto" height={32} src="/logo/logo.png" width={32} />
-        <button className="flex items-center gap-2 rounded-full border border-[#e2e6ef] bg-[#fbfcff] px-2 py-1.5 text-left" type="button">
-          <span className="inline-flex h-6.5 w-6.5 items-center justify-center rounded-full bg-[#3d3bb8] text-[0.7rem] font-semibold text-white">O</span>
-          <span className="leading-tight">
-            <span className="block text-[0.76rem] font-semibold text-[#3d3bb8]">Welcome back, Oluyinka!</span>
-            <span className="block text-[0.62rem] text-[#6d758a]">Oluyinka@dotsandsstrokesstudio.com</span>
-          </span>
-          <span className="ml-1 text-[0.65rem] text-[#6d758a]">v</span>
-        </button>
-      </header>
+    setRequestingPlaceSearch(true);
+    placeSearchTimeoutRef.current = setTimeout(async () => {
+      const controller = new AbortController();
+      placeSearchAbortRef.current = controller;
 
-      <section
-        className={
-          showReviewScreen
-            ? "min-h-[calc(100svh-112px)] px-4 py-5 sm:px-6"
-            : setupComplete
-              ? "h-[calc(100svh-56px)] px-4 py-5 sm:px-6"
-            : "grid h-[calc(100svh-112px)] grid-cols-[250px_1fr] gap-8 px-8 py-6"
+      try {
+        const response = await fetch("/api/places/autocomplete", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ input }),
+          signal: controller.signal,
+        });
+        const data = (await response.json()) as {
+          message?: string;
+          predictions?: PlacePrediction[];
+        };
+
+        if (!response.ok) {
+          throw new Error(data.message ?? "Could not search addresses.");
         }
-      >
-        {!setupComplete && !showReviewScreen ? (
-          <aside className="pt-8">
-            <div className="space-y-2">
-              {steps.map((step, index) => {
-                const active = index === activeStepIndex;
-                const done = completedSteps.includes(step.id);
 
-                return (
-                  <button
-                    key={step.id}
-                    className={`flex h-11 w-full items-center justify-between rounded-[0.58rem] px-3 text-left ${active ? "bg-[#e4effa]" : "bg-[#edf2f8]"}`}
-                    onClick={() => setActiveStepIndex(index)}
-                    type="button"
-                  >
-                    <span className="flex items-center gap-2">
-                      <StepItemIcon kind={getStepIconKindFromLabel(step.label)} />
-                      <span className="text-[0.78rem] font-semibold text-[#38445e]">{step.label}</span>
-                    </span>
-                    <StatusIndicator active={active} done={done} />
-                  </button>
-                );
-              })}
-            </div>
-          </aside>
-        ) : null}
+        setPlacePredictions(data.predictions ?? []);
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError")
+          return;
+        setLocationError(
+          error instanceof Error
+            ? error.message
+            : "Could not search addresses.",
+        );
+      } finally {
+        if (placeSearchAbortRef.current === controller) {
+          placeSearchAbortRef.current = null;
+          setRequestingPlaceSearch(false);
+        }
+      }
+    }, 500);
+  };
 
-        <div className={showReviewScreen ? "mx-auto w-full max-w-[660px]" : setupComplete ? "mx-auto flex h-full w-full max-w-[820px] items-center justify-center" : "overflow-hidden pr-2"}>
+  const handleSelectPlace = (placeId: string) => {
+    setLocationError("");
+    const selectedPlace = placePredictions.find(
+      (prediction) => prediction.placeId === placeId,
+    );
+    const description = selectedPlace?.description ?? placeQuery;
+    setPlaceQuery(description);
+    setPlacePredictions([]);
+    setLocationSource("search");
+    setSelectedPlaceId(placeId);
+    setGpsAccuracy(null);
+    setAddressForm({ ...emptyAddressForm, address: description });
+    setMapCoordinates(null);
+    setLocationView("review");
+  };
+
+  const currentStep = steps[activeStepIndex];
+  const dashboardHref = "/students/dashboard";
+
+  return (
+    <main className="flex h-[100svh] flex-col overflow-hidden bg-white text-[#171c2a]">
+      <OnboardingNavbar email={userEmail} name={profileForm.firstName} />
+
+      <section className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-4 py-3 sm:px-6 sm:py-5">
+        <div className="flex min-h-full w-full items-center justify-center">
           {setupComplete ? (
-            <SetupSuccessView />
-          ) : showReviewScreen ? (
-            <ReviewInformationStep
-              compensationForm={compensationForm}
-              fullAddress={fullAddress}
+            <SetupSuccessView dashboardHref={dashboardHref} />
+          ) : displayedStep === "personal" ? (
+            <StepOneProfileForm
+              emailLocked={Boolean(initialProfile?.email?.trim())}
+              fieldErrors={profileFieldErrors}
+              generalError={profileError}
               greetingName={greetingName}
-              identificationForm={identificationForm}
-              mapEmbedUrl={mapEmbedUrl}
-              onEditCompensation={() => jumpToStep("compensation")}
-              onEditIdentification={() => jumpToStep("identification")}
-              onEditLocation={() => jumpToStep("location", "edit")}
-              onEditPersonal={() => jumpToStep("personal")}
-              onReviewConfirmedChange={setReviewConfirmed}
-              personalForm={personalForm}
-              reviewConfirmed={reviewConfirmed}
-              role={role}
+              onProfileFieldChange={updateProfileField}
+              profileForm={profileForm}
+              validationVisible={profileValidationVisible}
             />
-          ) : currentStep === "personal" ? (
-            <div className="mx-auto max-w-[620px]">
-              <SectionTitle>Personal information</SectionTitle>
-
-              <div className="mt-2 grid grid-cols-2 gap-2.5">
-                <label><FieldLabel>Last name</FieldLabel><input className="mt-1 h-8 w-full rounded-md border border-[#d8dde8] bg-white px-3 text-[0.76rem]" onChange={(e) => setPersonalForm((p) => ({ ...p, lastName: e.target.value }))} value={personalForm.lastName} /></label>
-                <label><FieldLabel>First name</FieldLabel><input className="mt-1 h-8 w-full rounded-md border border-[#d8dde8] bg-white px-3 text-[0.76rem]" onChange={(e) => setPersonalForm((p) => ({ ...p, firstName: e.target.value }))} value={personalForm.firstName} /></label>
-                <label><FieldLabel>Other name</FieldLabel><input className="mt-1 h-8 w-full rounded-md border border-[#d8dde8] bg-white px-3 text-[0.76rem]" onChange={(e) => setPersonalForm((p) => ({ ...p, otherName: e.target.value }))} placeholder="Enter your other name" value={personalForm.otherName} /></label>
-                <label><FieldLabel>Date of birth</FieldLabel><input className="mt-1 h-8 w-full rounded-md border border-[#d8dde8] bg-white px-3 text-[0.76rem]" onChange={(e) => setPersonalForm((p) => ({ ...p, dob: e.target.value }))} placeholder="DD/MM/YY" value={personalForm.dob} /></label>
-              </div>
-
-              <SectionTitle>Contact information</SectionTitle>
-              <div className="mt-2 grid grid-cols-2 gap-2.5">
-                <label><FieldLabel>Email</FieldLabel><input className="mt-1 h-8 w-full rounded-md border border-[#d8dde8] bg-[#f2f4f8] px-3 text-[0.76rem] text-[#6d758a]" disabled value={personalForm.email} /></label>
-                <label>
-                  <FieldLabel>Phone number</FieldLabel>
-                  <div className="mt-1 flex h-8 items-center rounded-md border border-[#d8dde8] bg-white px-3 text-[0.76rem] text-[#6c748a]">
-                    <span>+234</span>
-                    <span className="mx-2 text-[#c5cada]">|</span>
-                    <input className="min-w-0 flex-1 bg-transparent text-[0.76rem] text-[#37405a] outline-none" onChange={(e) => setPersonalForm((p) => ({ ...p, phoneNumber: e.target.value }))} placeholder="phone number" value={personalForm.phoneNumber} />
-                  </div>
-                </label>
-              </div>
-
-              {role === "tutor" ? (
-                <>
-                  <SectionTitle>Professional information</SectionTitle>
-                  <div className="mt-2 grid grid-cols-2 gap-2.5">
-                    <label><FieldLabel>Occupation</FieldLabel><input className="mt-1 h-8 w-full rounded-md border border-[#d8dde8] bg-white px-3 text-[0.76rem]" onChange={(e) => setPersonalForm((p) => ({ ...p, occupation: e.target.value }))} placeholder="Occupation" value={personalForm.occupation} /></label>
-                    <label><FieldLabel>Qualification</FieldLabel><input className="mt-1 h-8 w-full rounded-md border border-[#d8dde8] bg-white px-3 text-[0.76rem]" onChange={(e) => setPersonalForm((p) => ({ ...p, qualification: e.target.value }))} placeholder="Highest qualification" value={personalForm.qualification} /></label>
-                    <label className="col-span-2"><FieldLabel>Tell us about your experience</FieldLabel><textarea className="mt-1 h-12 w-full resize-none rounded-md border border-[#d8dde8] bg-white px-3 py-2 text-[0.76rem]" onChange={(e) => setPersonalForm((p) => ({ ...p, bio: e.target.value }))} placeholder="Tell us why you are the perfect tutor for the job." value={personalForm.bio} /></label>
-                  </div>
-                </>
-              ) : null}
-
-              <SectionTitle>Security</SectionTitle>
-              <div className="mt-2 grid grid-cols-2 gap-2.5">
-                <label>
-                  <FieldLabel>Password</FieldLabel>
-                  <div className="mt-1 flex h-8 items-center rounded-md border border-[#d8dde8] bg-white px-3 text-[0.76rem]">
-                    <input className="min-w-0 flex-1 bg-transparent outline-none" onChange={(e) => setPersonalForm((p) => ({ ...p, password: e.target.value }))} type={showPassword ? "text" : "password"} value={personalForm.password} />
-                    <button aria-label={showPassword ? "Hide password" : "Show password"} className="text-[#7b84a0] hover:text-[#2187d3]" onClick={() => setShowPassword((v) => !v)} type="button"><EyeIcon open={showPassword} /></button>
-                  </div>
-                </label>
-                <label>
-                  <FieldLabel>Confirm Password</FieldLabel>
-                  <div className="mt-1 flex h-8 items-center rounded-md border border-[#d8dde8] bg-white px-3 text-[0.76rem]">
-                    <input className="min-w-0 flex-1 bg-transparent outline-none" onChange={(e) => setPersonalForm((p) => ({ ...p, confirmPassword: e.target.value }))} type={showConfirmPassword ? "text" : "password"} value={personalForm.confirmPassword} />
-                    <button aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"} className="text-[#7b84a0] hover:text-[#2187d3]" onClick={() => setShowConfirmPassword((v) => !v)} type="button"><EyeIcon open={showConfirmPassword} /></button>
-                  </div>
-                </label>
-              </div>
-            </div>
-          ) : currentStep === "identification" ? (
-            <div className="mx-auto max-w-[620px]">
-              <SectionTitle>Right to work (UK)</SectionTitle>
-              <div className="mt-2 space-y-2">
-                <label><FieldLabel>Employer share code</FieldLabel><input className="mt-1 h-8 w-full rounded-md border border-[#d8dde8] bg-white px-3 text-[0.76rem]" onChange={(e) => setIdentificationForm((p) => ({ ...p, employerShareCode: e.target.value }))} placeholder="Enter employer share code" value={identificationForm.employerShareCode} /></label>
-                <p className="text-[0.62rem] text-[#8c93a7]">Generate your share code from the UK government website to confirm your right to work.</p>
-              </div>
-
-              <div className="mt-6">
-                <SectionTitle>Background check</SectionTitle>
-                <div className="mt-2 space-y-2">
-                  <label><FieldLabel>DBS certificate number</FieldLabel><input className="mt-1 h-8 w-full rounded-md border border-[#d8dde8] bg-white px-3 text-[0.76rem]" onChange={(e) => setIdentificationForm((p) => ({ ...p, dbsCertificateNumber: e.target.value }))} placeholder="Enter DBS certificate number" value={identificationForm.dbsCertificateNumber} /></label>
-                  <p className="text-[0.62rem] text-[#8c93a7]">Provide your Disclosure and Barring Service (DBS) certificate number for background verification.</p>
-                </div>
-              </div>
-
-              <div className="mt-6">
-                <SectionTitle>Identification type</SectionTitle>
-                <div className="mt-2 space-y-2">
-                  <label><FieldLabel>ID type</FieldLabel><input className="mt-1 h-8 w-full rounded-md border border-[#d8dde8] bg-white px-3 text-[0.76rem]" onChange={(e) => setIdentificationForm((p) => ({ ...p, idType: e.target.value }))} placeholder="Select ID type" value={identificationForm.idType} /></label>
-                  <label>
-                    <FieldLabel>Upload ID document</FieldLabel>
-                    <button className="mt-1 flex h-20 w-full flex-col items-center justify-center rounded-md border border-[#d8dde8] bg-white text-[0.72rem]" onClick={() => setIdentificationForm((p) => ({ ...p, idDocumentName: "uploaded-document.pdf" }))} type="button">
-                      <span className="font-semibold text-[#5a52d4]">Click to upload</span>
-                      <span className="text-[#8c93a7]">or drag and drop</span>
-                    </button>
-                  </label>
-                </div>
-              </div>
-            </div>
-          ) : currentStep === "compensation" ? (
-            <div className="mx-auto max-w-[620px]">
-              <SectionTitle>Payment details</SectionTitle>
-              <div className="mt-2 grid grid-cols-2 gap-2.5">
-                <label><FieldLabel>Last name</FieldLabel><input className="mt-1 h-8 w-full rounded-md border border-[#d8dde8] bg-white px-3 text-[0.76rem]" onChange={(e) => setCompensationForm((p) => ({ ...p, lastName: e.target.value }))} placeholder="Enter your last name" value={compensationForm.lastName} /></label>
-                <label><FieldLabel>First Name</FieldLabel><input className="mt-1 h-8 w-full rounded-md border border-[#d8dde8] bg-white px-3 text-[0.76rem]" onChange={(e) => setCompensationForm((p) => ({ ...p, firstName: e.target.value }))} placeholder="Enter your first name" value={compensationForm.firstName} /></label>
-                <label><FieldLabel>Account number</FieldLabel><input className="mt-1 h-8 w-full rounded-md border border-[#d8dde8] bg-white px-3 text-[0.76rem]" onChange={(e) => setCompensationForm((p) => ({ ...p, accountNumber: e.target.value }))} placeholder="Enter your bank account number" value={compensationForm.accountNumber} /></label>
-                <label><FieldLabel>Sort code</FieldLabel><input className="mt-1 h-8 w-full rounded-md border border-[#d8dde8] bg-white px-3 text-[0.76rem]" onChange={(e) => setCompensationForm((p) => ({ ...p, sortCode: e.target.value }))} placeholder="Enter your bank's sort code" value={compensationForm.sortCode} /></label>
-              </div>
-            </div>
-          ) : locationView === "prompt" ? (
-            <div className="flex h-full items-center justify-center">
-              <div className="text-center">
-                <div className="mx-auto mb-5 w-fit"><LocationTargetIcon /></div>
-                <h2 className="text-[2rem] font-bold tracking-[-0.02em] text-[#1d2331]">Find tutors near you</h2>
-                <p className="mx-auto mt-2 max-w-[390px] text-sm font-medium text-[#8c93a7]">Allow location access so we can show you the best tutors available in your area.</p>
-                <button className="mt-5 h-10 rounded-full bg-[#231d71] px-8 text-sm font-semibold text-white" disabled={requestingLocation} onClick={handleAllowLocation} type="button">{requestingLocation ? "Requesting location..." : "Allow location access"}</button>
-                {locationError ? <p className="mt-2 text-sm text-[#d04b4b]">{locationError}</p> : null}
-              </div>
-            </div>
-          ) : locationView === "map" ? (
-            <div className="mx-auto max-w-[660px] text-center">
-              <div className="mx-auto mb-4 w-fit"><LocationTargetIcon /></div>
-              <h2 className="text-[2rem] font-bold tracking-[-0.02em] text-[#1d2331]">Is this your current address?</h2>
-
-              <div className="mt-3 rounded-[0.7rem] border border-[#d8dde8] bg-white p-2.5 text-left">
-                <p className="text-[0.72rem] font-semibold text-[#6f778c]">Address</p>
-                <p className="mt-0.5 text-[0.83rem] text-[#37405a]">{addressForm.address || "No address found yet"}</p>
-                <div className="mt-2 overflow-hidden rounded-[0.55rem] border border-[#e1e4ee]">
-                  {mapEmbedUrl ? (
-                    <iframe className="h-[220px] w-full" loading="lazy" referrerPolicy="no-referrer-when-downgrade" src={mapEmbedUrl} title="Current location map" />
-                  ) : (
-                    <div className="flex h-[220px] items-center justify-center text-sm text-[#8c93a7]">Map preview unavailable</div>
-                  )}
-                </div>
-              </div>
-
-              <div className="mt-4 flex justify-end gap-3">
-                <button className="h-9 rounded-full border border-[#d8dde8] bg-white px-5 text-sm font-semibold text-[#6f778c]" onClick={() => setLocationView("edit")} type="button">Edit address</button>
-                <button className="h-9 rounded-full bg-[#231d71] px-6 text-sm font-semibold text-white" onClick={openReviewScreen} type="button">Yes this is my address</button>
-              </div>
-            </div>
           ) : (
-            <div className="mx-auto max-w-[620px]">
-              <h2 className="text-[2rem] font-bold tracking-[-0.02em] text-[#1d2331]">Edit address</h2>
-              <p className="mt-1.5 text-sm text-[#8c93a7]">Update your address details and confirm when done.</p>
-
-              <div className="mt-4 grid grid-cols-2 gap-2.5">
-                <label className="col-span-2"><FieldLabel>Address</FieldLabel><input className="mt-1 h-8 w-full rounded-md border border-[#d8dde8] bg-white px-3 text-[0.76rem]" onChange={(e) => { setAddressForm((p) => ({ ...p, address: e.target.value })); setAddressConfirmed(false); }} value={addressForm.address} /></label>
-                <label><FieldLabel>Country</FieldLabel><input className="mt-1 h-8 w-full rounded-md border border-[#d8dde8] bg-white px-3 text-[0.76rem]" onChange={(e) => { setAddressForm((p) => ({ ...p, country: e.target.value })); setAddressConfirmed(false); }} value={addressForm.country} /></label>
-                <label><FieldLabel>Postcode</FieldLabel><input className="mt-1 h-8 w-full rounded-md border border-[#d8dde8] bg-white px-3 text-[0.76rem]" onChange={(e) => { setAddressForm((p) => ({ ...p, postcode: e.target.value })); setAddressConfirmed(false); }} value={addressForm.postcode} /></label>
-                <label><FieldLabel>State</FieldLabel><input className="mt-1 h-8 w-full rounded-md border border-[#d8dde8] bg-white px-3 text-[0.76rem]" onChange={(e) => { setAddressForm((p) => ({ ...p, state: e.target.value })); setAddressConfirmed(false); }} value={addressForm.state} /></label>
-                <label><FieldLabel>City</FieldLabel><input className="mt-1 h-8 w-full rounded-md border border-[#d8dde8] bg-white px-3 text-[0.76rem]" onChange={(e) => { setAddressForm((p) => ({ ...p, city: e.target.value })); setAddressConfirmed(false); }} value={addressForm.city} /></label>
-              </div>
-
-              <div className="mt-4 flex justify-end gap-3">
-                <button className="h-9 rounded-full border border-[#d8dde8] px-5 text-sm" onClick={() => setLocationView("map")} type="button">Back to map</button>
-                <button className={`h-9 rounded-full px-6 text-sm font-semibold text-white ${addressFilled ? "bg-[#231d71]" : "bg-[#cdd1de]"}`} disabled={!addressFilled} onClick={openReviewScreen} type="button">Yes this is my address</button>
-              </div>
+            <div className="w-full text-center">
+              {locationView === "prompt" ? (
+                <StepTwoLocationPrompt
+                  locationError={locationError}
+                  onAllowLocation={handleAllowLocation}
+                  onEnterAddress={() => openAddressSearch()}
+                  requestingLocation={requestingLocation}
+                />
+              ) : (
+                <StepTwoAddressConfirm
+                  addressForm={addressForm}
+                  coordinates={mapCoordinates}
+                  locationError={locationError}
+                  mode={locationView}
+                  placeId={selectedPlaceId}
+                  onChangeLocation={handleLocationBack}
+                  onPlaceQueryChange={handlePlaceQueryChange}
+                  onSelectPlace={handleSelectPlace}
+                  placePredictions={placePredictions}
+                  placeQuery={placeQuery}
+                  requestingPlaceSearch={requestingPlaceSearch}
+                  source={locationSource}
+                />
+              )}
             </div>
           )}
         </div>
       </section>
 
       {!setupComplete ? (
-        <footer className="flex h-14 items-center justify-between border-t border-[#e6e9f2] bg-white/95 px-3 sm:px-5">
-          <div className="flex items-center gap-2 text-[0.72rem] text-[#5f6780]">
-            <span className="rounded-full border border-[#c7cdfd] bg-[#f2f3ff] px-2 py-1 font-semibold text-[#5852ce]">{stepLabel}</span>
-            <span>›</span>
-            <span className="font-medium">Profile set up</span>
-          </div>
-
-          <div className="flex items-center gap-2.5">
-            {showReviewScreen ? (
-              <>
+        <footer className="shrink-0 border-t border-[#e5e8f2] bg-white px-4 py-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] sm:px-[var(--dashboard-gutter)]">
+          <div className="mx-auto flex w-full max-w-[var(--dashboard-max-width)] flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex min-w-0 items-center gap-2 text-xs text-[#30384f]">
+              <span className="shrink-0 rounded-full border border-[#6d63ee] bg-white px-2 py-1 font-semibold text-[#5b4ded]">
+                Step {activeStepIndex + 1}/2
+              </span>
+              <span aria-hidden className="text-[#7c8498]">
+                ›
+              </span>
+              <span className="truncate font-semibold">
+                {currentStep.label}
+              </span>
+              {displayedStep === "location" && locationView !== "prompt" ? (
                 <button
-                  className="h-8.5 rounded-full border border-[#d8dde8] px-5 text-[0.78rem] font-semibold text-[#6f778c]"
-                  onClick={() => {
-                    setShowReview(false);
-                    setReviewConfirmed(false);
-                    setLocationView("map");
-                  }}
+                  className="ml-1 shrink-0 font-semibold text-brand-accent underline-offset-4 hover:underline"
+                  onClick={handleLocationBack}
                   type="button"
                 >
-                  Go back
+                  ← <span className="sm:hidden">Back</span>
+                  <span className="hidden sm:inline">
+                    {locationView === "search"
+                      ? "Back to location options"
+                      : locationSource === "search"
+                          ? "Back to address search"
+                          : "Back to location options"}
+                  </span>
                 </button>
-                <button
-                  className={`h-8.5 rounded-full px-6 text-[0.78rem] font-semibold text-white ${reviewConfirmed ? "bg-[#231d71]" : "bg-[#cdd1de]"}`}
-                  disabled={!reviewConfirmed}
-                  onClick={() => setSetupComplete(true)}
-                  type="button"
+              ) : null}
+            </div>
+
+            {displayedStep === "personal" ? (
+              <div className="flex w-full flex-col gap-2 sm:w-auto sm:items-end">
+                <div className="grid grid-cols-2 gap-2 sm:flex sm:shrink-0 sm:justify-end">
+                  <Button
+                    disabled={profileSubmitting}
+                    onClick={onBack}
+                    size="lg"
+                    variant="secondary"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    className="px-6 disabled:bg-[#b8b6cf] disabled:opacity-100"
+                    disabled={profileSubmitting}
+                    onClick={() => void handleContinue()}
+                    size="lg"
+                    variant="primary"
+                  >
+                    {profileSubmitting ? "Saving..." : "Continue"}
+                  </Button>
+                </div>
+              </div>
+            ) : locationView === "prompt" ? (
+              <div className="grid grid-cols-2 gap-2 sm:flex sm:shrink-0 sm:justify-end">
+                <Button
+                  onClick={handleSkipLocation}
+                  size="lg"
+                  variant="secondary"
+                >
+                  Skip
+                </Button>
+                <Button
+                  className="px-6 disabled:bg-[#b8b6cf] disabled:opacity-100"
+                  disabled
+                  size="lg"
+                  variant="primary"
                 >
                   Finish setup
-                </button>
-              </>
+                </Button>
+              </div>
+            ) : locationView === "search" ? (
+              <div className="flex shrink-0 justify-end">
+                <Button
+                  onClick={handleSkipLocation}
+                  size="lg"
+                  variant="secondary"
+                >
+                  Skip
+                </Button>
+              </div>
             ) : (
-              <>
-                <button className="h-8.5 rounded-full border border-[#d8dde8] px-5 text-[0.78rem] font-semibold text-[#6f778c]" onClick={activeStepIndex === 0 ? onBack : () => setActiveStepIndex((i) => Math.max(0, i - 1))} type="button">Cancel</button>
-
-                {footerHasContinue ? (
-                  <button className={`h-8.5 rounded-full px-6 text-[0.78rem] font-semibold text-white ${stepValid ? "bg-[#918ed8]" : "bg-[#cdd1de]"}`} disabled={!stepValid} onClick={handleContinue} type="button">{isLastStep ? "Finish setup" : "Continue"}</button>
-                ) : null}
-              </>
+              <div className="flex shrink-0 justify-end">
+                <button
+                  className="h-11 rounded-full bg-brand-primary px-5 text-sm font-semibold text-white disabled:bg-[#b8b6cf]"
+                  disabled={!locationReady || savingLocation}
+                  onClick={() => void handleFinishSetup()}
+                  type="button"
+                >
+                  {savingLocation ? "Saving..." : "Confirm location"}
+                </button>
+              </div>
             )}
           </div>
         </footer>
       ) : null}
-
-      <div className="sr-only">Selected role: {role ?? "none"}</div>
     </main>
   );
 }
-

@@ -9,6 +9,7 @@ import {
   CalendarDays,
   ChevronDown,
   CreditCard,
+  GraduationCap,
   Home,
   LogOut,
   Menu,
@@ -134,6 +135,7 @@ export function DashboardNavbar({ role, active = "Home" }: { role: DashboardRole
   const profileInitial = profileName.charAt(0).toUpperCase();
   const tutorEntry = tutorEntryConfig[sessionUser?.tutorStatus || "unknown"];
   const studentView = role === "student";
+  const SwitchIcon = studentView ? GraduationCap : Repeat2;
   const switchLabel = studentView ? tutorEntry.label : config.switchLabel;
   const switchMobileLabel = studentView ? tutorEntry.mobileLabel : config.switchMobileLabel;
   const switchTitle = studentView ? tutorEntry.title : config.switchTitle;
@@ -145,6 +147,9 @@ export function DashboardNavbar({ role, active = "Home" }: { role: DashboardRole
   const [isSwitchModalOpen, setIsSwitchModalOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const menuButtonRef = useRef<HTMLButtonElement | null>(null);
+  const menuCloseRef = useRef<HTMLButtonElement | null>(null);
+  const menuPanelRef = useRef<HTMLElement | null>(null);
   const profileMenuRef = useRef<HTMLDivElement | null>(null);
 
   const logOut = async () => {
@@ -161,7 +166,10 @@ export function DashboardNavbar({ role, active = "Home" }: { role: DashboardRole
     setIsMenuOpen(true);
   };
 
-  const closeMenu = () => setIsMenuOpen(false);
+  const closeMenu = () => {
+    setIsMenuOpen(false);
+    window.requestAnimationFrame(() => menuButtonRef.current?.focus());
+  };
 
   useEffect(() => {
     if (!isMenuMounted) return;
@@ -180,6 +188,39 @@ export function DashboardNavbar({ role, active = "Home" }: { role: DashboardRole
       document.body.style.overflow = previousOverflow;
     };
   }, [isMenuMounted, isMenuOpen]);
+
+  useEffect(() => {
+    if (!isMenuOpen) return;
+    window.requestAnimationFrame(() => menuCloseRef.current?.focus());
+
+    const handleMenuKeyboard = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setIsMenuOpen(false);
+        window.requestAnimationFrame(() => menuButtonRef.current?.focus());
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const focusable = Array.from(
+        menuPanelRef.current?.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ) ?? [],
+      );
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener("keydown", handleMenuKeyboard);
+    return () => document.removeEventListener("keydown", handleMenuKeyboard);
+  }, [isMenuOpen]);
 
   useEffect(() => {
     if (!profileMenuOpen) return;
@@ -201,7 +242,7 @@ export function DashboardNavbar({ role, active = "Home" }: { role: DashboardRole
     <header className="dashboard-header sticky top-0 z-50 border-b border-[#dfe4ee] bg-white shadow-[0_2px_12px_rgba(31,40,74,0.06)]">
       <div className="mx-auto grid min-h-[var(--topbar-h)] w-full max-w-[var(--dashboard-max-width)] grid-cols-[auto_1fr_auto] items-center gap-3 px-[var(--dashboard-gutter)] xl:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] xl:gap-6">
         <Link className="col-start-1 flex h-11 w-fit items-center rounded-lg" href={config.homeHref} aria-label="SP Novate dashboard">
-          <Image alt="SP Novate" className="h-8 w-8 xl:h-10 xl:w-10" height={80} priority src="/logo/logo.png" width={80} />
+          <Image alt="SP Novate" className="h-9 w-9 xl:h-11 xl:w-11" height={88} priority src="/logo/logo.png" width={88} />
         </Link>
 
         <nav aria-label={`${role} navigation`} className="navbar-scroll col-start-2 hidden self-stretch xl:flex xl:items-center xl:justify-center xl:gap-1.5 2xl:gap-2.5">
@@ -213,11 +254,11 @@ export function DashboardNavbar({ role, active = "Home" }: { role: DashboardRole
                 key={item.label}
                 aria-current={isActive ? "page" : undefined}
                 className={`group relative my-2 flex h-[calc(100%-1rem)] min-w-[5.75rem] flex-col items-center justify-center gap-1 rounded-lg px-3 text-[0.9rem] leading-tight transition-colors ${
-                  isActive ? "font-semibold text-brand-accent" : "font-medium text-[#555d70] hover:text-[#30384c]"
+                  isActive ? "font-semibold text-brand-accent" : "font-medium text-[#454d60] hover:bg-[#f7f8fb] hover:text-[#252d40]"
                 }`}
                 href={item.href}
               >
-                <Icon className={`h-[1.125rem] w-[1.125rem] transition-colors ${isActive ? "text-[#6265e5]" : "text-[#9ca6b8] group-hover:text-[#737d91]"}`} strokeWidth={1.8} />
+                <Icon className={`h-[1.125rem] w-[1.125rem] transition-colors ${isActive ? "text-[#6265e5]" : "text-[#748096] group-hover:text-[#4f596e]"}`} strokeWidth={1.8} />
                 <span className="relative">
                   {item.label}
                   {isActive ? <span className="absolute -bottom-[0.95rem] left-0 h-[3px] w-full rounded-full bg-brand-accent" /> : null}
@@ -229,26 +270,28 @@ export function DashboardNavbar({ role, active = "Home" }: { role: DashboardRole
 
         <div className="col-start-3 flex min-w-0 items-center justify-end gap-2.5">
           <button
+            aria-controls="dashboard-mobile-menu"
             aria-expanded={isMenuOpen}
             aria-label={isMenuOpen ? "Close navigation menu" : "Open navigation menu"}
             className="inline-flex h-11 w-11 items-center justify-center rounded-lg text-[#2e3448] hover:bg-[#f4f5f8] xl:hidden"
             onClick={isMenuOpen ? closeMenu : openMenu}
+            ref={menuButtonRef}
             type="button"
           >
             {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
 
           <button
-            className="hidden min-h-10 items-center gap-2 rounded-lg border border-[#dde2ec] bg-white px-3.5 text-sm font-medium text-[#454d60] transition-colors hover:border-[#cfd5e1] hover:bg-[#f8f9fb] xl:inline-flex"
+            className={`hidden min-h-10 items-center gap-2 rounded-lg border px-4 text-sm font-semibold shadow-sm transition-colors xl:inline-flex ${studentView ? "border-brand-primary bg-brand-primary text-white hover:border-[#1c175f] hover:bg-[#1c175f]" : "border-[#dde2ec] bg-white text-[#454d60] hover:border-[#cfd5e1] hover:bg-[#f8f9fb]"}`}
             onClick={() => setIsSwitchModalOpen(true)}
             type="button"
           >
-            <Repeat2 className="h-4 w-4 text-[#70798c]" strokeWidth={1.8} />
+            <SwitchIcon className={`h-4 w-4 ${studentView ? "text-white" : "text-[#70798c]"}`} strokeWidth={1.9} />
             {switchLabel}
           </button>
 
-          <div className="relative hidden xl:block" ref={profileMenuRef}>
-            <button aria-expanded={profileMenuOpen} aria-label={`Open account menu for ${profileName}`} className={`flex min-h-10 max-w-[12rem] items-center gap-2 rounded-lg border-l border-[#e1e5ed] py-1 pl-3 pr-2 ${active === "Settings" ? "bg-brand-primary-soft" : "hover:bg-[#f7f8fb]"}`} onClick={() => setProfileMenuOpen((current) => !current)} type="button">
+          <div className="relative hidden border-l border-[#e1e5ed] pl-3 xl:block" ref={profileMenuRef}>
+            <button aria-expanded={profileMenuOpen} aria-label={`${profileMenuOpen ? "Close" : "Open"} account menu for ${profileName}`} className={`flex min-h-10 max-w-[12rem] items-center gap-2 rounded-lg py-1 pl-1 pr-2 ${active === "Settings" ? "bg-brand-primary-soft" : "hover:bg-[#f7f8fb]"}`} onClick={() => setProfileMenuOpen((current) => !current)} type="button">
               <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-primary text-sm font-semibold text-white">{profileInitial}</span>
               <span className="min-w-0 text-left leading-tight"><span className="block truncate text-xs font-semibold text-[#303755]">{profileName}</span><span className="mt-0.5 block text-[0.65rem] font-medium text-[#8a91a1]">{role === "tutor" ? "Tutor account" : "Student account"}</span></span>
               <ChevronDown className={`h-3.5 w-3.5 shrink-0 text-[#7b8497] transition-transform ${profileMenuOpen ? "rotate-180" : ""}`} />
@@ -268,15 +311,27 @@ export function DashboardNavbar({ role, active = "Home" }: { role: DashboardRole
           />
           <aside
             aria-label={config.menuLabel}
-            className={`absolute right-0 top-0 h-full w-[min(88vw,22rem)] border-l border-brand-line bg-white p-4 shadow-2xl transition-transform duration-200 ${isMenuOpen ? "translate-x-0" : "translate-x-full"}`}
+            aria-modal="true"
+            className={`absolute right-0 top-0 flex h-full w-[min(88vw,22rem)] flex-col border-l border-brand-line bg-white shadow-2xl transition-transform duration-200 ${isMenuOpen ? "translate-x-0" : "translate-x-full"}`}
+            id="dashboard-mobile-menu"
+            ref={menuPanelRef}
+            role="dialog"
           >
-            <div className="mb-4 flex items-center justify-between">
-              <p className="text-sm font-semibold text-[#4a5166]">{config.menuLabel}</p>
-              <button aria-label="Close navigation menu" className="inline-flex h-11 w-11 items-center justify-center rounded-lg text-[#2e3448] hover:bg-[#f4f5f8]" onClick={closeMenu} type="button">
+            <div className="flex items-center justify-between gap-3 border-b border-[#e8ebf2] px-4 py-4">
+              <div className="flex min-w-0 items-center gap-3">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-primary text-base font-semibold text-white">{profileInitial}</span>
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold text-[#293149]">{profileName}</p>
+                  <p className="mt-0.5 text-xs font-medium text-[#7c8599]">{role === "tutor" ? "Tutor account" : "Student account"}</p>
+                </div>
+              </div>
+              <button aria-label="Close navigation menu" className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-[#444d62] hover:bg-[#f2f4f8]" onClick={closeMenu} ref={menuCloseRef} type="button">
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <nav className="grid gap-2">
+
+            <div className="min-h-0 flex-1 overflow-y-auto px-3 py-3">
+              <nav className="grid gap-1">
               {config.items.map((item) => {
                 const Icon = item.icon;
                 const isActive = item.label === active;
@@ -284,38 +339,38 @@ export function DashboardNavbar({ role, active = "Home" }: { role: DashboardRole
                   <Link
                     key={item.label}
                     aria-current={isActive ? "page" : undefined}
-                    className={`flex min-h-11 items-center gap-3 rounded-lg border px-3 text-sm font-semibold ${
-                      isActive ? "border-[#d8daf8] bg-brand-primary-soft text-brand-accent" : "border-brand-line bg-white text-[#5f6678]"
+                    className={`relative flex min-h-12 items-center gap-3 rounded-xl px-3.5 text-sm font-semibold transition-colors ${
+                      isActive ? "bg-brand-primary-soft text-brand-accent" : "text-[#535d72] hover:bg-[#f5f6f9] hover:text-[#30384c]"
                     }`}
                     href={item.href}
                     onClick={closeMenu}
                   >
-                    <Icon className="h-4 w-4" />
+                    {isActive ? <span className="absolute inset-y-2 left-0 w-[3px] rounded-full bg-brand-accent" /> : null}
+                    <span className={`inline-flex h-8 w-8 items-center justify-center rounded-lg ${isActive ? "bg-white text-brand-accent" : "text-[#707b90]"}`}><Icon className="h-4 w-4" /></span>
                     {item.label}
                   </Link>
                 );
               })}
-              {role === "tutor" ? <Link
-                aria-current={active === "Settings" ? "page" : undefined}
-                className={`flex min-h-11 items-center gap-3 rounded-lg border px-3 text-sm font-semibold ${active === "Settings" ? "border-[#d8daf8] bg-brand-primary-soft text-brand-accent" : "border-brand-line bg-white text-[#5f6678]"}`}
-                href="/tutor/settings"
-                onClick={closeMenu}
+              </nav>
+            </div>
+
+            <div className="shrink-0 border-t border-[#e8ebf2] px-4 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+              <button
+                className={`flex min-h-12 w-full items-center gap-3 rounded-xl border px-3.5 text-left text-sm font-semibold shadow-sm ${studentView ? "border-brand-primary bg-brand-primary text-white hover:bg-[#1c175f]" : "border-[#d8daf8] bg-brand-primary-soft text-brand-accent hover:bg-[#e7e9ff]"}`}
+                onClick={() => {
+                  closeMenu();
+                  setIsSwitchModalOpen(true);
+                }}
+                type="button"
               >
-                <Settings className="h-4 w-4" />
-                Settings
-              </Link> : null}
-            </nav>
-            <button
-              className="mt-3 min-h-11 w-full rounded-lg border border-[#d8daf8] bg-brand-primary-soft px-3 text-left text-sm font-semibold text-brand-accent"
-              onClick={() => {
-                closeMenu();
-                setIsSwitchModalOpen(true);
-              }}
-              type="button"
-            >
-              {switchMobileLabel}
-            </button>
-            <button className="mt-2 flex min-h-11 w-full items-center gap-3 rounded-lg border border-[#eadede] px-3 text-left text-sm font-semibold text-[#a44343] disabled:opacity-50" disabled={signingOut} onClick={() => void logOut()} type="button"><LogOut className="h-4 w-4" />{signingOut ? "Logging out..." : "Log out"}</button>
+                <SwitchIcon className="h-5 w-5" strokeWidth={1.9} />
+                {switchMobileLabel}
+              </button>
+              <div className="mt-3 grid gap-1">
+                {role === "tutor" ? <Link className="flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm font-semibold text-[#596277] hover:bg-[#f5f6f9]" href="/tutor/settings" onClick={closeMenu}><Settings className="h-4 w-4" />Account settings</Link> : null}
+                <button className="flex min-h-11 w-full items-center gap-3 rounded-lg px-3 text-left text-sm font-semibold text-[#a44343] hover:bg-[#fff5f4] disabled:opacity-50" disabled={signingOut} onClick={() => void logOut()} type="button"><LogOut className="h-4 w-4" />{signingOut ? "Logging out..." : "Log out"}</button>
+              </div>
+            </div>
           </aside>
         </div>
       ) : null}

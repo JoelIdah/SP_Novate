@@ -35,7 +35,7 @@ type TutorQuery = {
   name?: string;
   department?: string;
   subject?: string;
-  day?: string;
+  days?: string[];
   minimumRating?: string;
 };
 
@@ -134,7 +134,7 @@ export async function getTutors(query: TutorQuery, signal?: AbortSignal) {
   } else {
     if (query.department) params.set("department", query.department);
     if (query.subject) params.set("subject", query.subject);
-    if (query.day) params.append("days", query.day.toLowerCase());
+    query.days?.forEach((day) => params.append("days", day.toLowerCase()));
     if (query.minimumRating) params.set("min_rating", query.minimumRating);
   }
 

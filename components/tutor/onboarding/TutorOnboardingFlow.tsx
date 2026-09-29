@@ -743,12 +743,12 @@ export default function TutorOnboardingFlow() {
   const applicationEditable = !applicationPending && !applicationApproved;
 
   return (
-    <main className="flex min-h-[100svh] flex-col bg-white text-[#171c2a]">
+    <main className="flex h-[100dvh] min-h-[100dvh] flex-col overflow-hidden bg-white text-[#171c2a]">
       <OnboardingNavbar
         email={sessionUser?.email ?? ""}
         name={sessionUser?.firstName ?? ""}
       />
-      <section className="flex min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6 lg:px-[var(--dashboard-gutter)] lg:py-3">
+      <section className="scrollbar-hover flex min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6 lg:px-[var(--dashboard-gutter)] lg:py-3">
         {stage === "overview" ? (
           <div className="mx-auto flex w-full max-w-[34rem] flex-col items-center justify-center text-center">
             <h1 className="text-2xl font-bold text-[#1d2331] sm:text-3xl">
@@ -783,7 +783,7 @@ export default function TutorOnboardingFlow() {
             </button>
           </div>
         ) : stage === "review" ? (
-          <div className="mx-auto w-full max-w-[40rem]">
+          <div className="mx-auto w-full max-w-[75rem]">
             {submissionMessage ? <p className={`mb-3 rounded-xl border px-4 py-3 text-sm font-medium ${applicationSubmitted ? "border-[#bde8d0] bg-[#effaf4] text-[#20784d]" : "border-[#f0d6b5] bg-[#fff9f1] text-[#8b5a20]"}`} role="status">{submissionMessage}</p> : null}
             {reviewLoading ? <div className="py-16 text-center text-sm font-medium text-[#8a93a7]">Loading your saved application…</div> : null}
             {!reviewLoading && reviewError ? <div className="flex flex-col items-center gap-3 py-16 text-center" role="alert"><p className="text-sm font-medium text-brand-danger">{reviewError}</p><button className="h-10 rounded-full bg-brand-primary px-5 text-sm font-semibold text-white" onClick={() => { setReviewLoading(true); setReviewError(""); setReviewRefreshKey((current) => current + 1); }} type="button">Try again</button></div> : null}

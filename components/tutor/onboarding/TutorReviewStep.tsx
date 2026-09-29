@@ -10,17 +10,17 @@ function titleCase(value: string) {
 }
 
 function ReviewField({ label, value }: { label: string; value?: string }) {
-  return <div><p className="text-[0.68rem] font-medium text-[#8a93a7]">{label}</p><p className="mt-0.5 break-words text-xs font-semibold text-[#35405a]">{value || "—"}</p></div>;
+  return <div className="min-w-0"><dt className="text-xs font-medium text-[#7d879d]">{label}</dt><dd className="mt-1 break-words text-sm font-semibold leading-relaxed text-[#35405a]">{value || "—"}</dd></div>;
 }
 
-function ReviewCard({ children, editable, icon: Icon, onEdit, title }: { children: React.ReactNode; editable: boolean; icon: typeof UserRound; onEdit: () => void; title: string }) {
+function ReviewCard({ children, className = "", editable, icon: Icon, onEdit, title }: { children: React.ReactNode; className?: string; editable: boolean; icon: typeof UserRound; onEdit: () => void; title: string }) {
   return (
-    <article className="overflow-hidden rounded-xl border border-[#e1e5ed] bg-[#f7f8fc]">
-      <header className="flex items-center justify-between border-b border-[#e5e8f0] px-3 py-2">
-        <h2 className="flex items-center gap-2 text-xs font-bold text-[#35405a]"><span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#4039bd] text-white"><Icon size={11} /></span>{title}</h2>
-        {editable ? <button className="inline-flex items-center gap-1 text-xs font-semibold text-[#5652c9]" onClick={onEdit} type="button"><Pencil size={11} /> Edit</button> : null}
+    <article className={`flex flex-col overflow-hidden rounded-2xl border border-[#dce2ec] bg-[#f7f8fc] shadow-[0_6px_20px_rgba(31,40,74,0.05)] ${className}`}>
+      <header className="flex items-center justify-between border-b border-[#e2e6ee] px-4 py-3.5 sm:px-5">
+        <h2 className="flex items-center gap-2.5 text-sm font-bold text-[#35405a]"><span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[#4039bd] text-white"><Icon size={14} /></span>{title}</h2>
+        {editable ? <button className="inline-flex min-h-10 items-center gap-1.5 rounded-full px-3 text-sm font-semibold text-[#5652c9] hover:bg-[#eeedff]" onClick={onEdit} type="button"><Pencil size={13} /> Edit</button> : null}
       </header>
-      <div className="bg-white p-3">{children}</div>
+      <div className="flex-1 bg-white p-4 sm:p-5">{children}</div>
     </article>
   );
 }
@@ -44,28 +44,28 @@ export function TutorReviewStep({ canSubmit, confirmed, editable, onConfirmedCha
   const uk = identity?.country === "uk" || compensation?.country === "uk";
 
   return (
-    <section className="mx-auto w-full max-w-[40rem] pb-4">
-      <div className="mb-4 text-center"><h1 className="text-2xl font-bold text-[#1d2331]">Hey {personal?.first_name || "there"}!</h1><p className="mt-1 text-sm font-medium text-[#8a93a7]">Please confirm the information saved for your tutor application.</p></div>
-      <div className="mb-3 rounded-xl border border-[#dfe3f0] bg-[#f7f8fc] px-4 py-3 text-sm text-[#596277]"><span className="font-semibold">Application status:</span> {titleCase(review.tutor_status)}</div>
-      {!review.is_complete ? <div className="mb-3 rounded-xl border border-[#f0d6b5] bg-[#fff9f1] px-4 py-3 text-sm text-[#8b5a20]" role="alert"><p className="font-semibold">Your application is not complete yet.</p><p className="mt-1 text-xs">Missing: {review.missing_steps.length ? review.missing_steps.map(titleCase).join(", ") : "one or more required steps"}.</p></div> : null}
-      <div className="space-y-3">
-        <ReviewCard editable={editable} icon={UserRound} onEdit={() => onEdit("personal")} title="Personal information">
-          <div className="grid grid-cols-2 gap-x-5 gap-y-2.5 sm:grid-cols-4"><ReviewField label="First name" value={personal?.first_name} /><ReviewField label="Last name" value={personal?.last_name} /><ReviewField label="Other names" value={personal?.other_names} /><ReviewField label="Date of birth" value={personal?.dob} /><ReviewField label="Email" value={personal?.email} /><ReviewField label="Phone number" value={personal?.phone_number} /><ReviewField label="Occupation" value={personal?.occupation} /><ReviewField label="Qualifications" value={personal?.qualifications.join(", ")} /><div className="col-span-2 sm:col-span-4"><ReviewField label="Tutor bio" value={personal?.bio} /></div></div>
+    <section className="mx-auto w-full max-w-[75rem] pb-6">
+      <div className="mb-6 text-center"><h1 className="text-2xl font-bold text-[#1d2331] sm:text-3xl">Hey {personal?.first_name || "there"}!</h1><p className="mx-auto mt-2 max-w-2xl text-sm font-medium leading-relaxed text-[#7d879d] sm:text-base">Please confirm the information saved for your tutor application.</p></div>
+      <div className="mb-4 rounded-xl border border-[#dfe3f0] bg-[#f4f5fb] px-4 py-3.5 text-sm text-[#505a72]"><span className="font-semibold">Application status:</span> {titleCase(review.tutor_status)}</div>
+      {!review.is_complete ? <div className="mb-4 rounded-xl border border-[#f0d6b5] bg-[#fff9f1] px-4 py-3.5 text-sm text-[#8b5a20]" role="alert"><p className="font-semibold">Your application is not complete yet.</p><p className="mt-1 text-sm">Missing: {review.missing_steps.length ? review.missing_steps.map(titleCase).join(", ") : "one or more required steps"}.</p></div> : null}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <ReviewCard className="lg:col-span-2" editable={editable} icon={UserRound} onEdit={() => onEdit("personal")} title="Personal information">
+          <dl className="grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2 xl:grid-cols-4"><ReviewField label="First name" value={personal?.first_name} /><ReviewField label="Last name" value={personal?.last_name} /><ReviewField label="Other names" value={personal?.other_names} /><ReviewField label="Date of birth" value={personal?.dob} /><ReviewField label="Email" value={personal?.email} /><ReviewField label="Phone number" value={personal?.phone_number} /><ReviewField label="Occupation" value={personal?.occupation} /><ReviewField label="Qualifications" value={personal?.qualifications.join(", ")} /><div className="sm:col-span-2 xl:col-span-4 xl:max-w-[75ch]"><ReviewField label="Tutor bio" value={personal?.bio} /></div></dl>
         </ReviewCard>
 
         <ReviewCard editable={editable} icon={FileCheck2} onEdit={() => onEdit("identity")} title="Identification verification">
-          <div className="grid grid-cols-2 gap-x-5 gap-y-2.5">
+          <dl className="grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2">
             {uk ? <><ReviewField label="Employer share code" value={identity?.employer_share_code} /><ReviewField label="DBS certificate number" value={identity?.dbs_certificate_number} /></> : null}
             <ReviewField label="Country" value={identity?.country ? titleCase(identity.country) : undefined} />
             <ReviewField label="ID type" value={identity?.id_type ? titleCase(identity.id_type) : undefined} />
             <ReviewField label="Verification status" value={identity?.status ? titleCase(identity.status) : "Not available"} />
-            <div className="col-span-2">
-              <p className="text-[0.68rem] font-medium text-[#8a93a7]">ID documents</p>
+            <div className="sm:col-span-2">
+              <dt className="text-xs font-medium text-[#7d879d]">ID documents</dt>
               {identityDocuments.length ? (
-                <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1">
+                <dd className="mt-1.5 flex flex-wrap gap-x-4 gap-y-2">
                   {identityDocuments.map((document) => (
                     <a
-                      className="break-all text-xs font-semibold text-brand-accent hover:underline"
+                      className="break-all text-sm font-semibold text-brand-accent hover:underline"
                       href={document.document_url}
                       key={document.document_url}
                       rel="noreferrer"
@@ -74,22 +74,22 @@ export function TutorReviewStep({ canSubmit, confirmed, editable, onConfirmedCha
                       {document.file_name}
                     </a>
                   ))}
-                </div>
-              ) : <p className="mt-0.5 text-xs font-semibold text-[#35405a]">Not available</p>}
+                </dd>
+              ) : <dd className="mt-1 text-sm font-semibold text-[#35405a]">Not available</dd>}
             </div>
-          </div>
+          </dl>
         </ReviewCard>
 
         <ReviewCard editable={editable} icon={CircleDollarSign} onEdit={() => onEdit("compensation")} title="Compensation details">
-          <div className="grid grid-cols-2 gap-x-5 gap-y-2.5">{uk ? <><ReviewField label="Payout provider" value="Stripe" /><ReviewField label="Payouts enabled" value={compensation?.stripe_payouts_enabled ? "Yes" : "Pending"} /></> : <><ReviewField label="Bank name" value={compensation?.bank_name} /><ReviewField label="Bank code" value={compensation?.bank_code} /><ReviewField label="Account number" value={compensation?.account_number} /><ReviewField label="Account holder name" value={compensation?.account_name} /></>}</div>
+          <dl className="grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2">{uk ? <><ReviewField label="Payout provider" value="Stripe" /><ReviewField label="Payouts enabled" value={compensation?.stripe_payouts_enabled ? "Yes" : "Pending"} /></> : <><ReviewField label="Bank name" value={compensation?.bank_name} /><ReviewField label="Bank code" value={compensation?.bank_code} /><ReviewField label="Account number" value={compensation?.account_number} /><ReviewField label="Account holder name" value={compensation?.account_name} /></>}</dl>
         </ReviewCard>
 
-        <ReviewCard editable={editable} icon={MapPin} onEdit={() => onEdit("location")} title="Location access">
-          <ReviewField label="Address" value={location?.address} />
-          {mapUrl ? <div className="relative mt-2 aspect-[2.7/1] overflow-hidden rounded-lg border border-[#e1e5ed]"><Image alt="Confirmed tutor location" className="object-cover" fill sizes="640px" src={mapUrl} unoptimized /></div> : null}
+        <ReviewCard className="lg:col-span-2" editable={editable} icon={MapPin} onEdit={() => onEdit("location")} title="Location access">
+          <dl><ReviewField label="Address" value={location?.address} /></dl>
+          {mapUrl ? <div className="relative mt-4 aspect-[3.4/1] min-h-40 overflow-hidden rounded-xl border border-[#dce2ec]"><Image alt="Confirmed tutor location" className="object-cover" fill sizes="(min-width: 1024px) 1200px, 100vw" src={mapUrl} unoptimized /></div> : null}
         </ReviewCard>
       </div>
-      {canSubmit ? <label className="mt-3 flex items-center gap-2 rounded-lg border border-[#dfe3ee] bg-white px-3 py-2 text-xs font-medium text-[#4f586f]"><input checked={confirmed} className="h-4 w-4 accent-[#4f4ac8]" onChange={(event) => onConfirmedChange(event.target.checked)} type="checkbox" />I confirm that the information saved above is accurate.</label> : null}
+      {canSubmit ? <label className="mt-4 flex items-start gap-3 rounded-xl border border-[#d8deea] bg-white px-4 py-3.5 text-sm font-medium leading-relaxed text-[#4f586f]"><input checked={confirmed} className="mt-0.5 h-4 w-4 shrink-0 accent-[#4f4ac8]" onChange={(event) => onConfirmedChange(event.target.checked)} type="checkbox" />I confirm that the information saved above is accurate.</label> : null}
     </section>
   );
 }

@@ -38,7 +38,7 @@ export type TutorReviewDocument = {
 
 export type TutorCompensationInput =
   | { country: "uk"; return_url: string; refresh_url: string }
-  | { country: "nigeria"; bank_name: string; bank_code: string; account_number: string };
+  | { country: "nigeria"; bank_name: string; bank_code: string; account_name: string; account_number: string };
 
 export type TutorCompensationResult =
   | {
@@ -68,6 +68,7 @@ export type TutorOnboardingReview = {
     status: string;
     employer_share_code?: string;
     dbs_certificate_number?: string;
+    documents?: TutorReviewDocument[];
   };
   documents: TutorReviewDocument[];
   is_complete: boolean;
@@ -77,6 +78,7 @@ export type TutorOnboardingReview = {
     latitude: number;
     longitude: number;
     place_id?: string;
+    country_code?: string;
     source: string;
   };
   missing_steps: string[];
@@ -174,9 +176,16 @@ export async function getTutorOnboardingReview(signal?: AbortSignal) {
   if (!isRecord(data)) {
     throw new Error("We couldn’t load your application review. Please try again.");
   }
+  const identification = isRecord(data.identification)
+    ? data.identification
+    : null;
+  const nestedDocuments = identification && Array.isArray(identification.documents)
+    ? identification.documents
+    : [];
+  const topLevelDocuments = Array.isArray(data.documents) ? data.documents : [];
   return {
     ...data,
-    documents: Array.isArray(data.documents) ? data.documents : [],
+    documents: topLevelDocuments.length ? topLevelDocuments : nestedDocuments,
     missing_steps: Array.isArray(data.missing_steps) ? data.missing_steps : [],
   } as TutorOnboardingReview;
 }

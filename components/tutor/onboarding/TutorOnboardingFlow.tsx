@@ -66,9 +66,9 @@ type CompensationForm = {
 
 const stages = [
   { id: "personal", label: "Personal information", icon: UserRound },
+  { id: "location", label: "Location access", icon: MapPin },
   { id: "identity", label: "Identification verification", icon: FileCheck2 },
   { id: "compensation", label: "Compensation details", icon: CircleDollarSign },
-  { id: "location", label: "Location access", icon: MapPin },
 ] as const;
 const fieldClassName =
   "mt-1.5 h-11 w-full rounded-lg border border-[#d8dde8] bg-white px-3.5 text-sm font-medium text-[#46506a] outline-none focus:border-[#6d63ee] focus:ring-2 focus:ring-[#6d63ee]/15 aria-[invalid=true]:border-brand-danger";
@@ -115,6 +115,16 @@ function getMaximumTutorDob() {
   const month = String(cutoff.getMonth() + 1).padStart(2, "0");
   const day = String(cutoff.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
+}
+
+function getOperatingCountry(review: TutorOnboardingReview): OperatingCountry {
+  const locationCountry = review.location?.country_code?.trim().toUpperCase();
+  if (locationCountry === "NG" || locationCountry === "GB") return locationCountry;
+
+  const savedCountry = review.identification?.country ?? review.compensation?.country;
+  if (savedCountry === "nigeria") return "NG";
+  if (savedCountry === "uk") return "GB";
+  return "";
 }
 
 function FieldLabel({
@@ -247,6 +257,7 @@ export default function TutorOnboardingFlow() {
   const [reviewData, setReviewData] = useState<TutorOnboardingReview | null>(null);
   const [reviewLoading, setReviewLoading] = useState(true);
   const [reviewError, setReviewError] = useState("");
+  const [locationCountryError, setLocationCountryError] = useState("");
   const [reviewRefreshKey, setReviewRefreshKey] = useState(0);
   const [consentSubmitting, setConsentSubmitting] = useState(false);
   const [applicationSubmitted, setApplicationSubmitted] = useState(false);
@@ -294,6 +305,7 @@ export default function TutorOnboardingFlow() {
   const [submittedCompensationSignature, setSubmittedCompensationSignature] =
     useState("");
   const hasLoadedTutorPersonalDetails = useRef(false);
+  const hasHandledStripeCallback = useRef(false);
   const firstName = personalForm.firstName ?? sessionUser?.firstName ?? "";
   const lastName = personalForm.lastName ?? sessionUser?.lastName ?? "";
   const email = personalForm.email ?? sessionUser?.email ?? "";
@@ -316,7 +328,6 @@ export default function TutorOnboardingFlow() {
     dobValid &&
     emailValid &&
     phoneValid &&
-    personalForm.country &&
     personalForm.occupation.trim() &&
     personalForm.qualification.trim() &&
     personalForm.experience.trim().length >= 10,
@@ -337,9 +348,20 @@ export default function TutorOnboardingFlow() {
     ...(personalForm.otherName.trim() ? { other_names: personalForm.otherName.trim() } : {}),
   };
   const personalSignature = JSON.stringify(personalPayload);
-  const savedIdentityDocuments = reviewData?.documents.filter(
-    (document) => document.purpose === "identification",
-  ) ?? [];
+  const expectedBackendCountry = personalForm.country === "NG"
+    ? "nigeria"
+    : personalForm.country === "GB"
+      ? "uk"
+      : "";
+  const savedIdentityMatchesCountry = Boolean(
+    expectedBackendCountry &&
+    reviewData?.identification?.country === expectedBackendCountry,
+  );
+  const savedIdentityDocuments = savedIdentityMatchesCountry
+    ? reviewData?.documents.filter(
+        (document) => document.purpose === "identification",
+      ) ?? []
+    : [];
   const hasIdentityDocuments = idFiles.length > 0 || savedIdentityDocuments.length > 0;
   const identitySignature = JSON.stringify({
     country: personalForm.country,
@@ -366,6 +388,7 @@ export default function TutorOnboardingFlow() {
     normalizeRightToWorkShareCode(shareCode),
   );
   const identityComplete = Boolean(
+    personalForm.country &&
     idType &&
     !identityDocumentRequired &&
     idFiles.length <= 5 &&
@@ -374,7 +397,7 @@ export default function TutorOnboardingFlow() {
   const compensationComplete =
     personalForm.country === "GB"
       ? true
-      : Boolean(
+      : personalForm.country === "NG" && Boolean(
           compensation.bankCode.trim() &&
           compensation.bankName.trim() &&
           compensation.accountName.trim() &&
@@ -390,8 +413,7 @@ export default function TutorOnboardingFlow() {
   const hasSavedApplication = Boolean(
     reviewData?.personal_details ||
     reviewData?.identification ||
-    reviewData?.compensation ||
-    reviewData?.location,
+    reviewData?.compensation,
   );
 
   const markCompleted = (item: SetupStage) =>
@@ -400,7 +422,7 @@ export default function TutorOnboardingFlow() {
     );
   const unmarkCompleted = (...items: SetupStage[]) =>
     setCompleted((current) => current.filter((item) => !items.includes(item)));
-  const goNext = (current: SetupStage, next: SetupStage) => {
+  const goNext = (current: SetupStage, next: Stage) => {
     markCompleted(current);
     if (returnToReview) {
       setReviewLoading(true);
@@ -440,13 +462,82 @@ export default function TutorOnboardingFlow() {
     updatePersonal("country", country);
   };
   const location = useTutorLocationSetup(() => {
-    markCompleted("location");
     setReviewLoading(true);
     setReviewError("");
-    setStage("review");
-    setReturnToReview(false);
+    setLocationCountryError("");
+    void getTutorOnboardingReview()
+      .then((data) => {
+        setReviewData(data);
+        const verifiedCountry = getOperatingCountry(data);
+        if (!verifiedCountry) {
+          setLocationCountryError(
+            "Tutor onboarding is currently available only in Nigeria and the United Kingdom. Contact support if your location should be supported.",
+          );
+          return;
+        }
+        const countryChanged = Boolean(
+          personalForm.country && personalForm.country !== verifiedCountry,
+        );
+        changeCountry(verifiedCountry);
+        if (countryChanged) {
+          markCompleted("location");
+          setReturnToReview(false);
+          setStage("identity");
+        } else {
+          goNext("location", "identity");
+        }
+      })
+      .catch((caught: unknown) => {
+        setLocationCountryError(
+          caught instanceof Error
+            ? caught.message
+            : "Your saved location country could not be confirmed.",
+        );
+      })
+      .finally(() => setReviewLoading(false));
   });
   const loadSavedLocation = location.loadSavedLocation;
+
+  useEffect(() => {
+    if (hasHandledStripeCallback.current) return;
+    const stripeAction = new URLSearchParams(window.location.search).get("stripe");
+    if (stripeAction !== "return" && stripeAction !== "refresh") return;
+    hasHandledStripeCallback.current = true;
+
+    const callbackTimer = window.setTimeout(() => {
+      if (stripeAction === "return") {
+        setStage("review");
+        setReviewLoading(true);
+        return;
+      }
+
+      setStage("compensation");
+      setPersonalForm((current) => ({ ...current, country: "GB" }));
+      setCompensationSubmitting(true);
+      setCompensationSaveError("");
+      void saveTutorCompensation({
+        country: "uk",
+        refresh_url: `${window.location.origin}/tutor/onboarding?stripe=refresh`,
+        return_url: `${window.location.origin}/tutor/onboarding?stripe=return`,
+      })
+        .then((result) => {
+          if (result.country !== "uk") {
+            throw new Error("Stripe returned an unexpected payout response.");
+          }
+          window.location.assign(result.stripe_onboarding_url);
+        })
+        .catch((caught: unknown) => {
+          setCompensationSaveError(
+            caught instanceof Error
+              ? caught.message
+              : "Could not refresh the Stripe onboarding link.",
+          );
+        })
+        .finally(() => setCompensationSubmitting(false));
+    }, 0);
+
+    return () => window.clearTimeout(callbackTimer);
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -467,6 +558,8 @@ export default function TutorOnboardingFlow() {
           firstName: current.firstName ?? profile.first_name,
           lastName: current.lastName ?? profile.last_name,
           otherName: current.otherName || profile.other_names || "",
+          dateOfBirth:
+            current.dateOfBirth || formatDateForInput(profile.dob),
           email: current.email ?? profile.email,
           phoneNumber:
             current.phoneNumber ||
@@ -493,9 +586,10 @@ export default function TutorOnboardingFlow() {
         hasLoadedTutorPersonalDetails.current = Boolean(data.personal_details);
         setReviewData(data);
         setReviewError("");
-        const savedSetupCountry = data.identification?.country ?? data.compensation?.country;
-        const savedCountry: OperatingCountry =
-          savedSetupCountry === "nigeria" ? "NG" : savedSetupCountry === "uk" ? "GB" : "";
+        const savedCountry = getOperatingCountry(data);
+        if (savedCountry) {
+          setPersonalForm((current) => ({ ...current, country: savedCountry }));
+        }
 
         if (data.personal_details) {
           const savedPhone = parsePhoneNumberFromString(data.personal_details.phone_number);
@@ -509,7 +603,6 @@ export default function TutorOnboardingFlow() {
               formatDateForInput(data.personal_details?.dob) || current.dateOfBirth,
             email: data.personal_details?.email ?? current.email,
             phoneNumber: savedPhone?.nationalNumber ?? data.personal_details?.phone_number ?? "",
-            country: savedCountry || current.country,
             occupation: data.personal_details?.occupation ?? "",
             qualification: data.personal_details?.qualifications.join(", ") ?? "",
             experience: data.personal_details?.bio ?? "",
@@ -517,13 +610,19 @@ export default function TutorOnboardingFlow() {
         }
 
         if (data.identification) {
+          const identificationCountry: OperatingCountry =
+            data.identification.country === "nigeria"
+              ? "NG"
+              : data.identification.country === "uk"
+                ? "GB"
+                : "";
           const savedIdType = Object.entries(identificationTypeValues)
             .find(([, value]) => value === data.identification?.id_type)?.[0] ?? data.identification.id_type;
           setIdType(savedIdType);
           setShareCode(formatRightToWorkShareCode(data.identification.employer_share_code ?? ""));
           setDbsNumber(data.identification.dbs_certificate_number ?? "");
           setSubmittedIdentitySignature(JSON.stringify({
-            country: savedCountry,
+            country: identificationCountry,
             dbsNumber: data.identification.dbs_certificate_number ?? "",
             files: [],
             idType: savedIdType,
@@ -532,6 +631,12 @@ export default function TutorOnboardingFlow() {
         }
 
         if (data.compensation) {
+          const compensationCountry: OperatingCountry =
+            data.compensation.country === "nigeria"
+              ? "NG"
+              : data.compensation.country === "uk"
+                ? "GB"
+                : "";
           const savedCompensation: CompensationForm = {
             accountName: data.compensation.account_name ?? "",
             accountNumber: data.compensation.account_number ?? "",
@@ -539,7 +644,7 @@ export default function TutorOnboardingFlow() {
             bankName: data.compensation.bank_name ?? "",
           };
           setCompensation(savedCompensation);
-          setSubmittedCompensationSignature(JSON.stringify({ ...savedCompensation, country: savedCountry }));
+          setSubmittedCompensationSignature(JSON.stringify({ ...savedCompensation, country: compensationCountry }));
           if (savedCompensation.bankCode && savedCompensation.accountNumber && savedCompensation.accountName) {
             setVerifiedAccountSignature(`${savedCompensation.bankCode}:${savedCompensation.accountNumber}`);
           }
@@ -557,7 +662,12 @@ export default function TutorOnboardingFlow() {
         };
         const stepHasSavedData: Record<SetupStage, boolean> = {
           personal: Boolean(data.personal_details),
-          identity: Boolean(data.identification && data.documents.some((document) => document.purpose === "identification")),
+          identity: Boolean(
+            data.identification &&
+            ((savedCountry === "NG" && data.identification.country === "nigeria") ||
+              (savedCountry === "GB" && data.identification.country === "uk")) &&
+            data.documents.some((document) => document.purpose === "identification"),
+          ),
           compensation: Boolean(
             data.compensation &&
             ((savedCountry === "NG" && data.compensation.country === "nigeria") ||
@@ -620,7 +730,7 @@ export default function TutorOnboardingFlow() {
     if (!personalComplete) return;
     if (submittedPersonalSignature === personalSignature) {
       setValidationVisible(false);
-      goNext("personal", "identity");
+      goNext("personal", "location");
       return;
     }
     setPersonalSubmitting(true);
@@ -634,7 +744,7 @@ export default function TutorOnboardingFlow() {
       setPersonalSubmitting(false);
     }
     setValidationVisible(false);
-    goNext("personal", "identity");
+    goNext("personal", "location");
   };
   const advanceFromIdentity = () => {
     setIdentityValidationVisible(false);
@@ -758,7 +868,7 @@ export default function TutorOnboardingFlow() {
     if (!compensationComplete) return;
     if (submittedCompensationSignature === compensationSignature) {
       setCompensationValidationVisible(false);
-      goNext("compensation", "location");
+      goNext("compensation", "review");
       return;
     }
     setCompensationSubmitting(true);
@@ -771,6 +881,7 @@ export default function TutorOnboardingFlow() {
               return_url: `${window.location.origin}/tutor/onboarding?stripe=return`,
             }
           : {
+              account_name: compensation.accountName,
               account_number: compensation.accountNumber,
               bank_code: compensation.bankCode,
               bank_name: compensation.bankName,
@@ -788,7 +899,7 @@ export default function TutorOnboardingFlow() {
         : "Could not save compensation details.";
       setCompensationSaveError(
         personalForm.country === "NG" && /return_url|refresh_url|stripe onboarding/i.test(message)
-          ? "Your saved payout location is being treated as UK, but this form is using Nigeria. Update and confirm your location before trying payout setup again."
+          ? "The server routed this Nigerian payout request to Stripe. Please contact support before trying again."
           : message,
       );
       return;
@@ -796,7 +907,7 @@ export default function TutorOnboardingFlow() {
       setCompensationSubmitting(false);
     }
     setCompensationValidationVisible(false);
-    goNext("compensation", "location");
+    goNext("compensation", "review");
   };
   const editReview = (section: SetupStage) => {
     setReviewConfirmed(false);
@@ -808,7 +919,8 @@ export default function TutorOnboardingFlow() {
   const submitReview = async () => {
     if (
       !reviewConfirmed ||
-      !reviewData?.is_complete ||
+      !reviewData ||
+      !canSubmitApplication ||
       reviewData.tutor_status === "pending" ||
       reviewData.tutor_status === "approved" ||
       consentSubmitting ||
@@ -840,8 +952,48 @@ export default function TutorOnboardingFlow() {
     applicationSubmitted ||
     tutorStatus === "pending";
   const applicationApproved = tutorStatus === "approved";
+  const reviewCountry = reviewData ? getOperatingCountry(reviewData) : "";
+  const reviewBackendCountry = reviewCountry === "NG"
+    ? "nigeria"
+    : reviewCountry === "GB"
+      ? "uk"
+      : "";
+  const reviewIdentityMatchesCountry = Boolean(
+    reviewBackendCountry &&
+    reviewData?.identification?.country === reviewBackendCountry &&
+    reviewData.documents.some((document) => document.purpose === "identification"),
+  );
+  const reviewCompensationMatchesCountry = Boolean(
+    reviewBackendCountry &&
+    reviewData?.compensation?.country === reviewBackendCountry,
+  );
+  const outdatedReviewSections: Array<"identification" | "compensation"> = [];
+  if (reviewData?.identification && !reviewIdentityMatchesCountry) {
+    outdatedReviewSections.push("identification");
+  }
+  if (reviewData?.compensation && !reviewCompensationMatchesCountry) {
+    outdatedReviewSections.push("compensation");
+  }
+  const effectiveMissingSteps = reviewData
+    ? Array.from(new Set([
+        ...reviewData.missing_steps,
+        ...(!reviewIdentityMatchesCountry ? ["identification"] : []),
+        ...(!reviewCompensationMatchesCountry ? ["compensation"] : []),
+      ]))
+    : [];
+  const effectiveReviewData = reviewData
+    ? {
+        ...reviewData,
+        is_complete: Boolean(
+          reviewData.is_complete &&
+          reviewIdentityMatchesCountry &&
+          reviewCompensationMatchesCountry,
+        ),
+        missing_steps: effectiveMissingSteps,
+      }
+    : null;
   const canSubmitApplication = Boolean(
-    reviewData?.is_complete && !applicationPending && !applicationApproved,
+    effectiveReviewData?.is_complete && !applicationPending && !applicationApproved,
   );
   const applicationEditable = !applicationPending && !applicationApproved;
 
@@ -890,7 +1042,7 @@ export default function TutorOnboardingFlow() {
             {submissionMessage ? <p className={`mb-3 rounded-xl border px-4 py-3 text-sm font-medium ${applicationSubmitted ? "border-[#bde8d0] bg-[#effaf4] text-[#20784d]" : "border-[#f0d6b5] bg-[#fff9f1] text-[#8b5a20]"}`} role="status">{submissionMessage}</p> : null}
             {reviewLoading ? <div className="py-16 text-center text-sm font-medium text-[#8a93a7]">Loading your saved application…</div> : null}
             {!reviewLoading && reviewError ? <div className="flex flex-col items-center gap-3 py-16 text-center" role="alert"><p className="text-sm font-medium text-brand-danger">{reviewError}</p><button className="h-10 rounded-full bg-brand-primary px-5 text-sm font-semibold text-white" onClick={() => { setReviewLoading(true); setReviewError(""); setReviewRefreshKey((current) => current + 1); }} type="button">Try again</button></div> : null}
-            {!reviewLoading && reviewData ? <TutorReviewStep canSubmit={canSubmitApplication} confirmed={reviewConfirmed} editable={applicationEditable} onConfirmedChange={(value) => { setReviewConfirmed(value); setSubmissionMessage(""); }} onEdit={editReview} review={reviewData} /> : null}
+            {!reviewLoading && effectiveReviewData ? <TutorReviewStep canSubmit={canSubmitApplication} confirmed={reviewConfirmed} editable={applicationEditable} onConfirmedChange={(value) => { setReviewConfirmed(value); setSubmissionMessage(""); }} onEdit={editReview} outdatedSections={outdatedReviewSections} review={effectiveReviewData} /> : null}
           </div>
         ) : (
           <div className="mx-auto flex w-full max-w-[75rem] items-start justify-center gap-8 xl:gap-16">
@@ -1029,28 +1181,6 @@ export default function TutorOnboardingFlow() {
                         </span>
                       ) : null}
                     </label>
-                    <label className="sm:col-span-2">
-                      <FieldLabel>
-                        Country where you&apos;ll provide tutoring services
-                      </FieldLabel>
-                      <SelectField
-                        ariaInvalid={validationVisible && !personalForm.country}
-                        onChange={(value) =>
-                          changeCountry(value as OperatingCountry)
-                        }
-                        options={[
-                          { label: "Nigeria", value: "NG" },
-                          { label: "United Kingdom", value: "GB" },
-                        ]}
-                        placeholder="Select country"
-                        value={personalForm.country}
-                      />
-                      <InlineFieldError
-                        show={validationVisible && !personalForm.country}
-                      >
-                        Select the country where you will provide tutoring.
-                      </InlineFieldError>
-                    </label>
                     <label>
                       <FieldLabel>Occupation</FieldLabel>
                       <input
@@ -1133,6 +1263,15 @@ export default function TutorOnboardingFlow() {
                   <p className="mt-1 text-sm leading-6 text-[#7d879d]">
                     Add the details and supporting documents needed to verify your identity.
                   </p>
+                  {personalForm.country ? (
+                    <p className="mt-2 text-xs font-semibold text-[#5652c9]">
+                      Requirements for {personalForm.country === "GB" ? "the United Kingdom" : "Nigeria"}, based on your confirmed location.
+                    </p>
+                  ) : (
+                    <Notice className="mt-3 text-sm" role="alert">
+                      Confirm a supported location before completing identity verification.
+                    </Notice>
+                  )}
                   {personalForm.country === "GB" ? (
                     <section className="mt-5 rounded-2xl border border-[#e0e4ed] bg-[#f8f9fc] p-4 sm:p-5">
                       <div className="mb-4">
@@ -1317,6 +1456,15 @@ export default function TutorOnboardingFlow() {
                   <h1 className="text-xl font-bold text-[#252c3c]">
                     Payout setup
                   </h1>
+                  {personalForm.country ? (
+                    <p className="mt-2 text-xs font-semibold text-[#5652c9]">
+                      Payout method for {personalForm.country === "GB" ? "the United Kingdom" : "Nigeria"}, based on your confirmed location.
+                    </p>
+                  ) : (
+                    <Notice className="mt-3 text-sm" role="alert">
+                      Confirm a supported location before setting up payouts.
+                    </Notice>
+                  )}
                   <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
                     {personalForm.country === "GB" ? (
                       <div className="rounded-xl border border-[#dfe3ec] bg-[#f7f8fb] p-4 sm:col-span-2">
@@ -1330,7 +1478,7 @@ export default function TutorOnboardingFlow() {
                           finished.
                         </p>
                       </div>
-                    ) : (
+                    ) : personalForm.country === "NG" ? (
                       <>
                         <div>
                           <FieldLabel>Bank name</FieldLabel>
@@ -1450,7 +1598,7 @@ export default function TutorOnboardingFlow() {
                           </InlineFieldError>
                         </label>
                       </>
-                    )}
+                    ) : null}
                   </div>
                   {compensationSaveError ? (
                     <Notice className="mt-3 text-sm" role="alert">
@@ -1460,6 +1608,11 @@ export default function TutorOnboardingFlow() {
                 </>
               ) : (
                 <>
+                  {locationCountryError ? (
+                    <Notice className="mb-3 text-sm" role="alert">
+                      {locationCountryError}
+                    </Notice>
+                  ) : null}
                   {location.view === "prompt" ? (
                     <StepTwoLocationPrompt
                       locationError={location.error}
@@ -1510,14 +1663,14 @@ export default function TutorOnboardingFlow() {
                     if (returnToReview && stage !== "review") {
                       setReturnToReview(false);
                       setStage("review");
-                    } else if (stage === "review") setStage("location");
+                    } else if (stage === "review") setStage("compensation");
                     else if (stage === "personal")
                       router.push("/students/dashboard");
-                    else if (stage === "identity") setStage("personal");
+                    else if (stage === "identity") setStage("location");
                     else if (stage === "compensation") setStage("identity");
                     else if (stage === "location") {
                       if (location.view === "search") location.goBack();
-                      else setStage("compensation");
+                      else setStage("personal");
                     }
                   }}
                   type="button"
@@ -1563,13 +1716,15 @@ export default function TutorOnboardingFlow() {
                   <>
                     <button
                       className="h-11 min-w-0 rounded-full bg-brand-primary px-3 text-sm font-semibold text-white disabled:bg-[#b8b6cf] sm:px-5"
-                      disabled={!location.ready || location.saving}
+                      disabled={!location.ready || location.saving || reviewLoading}
                       onClick={() => void location.confirm()}
                       type="button"
                     >
                       {location.saving
                         ? "Saving..."
-                        : "Confirm"}
+                        : reviewLoading
+                          ? "Confirming country..."
+                          : "Confirm"}
                     </button>
                   </>
                 )

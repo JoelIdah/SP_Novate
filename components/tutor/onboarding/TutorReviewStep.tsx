@@ -3,6 +3,7 @@
 import { CircleDollarSign, FileCheck2, MapPin, Pencil, UserRound } from "lucide-react";
 import Image from "next/image";
 
+import { TutorDocumentLink } from "./TutorDocumentLink";
 import type { TutorOnboardingReview } from "./tutorOnboarding";
 
 function titleCase(value: string) {
@@ -35,7 +36,9 @@ export function TutorReviewStep({ canSubmit, confirmed, editable, onConfirmedCha
 }) {
   const personal = review.personal_details;
   const identity = review.identification;
-  const identityDocuments = review.documents;
+  const identityDocuments = review.documents.filter(
+    (document) => document.purpose === "identification",
+  );
   const compensation = review.compensation;
   const location = review.location;
   const mapUrl = location
@@ -55,24 +58,19 @@ export function TutorReviewStep({ canSubmit, confirmed, editable, onConfirmedCha
 
         <ReviewCard editable={editable} icon={FileCheck2} onEdit={() => onEdit("identity")} title="Identification verification">
           <dl className="grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2">
-            {uk ? <><ReviewField label="Employer share code" value={identity?.employer_share_code} /><ReviewField label="DBS certificate number" value={identity?.dbs_certificate_number} /></> : null}
+            {uk ? <><ReviewField label="Right to work share code" value={identity?.employer_share_code} /><ReviewField label="DBS certificate number" value={identity?.dbs_certificate_number} /></> : null}
             <ReviewField label="Country" value={identity?.country ? titleCase(identity.country) : undefined} />
             <ReviewField label="ID type" value={identity?.id_type ? titleCase(identity.id_type) : undefined} />
             <ReviewField label="Verification status" value={identity?.status ? titleCase(identity.status) : "Not available"} />
             <div className="sm:col-span-2">
               <dt className="text-xs font-medium text-[#7d879d]">ID documents</dt>
               {identityDocuments.length ? (
-                <dd className="mt-1.5 flex flex-wrap gap-x-4 gap-y-2">
+                <dd className="mt-2 grid gap-3 sm:grid-cols-2">
                   {identityDocuments.map((document) => (
-                    <a
-                      className="break-all text-sm font-semibold text-brand-accent hover:underline"
-                      href={document.document_url}
+                    <TutorDocumentLink
+                      document={document}
                       key={document.document_url}
-                      rel="noreferrer"
-                      target="_blank"
-                    >
-                      {document.file_name}
-                    </a>
+                    />
                   ))}
                 </dd>
               ) : <dd className="mt-1 text-sm font-semibold text-[#35405a]">Not available</dd>}

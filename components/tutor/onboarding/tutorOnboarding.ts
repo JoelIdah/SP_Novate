@@ -156,14 +156,14 @@ export async function saveTutorCompensation(input: TutorCompensationInput) {
     body: JSON.stringify(input),
   });
   if (!isRecord(payload.data) || payload.data.country !== input.country) {
-    throw new Error("We couldnâ€™t process your compensation details. Please try again.");
+    throw new Error("We couldn’t process your compensation details. Please try again.");
   }
   if (
     input.country === "uk" &&
     (typeof payload.data.stripe_onboarding_url !== "string" ||
       !payload.data.stripe_onboarding_url)
   ) {
-    throw new Error("We couldnâ€™t start Stripe onboarding. Please try again.");
+    throw new Error("We couldn’t start Stripe onboarding. Please try again.");
   }
   return payload.data as TutorCompensationResult;
 }

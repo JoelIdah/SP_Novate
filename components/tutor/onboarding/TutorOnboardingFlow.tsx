@@ -15,7 +15,7 @@ import {
   type CountryCode,
 } from "libphonenumber-js";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { setAuthSession, useSessionUser } from "../../auth/authSession";
 import { fetchAuthenticatedProfile } from "../../auth/profile";
@@ -24,6 +24,7 @@ import { StepTwoAddressConfirm } from "../../signup/profile-setup/StepTwoAddress
 import { StepTwoLocationPrompt } from "../../signup/profile-setup/StepTwoLocationPrompt";
 import { Notice } from "../../ui/Notice";
 import { SelectMenu } from "../../ui/SelectMenu";
+import { TutorDocumentLink, TutorLocalDocumentLink } from "./TutorDocumentLink";
 import { TutorReviewStep } from "./TutorReviewStep";
 import { useTutorLocationSetup } from "./useTutorLocationSetup";
 import {
@@ -87,6 +88,14 @@ const identificationTypeValues: Record<string, string> = {
 };
 const acceptedIdentityFileName = /\.(?:jpe?g|png|webp|pdf)$/i;
 
+function normalizeRightToWorkShareCode(value: string) {
+  return value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 9);
+}
+
+function formatRightToWorkShareCode(value: string) {
+  return normalizeRightToWorkShareCode(value).match(/.{1,3}/g)?.join("-") ?? "";
+}
+
 function formatDateForBackend(value: string) {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
   return match ? `${match[3]}-${match[2]}-${match[1]}` : value;
@@ -97,6 +106,15 @@ function formatDateForInput(value?: string) {
   if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
   const match = /^(\d{2})-(\d{2})-(\d{4})$/.exec(value);
   return match ? `${match[3]}-${match[2]}-${match[1]}` : "";
+}
+
+function getMaximumTutorDob() {
+  const cutoff = new Date();
+  cutoff.setFullYear(cutoff.getFullYear() - 18);
+  const year = cutoff.getFullYear();
+  const month = String(cutoff.getMonth() + 1).padStart(2, "0");
+  const day = String(cutoff.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 function FieldLabel({
@@ -275,19 +293,27 @@ export default function TutorOnboardingFlow() {
   const [compensationSaveError, setCompensationSaveError] = useState("");
   const [submittedCompensationSignature, setSubmittedCompensationSignature] =
     useState("");
+  const hasLoadedTutorPersonalDetails = useRef(false);
   const firstName = personalForm.firstName ?? sessionUser?.firstName ?? "";
   const lastName = personalForm.lastName ?? sessionUser?.lastName ?? "";
   const email = personalForm.email ?? sessionUser?.email ?? "";
+  const maximumTutorDob = useMemo(() => getMaximumTutorDob(), []);
   const parsedPhone = parsePhoneNumberFromString(
     personalForm.phoneNumber.trim(),
     phoneCountry,
   );
   const phoneValid = parsedPhone?.isValid() ?? false;
+  const phoneCountryMismatch = Boolean(
+    personalForm.country && phoneCountry !== personalForm.country,
+  );
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+  const dobValid = Boolean(
+    personalForm.dateOfBirth && personalForm.dateOfBirth <= maximumTutorDob,
+  );
   const personalComplete = Boolean(
     firstName.trim() &&
     lastName.trim() &&
-    personalForm.dateOfBirth &&
+    dobValid &&
     emailValid &&
     phoneValid &&
     personalForm.country &&
@@ -315,19 +341,36 @@ export default function TutorOnboardingFlow() {
     (document) => document.purpose === "identification",
   ) ?? [];
   const hasIdentityDocuments = idFiles.length > 0 || savedIdentityDocuments.length > 0;
-  const identityComplete = Boolean(
-    idType &&
-    hasIdentityDocuments &&
-    idFiles.length <= 5 &&
-    (personalForm.country !== "GB" || (shareCode.trim() && dbsNumber.trim())),
-  );
   const identitySignature = JSON.stringify({
     country: personalForm.country,
     dbsNumber: dbsNumber.trim(),
     files: idFiles.map((file) => [file.name, file.size, file.lastModified]),
     idType,
-    shareCode: shareCode.trim(),
+    shareCode: normalizeRightToWorkShareCode(shareCode),
   });
+  const savedIdentitySignature = JSON.stringify({
+    country: personalForm.country,
+    dbsNumber: dbsNumber.trim(),
+    files: [],
+    idType,
+    shareCode: normalizeRightToWorkShareCode(shareCode),
+  });
+  const editingSavedIdentity = Boolean(
+    submittedIdentitySignature && submittedIdentitySignature !== identitySignature,
+  );
+  const identityDocumentRequired =
+    !hasIdentityDocuments ||
+    (savedIdentityDocuments.length > 0 && editingSavedIdentity && idFiles.length === 0);
+  const dbsNumberValid = /^\d{12}$/.test(dbsNumber.trim());
+  const shareCodeValid = /^W[A-Z0-9]{8}$/.test(
+    normalizeRightToWorkShareCode(shareCode),
+  );
+  const identityComplete = Boolean(
+    idType &&
+    !identityDocumentRequired &&
+    idFiles.length <= 5 &&
+    (personalForm.country !== "GB" || (shareCodeValid && dbsNumberValid)),
+  );
   const compensationComplete =
     personalForm.country === "GB"
       ? true
@@ -355,6 +398,8 @@ export default function TutorOnboardingFlow() {
     setCompleted((current) =>
       current.includes(item) ? current : [...current, item],
     );
+  const unmarkCompleted = (...items: SetupStage[]) =>
+    setCompleted((current) => current.filter((item) => !items.includes(item)));
   const goNext = (current: SetupStage, next: SetupStage) => {
     markCompleted(current);
     if (returnToReview) {
@@ -390,6 +435,7 @@ export default function TutorOnboardingFlow() {
       setAccountResolveError("");
       setCompensationSaveError("");
       setSubmittedCompensationSignature("");
+      unmarkCompleted("identity", "compensation");
     }
     updatePersonal("country", country);
   };
@@ -403,18 +449,53 @@ export default function TutorOnboardingFlow() {
   const loadSavedLocation = location.loadSavedLocation;
 
   useEffect(() => {
+    let active = true;
+
+    void fetchAuthenticatedProfile()
+      .then((profile) => {
+        if (!active) return;
+        setAuthSession(profile);
+        if (hasLoadedTutorPersonalDetails.current) return;
+
+        const profilePhone = profile.phone_number
+          ? parsePhoneNumberFromString(profile.phone_number)
+          : undefined;
+        if (profilePhone?.country) setPhoneCountry(profilePhone.country);
+
+        setPersonalForm((current) => ({
+          ...current,
+          firstName: current.firstName ?? profile.first_name,
+          lastName: current.lastName ?? profile.last_name,
+          otherName: current.otherName || profile.other_names || "",
+          email: current.email ?? profile.email,
+          phoneNumber:
+            current.phoneNumber ||
+            profilePhone?.nationalNumber ||
+            profile.phone_number ||
+            "",
+          occupation: current.occupation || profile.occupation || "",
+          qualification:
+            current.qualification || profile.qualifications?.join(", ") || "",
+        }));
+      })
+      .catch(() => undefined);
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
     if (stage !== "overview" && stage !== "review") return;
     const controller = new AbortController();
     getTutorOnboardingReview(controller.signal)
       .then((data) => {
+        hasLoadedTutorPersonalDetails.current = Boolean(data.personal_details);
         setReviewData(data);
         setReviewError("");
+        const savedSetupCountry = data.identification?.country ?? data.compensation?.country;
         const savedCountry: OperatingCountry =
-          data.identification?.country === "nigeria" || data.compensation?.country === "nigeria"
-            ? "NG"
-            : data.identification?.country === "uk" || data.compensation?.country === "uk"
-              ? "GB"
-              : "";
+          savedSetupCountry === "nigeria" ? "NG" : savedSetupCountry === "uk" ? "GB" : "";
 
         if (data.personal_details) {
           const savedPhone = parsePhoneNumberFromString(data.personal_details.phone_number);
@@ -439,14 +520,14 @@ export default function TutorOnboardingFlow() {
           const savedIdType = Object.entries(identificationTypeValues)
             .find(([, value]) => value === data.identification?.id_type)?.[0] ?? data.identification.id_type;
           setIdType(savedIdType);
-          setShareCode(data.identification.employer_share_code ?? "");
+          setShareCode(formatRightToWorkShareCode(data.identification.employer_share_code ?? ""));
           setDbsNumber(data.identification.dbs_certificate_number ?? "");
           setSubmittedIdentitySignature(JSON.stringify({
             country: savedCountry,
             dbsNumber: data.identification.dbs_certificate_number ?? "",
             files: [],
             idType: savedIdType,
-            shareCode: data.identification.employer_share_code ?? "",
+            shareCode: normalizeRightToWorkShareCode(data.identification.employer_share_code ?? ""),
           }));
         }
 
@@ -468,9 +549,25 @@ export default function TutorOnboardingFlow() {
           loadSavedLocation(data.location);
         }
 
+        const missingStepByStage: Record<SetupStage, string> = {
+          personal: "personal_details",
+          identity: "identification",
+          compensation: "compensation",
+          location: "location",
+        };
+        const stepHasSavedData: Record<SetupStage, boolean> = {
+          personal: Boolean(data.personal_details),
+          identity: Boolean(data.identification && data.documents.some((document) => document.purpose === "identification")),
+          compensation: Boolean(
+            data.compensation &&
+            ((savedCountry === "NG" && data.compensation.country === "nigeria") ||
+              (savedCountry === "GB" && data.compensation.country === "uk")),
+          ),
+          location: Boolean(data.location),
+        };
         setCompleted(
           stages
-            .filter((item) => !data.missing_steps.includes(item.id === "personal" ? "personal_details" : item.id))
+            .filter((item) => stepHasSavedData[item.id] && !data.missing_steps.includes(missingStepByStage[item.id]))
             .map((item) => item.id),
         );
       })
@@ -558,11 +655,12 @@ export default function TutorOnboardingFlow() {
         id_type: identificationTypeValues[idType] ?? idType.toLowerCase().replace(/[^a-z0-9]+/g, "_"),
         documents: idFiles,
         ...(personalForm.country === "GB" ? {
-          employer_share_code: shareCode.trim(),
+          employer_share_code: normalizeRightToWorkShareCode(shareCode),
           dbs_certificate_number: dbsNumber.trim(),
         } : {}),
       });
-      setSubmittedIdentitySignature(identitySignature);
+      setIdFiles([]);
+      setSubmittedIdentitySignature(savedIdentitySignature);
       advanceFromIdentity();
     } catch (caught) {
       setIdentitySaveError(
@@ -618,6 +716,7 @@ export default function TutorOnboardingFlow() {
     setVerifiedAccountSignature("");
     setAccountResolveError("");
     setCompensationSaveError("");
+    unmarkCompleted("compensation");
   };
   const changeNigerianAccountNumber = (value: string) => {
     setCompensation((current) => ({
@@ -628,6 +727,7 @@ export default function TutorOnboardingFlow() {
     setVerifiedAccountSignature("");
     setAccountResolveError("");
     setCompensationSaveError("");
+    unmarkCompleted("compensation");
   };
   const resolveNigerianAccount = async () => {
     const accountNumber = compensation.accountNumber.replace(/\D/g, "");
@@ -667,8 +767,8 @@ export default function TutorOnboardingFlow() {
         personalForm.country === "GB"
           ? {
               country: "uk",
-              refresh_url: `${window.location.origin}/tutor/onboarding`,
-              return_url: `${window.location.origin}/tutor/onboarding`,
+              refresh_url: `${window.location.origin}/tutor/onboarding?stripe=refresh`,
+              return_url: `${window.location.origin}/tutor/onboarding?stripe=return`,
             }
           : {
               account_number: compensation.accountNumber,
@@ -683,10 +783,13 @@ export default function TutorOnboardingFlow() {
       }
       setSubmittedCompensationSignature(compensationSignature);
     } catch (caught) {
+      const message = caught instanceof Error
+        ? caught.message
+        : "Could not save compensation details.";
       setCompensationSaveError(
-        caught instanceof Error
-          ? caught.message
-          : "Could not save compensation details.",
+        personalForm.country === "NG" && /return_url|refresh_url|stripe onboarding/i.test(message)
+          ? "Your saved payout location is being treated as UK, but this form is using Nigeria. Update and confirm your location before trying payout setup again."
+          : message,
       );
       return;
     } finally {
@@ -850,9 +953,10 @@ export default function TutorOnboardingFlow() {
                       <FieldLabel>Date of birth</FieldLabel>
                       <input
                         aria-invalid={
-                          validationVisible && !personalForm.dateOfBirth
+                          validationVisible && !dobValid
                         }
                         className={fieldClassName}
+                        max={maximumTutorDob}
                         onChange={(e) =>
                           updatePersonal("dateOfBirth", e.target.value)
                         }
@@ -860,9 +964,11 @@ export default function TutorOnboardingFlow() {
                         value={personalForm.dateOfBirth}
                       />
                       <InlineFieldError
-                        show={validationVisible && !personalForm.dateOfBirth}
+                        show={validationVisible && !dobValid}
                       >
-                        Enter your date of birth.
+                        {personalForm.dateOfBirth
+                          ? "Tutors must be at least 18 years old."
+                          : "Enter your date of birth."}
                       </InlineFieldError>
                     </label>
                     <label>
@@ -917,6 +1023,11 @@ export default function TutorOnboardingFlow() {
                         Enter a valid phone number for the selected country
                         code.
                       </InlineFieldError>
+                      {phoneValid && phoneCountryMismatch ? (
+                        <span className="mt-1 block text-xs font-medium text-[#9a6419]">
+                          This phone code does not match your tutoring country. You can continue if the number is correct.
+                        </span>
+                      ) : null}
                     </label>
                     <label className="sm:col-span-2">
                       <FieldLabel>
@@ -971,7 +1082,7 @@ export default function TutorOnboardingFlow() {
                         onChange={(e) =>
                           updatePersonal("qualification", e.target.value)
                         }
-                        placeholder="Separate multiple qualifications with commas"
+                        placeholder="e.g. BSc, MSc, PhD"
                         value={personalForm.qualification}
                       />
                       <InlineFieldError
@@ -1019,63 +1130,83 @@ export default function TutorOnboardingFlow() {
                   <h1 className="text-xl font-bold text-[#252c3c]">
                     Identification verification
                   </h1>
+                  <p className="mt-1 text-sm leading-6 text-[#7d879d]">
+                    Add the details and supporting documents needed to verify your identity.
+                  </p>
                   {personalForm.country === "GB" ? (
-                    <div className="mt-5 grid gap-4">
+                    <section className="mt-5 rounded-2xl border border-[#e0e4ed] bg-[#f8f9fc] p-4 sm:p-5">
+                      <div className="mb-4">
+                        <h2 className="text-sm font-bold text-[#35405a]">UK verification</h2>
+                        <p className="mt-1 text-xs leading-relaxed text-[#7d879d]">Provide your right to work and background-check references.</p>
+                      </div>
+                      <div className="grid gap-4 sm:grid-cols-2">
                       <label>
-                        <span className="mb-2 block border-b border-[#e8ebf2] pb-1 text-xs font-semibold text-[#6f778c]">
-                          Right to work (UK)
-                        </span>
-                        <FieldLabel>Employer share code</FieldLabel>
+                        <FieldLabel>Right to work share code</FieldLabel>
                         <input
                           aria-invalid={
-                            identityValidationVisible && !shareCode.trim()
+                            identityValidationVisible && !shareCodeValid
                           }
+                          autoComplete="off"
                           className={fieldClassName}
-                          onChange={(e) => setShareCode(e.target.value)}
-                          placeholder="Enter employer share code"
+                          autoCapitalize="characters"
+                          maxLength={11}
+                          onChange={(e) => setShareCode(formatRightToWorkShareCode(e.target.value))}
+                          placeholder="For example, W12-345-678"
+                          spellCheck={false}
                           value={shareCode}
                         />
                         <InlineFieldError
-                          show={identityValidationVisible && !shareCode.trim()}
+                          show={identityValidationVisible && !shareCodeValid}
                         >
-                          Enter your employer share code.
+                          Enter a 9-character right to work share code beginning with W.
                         </InlineFieldError>
                         <span className="mt-1 block text-xs text-[#8a93a7]">
-                          Generate your share code from the UK government
-                          website to confirm your right to work.
+                          Use a share code generated for an employer to check your
+                          right to work, not a right to rent share code. {" "}
+                          <a
+                            className="font-semibold text-brand-accent underline underline-offset-2"
+                            href="https://www.gov.uk/prove-right-to-work/get-a-share-code-online"
+                            rel="noreferrer"
+                            target="_blank"
+                          >
+                            Get a share code on GOV.UK
+                          </a>
+                          .
                         </span>
                       </label>
                       <label>
-                        <span className="mb-2 block border-b border-[#e8ebf2] pb-1 text-xs font-semibold text-[#6f778c]">
-                          Background check
-                        </span>
                         <FieldLabel>DBS certificate number</FieldLabel>
                         <input
                           aria-invalid={
-                            identityValidationVisible && !dbsNumber.trim()
+                            identityValidationVisible && !dbsNumberValid
                           }
                           className={fieldClassName}
-                          onChange={(e) => setDbsNumber(e.target.value)}
-                          placeholder="Enter DBS certificate number"
+                          inputMode="numeric"
+                          maxLength={12}
+                          onChange={(e) => setDbsNumber(e.target.value.replace(/\D/g, "").slice(0, 12))}
+                          placeholder="Enter the 12-digit certificate number"
                           value={dbsNumber}
                         />
                         <InlineFieldError
-                          show={identityValidationVisible && !dbsNumber.trim()}
+                          show={identityValidationVisible && !dbsNumberValid}
                         >
-                          Enter your DBS certificate number.
+                          Enter the 12-digit number shown on your DBS certificate.
                         </InlineFieldError>
                         <span className="mt-1 block text-xs text-[#8a93a7]">
-                          Provide your Disclosure and Barring Service (DBS)
-                          certificate number for background verification.
+                          This is the certificate number at the top right of your
+                          Disclosure and Barring Service certificate.
                         </span>
                       </label>
-                    </div>
+                      </div>
+                    </section>
                   ) : null}
-                  <div className="mt-5 grid gap-4">
+                  <section className="mt-4 rounded-2xl border border-[#e0e4ed] bg-white p-4 shadow-[0_5px_18px_rgba(31,40,74,0.04)] sm:p-5">
+                    <div className="mb-4">
+                      <h2 className="text-sm font-bold text-[#35405a]">Identity document</h2>
+                      <p className="mt-1 text-xs leading-relaxed text-[#7d879d]">Select an ID type, then attach up to five supporting files.</p>
+                    </div>
+                    <div className="grid gap-4">
                     <label>
-                      <span className="mb-2 block border-b border-[#e8ebf2] pb-1 text-xs font-semibold text-[#6f778c]">
-                        Identification type
-                      </span>
                       <FieldLabel>ID type</FieldLabel>
                       <SelectField
                         ariaInvalid={identityValidationVisible && !idType}
@@ -1101,7 +1232,12 @@ export default function TutorOnboardingFlow() {
                     <label>
                       <FieldLabel>Upload ID documents</FieldLabel>
                       <span
-                        className={`mt-1.5 flex min-h-28 cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed bg-[#fbfcff] ${identityValidationVisible && !hasIdentityDocuments ? "border-brand-danger" : "border-[#cfd5e2]"}`}
+                        className={`mt-1.5 flex min-h-28 cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed bg-[#fbfcff] ${identityValidationVisible && identityDocumentRequired ? "border-brand-danger" : "border-[#cfd5e2]"}`}
+                        onDragOver={(event) => event.preventDefault()}
+                        onDrop={(event) => {
+                          event.preventDefault();
+                          handleFiles(event.dataTransfer.files);
+                        }}
                       >
                         <UploadCloud className="h-6 w-6 text-[#5652d2]" />
                         <span className="mt-2 text-sm font-semibold text-[#5652d2]">
@@ -1109,8 +1245,8 @@ export default function TutorOnboardingFlow() {
                         </span>
                         <span className="text-xs text-[#9299a9]">
                           {savedIdentityDocuments.length
-                            ? "Add replacement documents if needed"
-                            : "Supported formats: PDF, JPG, PNG, and WEBP"}
+                            ? "Add more supporting documents if needed"
+                            : "PDF, JPG, PNG or WEBP · Up to 5 files"}
                         </span>
                         <input
                           accept=".pdf,.jpg,.jpeg,.png,.webp"
@@ -1124,9 +1260,11 @@ export default function TutorOnboardingFlow() {
                         />
                       </span>
                       <InlineFieldError
-                        show={identityValidationVisible && !hasIdentityDocuments}
+                        show={identityValidationVisible && identityDocumentRequired}
                       >
-                        Upload at least one identity document.
+                        {savedIdentityDocuments.length
+                          ? "Upload at least one supporting document when changing your identification details."
+                          : "Upload at least one identity document."}
                       </InlineFieldError>
                     </label>
                     {fileError ? (
@@ -1134,43 +1272,40 @@ export default function TutorOnboardingFlow() {
                     ) : null}
                     {savedIdentityDocuments.length ? (
                       <div className="space-y-2">
-                        <p className="text-xs font-semibold text-[#6f778c]">Previously uploaded documents</p>
-                        {savedIdentityDocuments.map((document) => (
-                          <div className="rounded-xl border border-[#dfe3ec] bg-[#f7f8fb] px-4 py-3 text-sm" key={document.document_url}>
-                            {document.file_name}
-                          </div>
-                        ))}
+                        <p className="text-xs font-semibold text-[#6f778c]">Previously uploaded documents ({savedIdentityDocuments.length})</p>
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          {savedIdentityDocuments.map((document) => (
+                            <TutorDocumentLink document={document} key={document.document_url} />
+                          ))}
+                        </div>
+                        <p className="text-xs leading-relaxed text-[#8a93a7]">
+                          New uploads are added to these documents; they do not replace them.
+                        </p>
                       </div>
                     ) : null}
                     {idFiles.length ? (
                       <div className="space-y-2">
+                        <p className="text-xs font-semibold text-[#6f778c]">Ready to upload ({idFiles.length}/5)</p>
+                        <div className="grid gap-3 sm:grid-cols-2">
                         {idFiles.map((file) => (
-                          <div
-                            className="flex min-w-0 items-center gap-3 rounded-xl border border-[#d9d7fb] bg-[#faf9ff] px-4 py-3 text-sm"
+                          <TutorLocalDocumentLink
+                            file={file}
                             key={`${file.name}-${file.size}-${file.lastModified}`}
-                          >
-                            <span className="min-w-0 flex-1 truncate">
-                              {file.name}
-                            </span>
-                            <button
-                              className="shrink-0 font-semibold text-brand-danger"
-                              onClick={() => {
+                            onRemove={() => {
                                 setIdFiles((current) =>
                                   current.filter(
                                     (candidate) => candidate !== file,
                                   ),
                                 );
                                 setIdentitySaveError("");
-                              }}
-                              type="button"
-                            >
-                              Remove
-                            </button>
-                          </div>
+                            }}
+                          />
                         ))}
+                        </div>
                       </div>
                     ) : null}
-                  </div>
+                    </div>
+                  </section>
                   {identitySaveError ? (
                     <Notice className="mt-3 text-sm" role="alert">
                       {identitySaveError}
@@ -1368,26 +1503,28 @@ export default function TutorOnboardingFlow() {
                   {submissionMessage}
                 </span>
               ) : null}
-              <button
-                className="h-11 shrink-0 rounded-full border border-[#d8dde8] bg-white px-4 text-sm font-semibold sm:px-5"
-                onClick={() => {
-                  if (returnToReview && stage !== "review") {
-                    setReturnToReview(false);
-                    setStage("review");
-                  } else if (stage === "review") setStage("location");
-                  else if (stage === "personal")
-                    router.push("/students/dashboard");
-                  else if (stage === "identity") setStage("personal");
-                  else if (stage === "compensation") setStage("identity");
-                  else if (stage === "location") {
-                    if (location.view === "search") location.goBack();
-                    else setStage("compensation");
-                  }
-                }}
-                type="button"
-              >
-                {stage === "personal" ? "Cancel" : "Back"}
-              </button>
+              {stage !== "review" || (!applicationPending && !applicationApproved) ? (
+                <button
+                  className="h-11 shrink-0 rounded-full border border-[#d8dde8] bg-white px-4 text-sm font-semibold sm:px-5"
+                  onClick={() => {
+                    if (returnToReview && stage !== "review") {
+                      setReturnToReview(false);
+                      setStage("review");
+                    } else if (stage === "review") setStage("location");
+                    else if (stage === "personal")
+                      router.push("/students/dashboard");
+                    else if (stage === "identity") setStage("personal");
+                    else if (stage === "compensation") setStage("identity");
+                    else if (stage === "location") {
+                      if (location.view === "search") location.goBack();
+                      else setStage("compensation");
+                    }
+                  }}
+                  type="button"
+                >
+                  {stage === "personal" ? "Cancel" : "Back"}
+                </button>
+              ) : null}
               {stage === "personal" ? (
                 <button
                   className="h-11 rounded-full bg-brand-primary px-6 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-[#b8b6cf]"
@@ -1422,21 +1559,7 @@ export default function TutorOnboardingFlow() {
                       : "Continue"}
                 </button>
               ) : stage === "location" ? (
-                location.view === "prompt" ? (
-                  <>
-                    <button
-                      className="h-11 min-w-0 rounded-full border border-[#d8dde8] px-3 text-sm font-semibold sm:px-5"
-                      onClick={() => {
-                        markCompleted("location");
-                        setStage("review");
-                        setReturnToReview(false);
-                      }}
-                      type="button"
-                    >
-                      Skip
-                    </button>
-                  </>
-                ) : location.view === "search" ? null : (
+                location.view === "prompt" ? null : location.view === "search" ? null : (
                   <>
                     <button
                       className="h-11 min-w-0 rounded-full bg-brand-primary px-3 text-sm font-semibold text-white disabled:bg-[#b8b6cf] sm:px-5"

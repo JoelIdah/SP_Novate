@@ -1263,15 +1263,11 @@ export default function TutorOnboardingFlow() {
                   <p className="mt-1 text-sm leading-6 text-[#7d879d]">
                     Add the details and supporting documents needed to verify your identity.
                   </p>
-                  {personalForm.country ? (
-                    <p className="mt-2 text-xs font-semibold text-[#5652c9]">
-                      Requirements for {personalForm.country === "GB" ? "the United Kingdom" : "Nigeria"}, based on your confirmed location.
-                    </p>
-                  ) : (
+                  {!personalForm.country ? (
                     <Notice className="mt-3 text-sm" role="alert">
                       Confirm a supported location before completing identity verification.
                     </Notice>
-                  )}
+                  ) : null}
                   {personalForm.country === "GB" ? (
                     <section className="mt-5 rounded-2xl border border-[#e0e4ed] bg-[#f8f9fc] p-4 sm:p-5">
                       <div className="mb-4">
@@ -1456,15 +1452,11 @@ export default function TutorOnboardingFlow() {
                   <h1 className="text-xl font-bold text-[#252c3c]">
                     Payout setup
                   </h1>
-                  {personalForm.country ? (
-                    <p className="mt-2 text-xs font-semibold text-[#5652c9]">
-                      Payout method for {personalForm.country === "GB" ? "the United Kingdom" : "Nigeria"}, based on your confirmed location.
-                    </p>
-                  ) : (
+                  {!personalForm.country ? (
                     <Notice className="mt-3 text-sm" role="alert">
                       Confirm a supported location before setting up payouts.
                     </Notice>
-                  )}
+                  ) : null}
                   <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
                     {personalForm.country === "GB" ? (
                       <div className="rounded-xl border border-[#dfe3ec] bg-[#f7f8fb] p-4 sm:col-span-2">

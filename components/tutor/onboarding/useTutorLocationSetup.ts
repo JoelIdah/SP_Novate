@@ -173,7 +173,7 @@ export function useTutorLocationSetup(onConfirmed: (summary: TutorLocationSummar
       stopSearch();
       onConfirmed({ address, coordinates });
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Could not save your tutor location.");
+      setError(caught instanceof Error ? caught.message : "Could not save your location.");
     } finally {
       setSaving(false);
     }

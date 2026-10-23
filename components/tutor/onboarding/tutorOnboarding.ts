@@ -157,17 +157,49 @@ export async function saveTutorCompensation(input: TutorCompensationInput) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
   });
-  if (!isRecord(payload.data) || payload.data.country !== input.country) {
+  if (!isRecord(payload.data)) {
     throw new Error("We couldn’t process your compensation details. Please try again.");
   }
-  if (
-    input.country === "uk" &&
-    (typeof payload.data.stripe_onboarding_url !== "string" ||
-      !payload.data.stripe_onboarding_url)
-  ) {
-    throw new Error("We couldn’t start Stripe onboarding. Please try again.");
+
+  if (input.country === "uk") {
+    const isUkResponse =
+      payload.data.country === "uk" ||
+      payload.data.country_code === "GB" ||
+      payload.data.provider === "stripe";
+    const onboardingUrl = [
+      payload.data.stripe_onboarding_url,
+      payload.data.onboarding_url,
+      payload.data.url,
+    ].find((value): value is string => typeof value === "string" && value.length > 0);
+
+    if (!isUkResponse || !onboardingUrl) {
+      throw new Error("We couldn’t start Stripe onboarding. Please try again.");
+    }
+
+    return {
+      country: "uk",
+      stripe_onboarding_url: onboardingUrl,
+      stripe_payouts_enabled: payload.data.stripe_payouts_enabled === true,
+    } satisfies TutorCompensationResult;
   }
-  return payload.data as TutorCompensationResult;
+
+  const isNigeriaResponse =
+    payload.data.country === "nigeria" ||
+    payload.data.country_code === "NG" ||
+    payload.data.provider === "paystack";
+  if (!isNigeriaResponse) {
+    throw new Error("We couldn’t process your compensation details. Please try again.");
+  }
+
+  return {
+    country: "nigeria",
+    account_name:
+      typeof payload.data.account_name === "string" ? payload.data.account_name : "",
+    account_number:
+      typeof payload.data.account_number === "string" ? payload.data.account_number : input.account_number,
+    bank_name:
+      typeof payload.data.bank_name === "string" ? payload.data.bank_name : input.bank_name,
+  } satisfies TutorCompensationResult;
 }
 
 export async function getTutorOnboardingReview(signal?: AbortSignal) {

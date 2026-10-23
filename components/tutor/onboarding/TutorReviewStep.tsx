@@ -45,9 +45,7 @@ export function TutorReviewStep({ canSubmit, confirmed, editable, onConfirmedCha
   const mapUrl = location
     ? `/api/places/map?latitude=${encodeURIComponent(location.latitude)}&longitude=${encodeURIComponent(location.longitude)}`
     : "";
-  const uk = review.location?.country_code?.toUpperCase() === "GB" ||
-    identity?.country === "uk" ||
-    compensation?.country === "uk";
+  const uk = review.location?.country_code?.toUpperCase() === "GB";
 
   return (
     <section className="mx-auto w-full max-w-[75rem] pb-6">

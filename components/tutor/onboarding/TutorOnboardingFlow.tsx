@@ -2,8 +2,11 @@
 
 import {
   BadgeCheck,
+  Clock3,
   CircleDollarSign,
   FileCheck2,
+  Globe2,
+  LoaderCircle,
   MapPin,
   UploadCloud,
   UserRound,
@@ -45,6 +48,7 @@ type Stage =
   "overview" | "personal" | "identity" | "compensation" | "location" | "review";
 type SetupStage = Exclude<Stage, "overview" | "review">;
 type OperatingCountry = "NG" | "GB" | "";
+type StripeReturnOutcome = "" | "ready" | "received";
 type PersonalForm = {
   firstName: string | null;
   lastName: string | null;
@@ -120,11 +124,41 @@ function getMaximumTutorDob() {
 function getOperatingCountry(review: TutorOnboardingReview): OperatingCountry {
   const locationCountry = review.location?.country_code?.trim().toUpperCase();
   if (locationCountry === "NG" || locationCountry === "GB") return locationCountry;
-
-  const savedCountry = review.identification?.country ?? review.compensation?.country;
-  if (savedCountry === "nigeria") return "NG";
-  if (savedCountry === "uk") return "GB";
   return "";
+}
+
+function getSavedCompensationCountry(
+  compensation: TutorOnboardingReview["compensation"],
+): OperatingCountry {
+  if (!compensation) return "";
+
+  const countryCode = compensation.country_code?.trim().toUpperCase();
+  const namedCountry = compensation.country?.trim().toLowerCase();
+  const countryFromCode = countryCode === "NG"
+    ? "NG"
+    : countryCode === "GB"
+      ? "GB"
+      : "";
+  const countryFromName = namedCountry === "nigeria"
+    ? "NG"
+    : namedCountry === "uk"
+      ? "GB"
+      : "";
+
+  if (countryFromCode && countryFromName && countryFromCode !== countryFromName) {
+    return "";
+  }
+  return countryFromCode || countryFromName;
+}
+
+function clearStripeCallbackParameter() {
+  const cleanUrl = new URL(window.location.href);
+  cleanUrl.searchParams.delete("stripe");
+  window.history.replaceState(
+    window.history.state,
+    "",
+    `${cleanUrl.pathname}${cleanUrl.search}${cleanUrl.hash}`,
+  );
 }
 
 function FieldLabel({
@@ -257,7 +291,14 @@ export default function TutorOnboardingFlow() {
   const [reviewData, setReviewData] = useState<TutorOnboardingReview | null>(null);
   const [reviewLoading, setReviewLoading] = useState(true);
   const [reviewError, setReviewError] = useState("");
+  const [stripeStatusChecking, setStripeStatusChecking] = useState(false);
+  const [stripeStatusPending, setStripeStatusPending] = useState(false);
+  const [stripeReturnOutcome, setStripeReturnOutcome] =
+    useState<StripeReturnOutcome>("");
+  const [stripeReturnAcknowledged, setStripeReturnAcknowledged] =
+    useState(false);
   const [locationCountryError, setLocationCountryError] = useState("");
+  const [unsupportedTutorLocation, setUnsupportedTutorLocation] = useState(false);
   const [reviewRefreshKey, setReviewRefreshKey] = useState(0);
   const [consentSubmitting, setConsentSubmitting] = useState(false);
   const [applicationSubmitted, setApplicationSubmitted] = useState(false);
@@ -465,16 +506,19 @@ export default function TutorOnboardingFlow() {
     setReviewLoading(true);
     setReviewError("");
     setLocationCountryError("");
+    setUnsupportedTutorLocation(false);
     void getTutorOnboardingReview()
       .then((data) => {
         setReviewData(data);
         const verifiedCountry = getOperatingCountry(data);
         if (!verifiedCountry) {
+          setUnsupportedTutorLocation(true);
           setLocationCountryError(
-            "Tutor onboarding is currently available only in Nigeria and the United Kingdom. Contact support if your location should be supported.",
+            "Tutor sign-up is coming soon to your country.",
           );
           return;
         }
+        setUnsupportedTutorLocation(false);
         const countryChanged = Boolean(
           personalForm.country && personalForm.country !== verifiedCountry,
         );
@@ -503,23 +547,90 @@ export default function TutorOnboardingFlow() {
     const stripeAction = new URLSearchParams(window.location.search).get("stripe");
     if (stripeAction !== "return" && stripeAction !== "refresh") return;
     hasHandledStripeCallback.current = true;
+    let cancelled = false;
+    let retryTimer: number | undefined;
+    const callbackController = new AbortController();
 
     const callbackTimer = window.setTimeout(() => {
       if (stripeAction === "return") {
         setStage("review");
         setReviewLoading(true);
+        setStripeStatusChecking(true);
+        setStripeStatusPending(false);
+        setStripeReturnOutcome("");
+        setStripeReturnAcknowledged(false);
+        void (async () => {
+          try {
+            for (let attempt = 0; attempt < 6; attempt += 1) {
+              const data = await getTutorOnboardingReview(
+                callbackController.signal,
+              );
+              if (cancelled) return;
+              setReviewData(data);
+              setReviewError("");
+
+              const verifiedCountry = getOperatingCountry(data);
+              if (verifiedCountry) {
+                setPersonalForm((current) => ({
+                  ...current,
+                  country: verifiedCountry,
+                }));
+              }
+
+              const stripeCompensationReady =
+                verifiedCountry === "GB" &&
+                getSavedCompensationCountry(data.compensation) === "GB" &&
+                !data.missing_steps.includes("compensation");
+              if (stripeCompensationReady) {
+                setStripeStatusPending(false);
+                setStripeReturnOutcome(
+                  data.compensation?.stripe_payouts_enabled
+                    ? "ready"
+                    : "received",
+                );
+                clearStripeCallbackParameter();
+                setReviewRefreshKey((current) => current + 1);
+                return;
+              }
+
+              if (attempt < 5) {
+                await new Promise<void>((resolve) => {
+                  retryTimer = window.setTimeout(resolve, 2_000);
+                });
+              } else {
+                setStripeStatusPending(true);
+              }
+            }
+          } catch {
+            if (!cancelled) setStripeStatusPending(true);
+          } finally {
+            if (!cancelled) {
+              setStripeStatusChecking(false);
+              setReviewLoading(false);
+            }
+          }
+        })();
         return;
       }
 
       setStage("compensation");
-      setPersonalForm((current) => ({ ...current, country: "GB" }));
       setCompensationSubmitting(true);
       setCompensationSaveError("");
-      void saveTutorCompensation({
-        country: "uk",
-        refresh_url: `${window.location.origin}/tutor/onboarding?stripe=refresh`,
-        return_url: `${window.location.origin}/tutor/onboarding?stripe=return`,
-      })
+      void getTutorOnboardingReview(callbackController.signal)
+        .then((data) => {
+          if (getOperatingCountry(data) !== "GB") {
+            throw new Error(
+              "Stripe onboarding can only be refreshed after confirming a United Kingdom location.",
+            );
+          }
+          setReviewData(data);
+          setPersonalForm((current) => ({ ...current, country: "GB" }));
+          return saveTutorCompensation({
+            country: "uk",
+            refresh_url: `${window.location.origin}/tutor/onboarding?stripe=refresh`,
+            return_url: `${window.location.origin}/tutor/onboarding?stripe=return`,
+          });
+        })
         .then((result) => {
           if (result.country !== "uk") {
             throw new Error("Stripe returned an unexpected payout response.");
@@ -527,16 +638,30 @@ export default function TutorOnboardingFlow() {
           window.location.assign(result.stripe_onboarding_url);
         })
         .catch((caught: unknown) => {
+          if (
+            cancelled ||
+            (caught instanceof DOMException && caught.name === "AbortError")
+          ) {
+            return;
+          }
           setCompensationSaveError(
             caught instanceof Error
               ? caught.message
               : "Could not refresh the Stripe onboarding link.",
           );
         })
-        .finally(() => setCompensationSubmitting(false));
+        .finally(() => {
+          if (!cancelled) setCompensationSubmitting(false);
+        });
     }, 0);
 
-    return () => window.clearTimeout(callbackTimer);
+    return () => {
+      cancelled = true;
+      hasHandledStripeCallback.current = false;
+      callbackController.abort();
+      window.clearTimeout(callbackTimer);
+      if (retryTimer !== undefined) window.clearTimeout(retryTimer);
+    };
   }, []);
 
   useEffect(() => {
@@ -587,6 +712,13 @@ export default function TutorOnboardingFlow() {
         setReviewData(data);
         setReviewError("");
         const savedCountry = getOperatingCountry(data);
+        if (
+          savedCountry === "GB" &&
+          getSavedCompensationCountry(data.compensation) === "GB" &&
+          !data.missing_steps.includes("compensation")
+        ) {
+          setStripeStatusPending(false);
+        }
         if (savedCountry) {
           setPersonalForm((current) => ({ ...current, country: savedCountry }));
         }
@@ -631,12 +763,9 @@ export default function TutorOnboardingFlow() {
         }
 
         if (data.compensation) {
-          const compensationCountry: OperatingCountry =
-            data.compensation.country === "nigeria"
-              ? "NG"
-              : data.compensation.country === "uk"
-                ? "GB"
-                : "";
+          const compensationCountry = getSavedCompensationCountry(
+            data.compensation,
+          );
           const savedCompensation: CompensationForm = {
             accountName: data.compensation.account_name ?? "",
             accountNumber: data.compensation.account_number ?? "",
@@ -670,8 +799,7 @@ export default function TutorOnboardingFlow() {
           ),
           compensation: Boolean(
             data.compensation &&
-            ((savedCountry === "NG" && data.compensation.country === "nigeria") ||
-              (savedCountry === "GB" && data.compensation.country === "uk")),
+            getSavedCompensationCountry(data.compensation) === savedCountry,
           ),
           location: Boolean(data.location),
         };
@@ -964,8 +1092,8 @@ export default function TutorOnboardingFlow() {
     reviewData.documents.some((document) => document.purpose === "identification"),
   );
   const reviewCompensationMatchesCountry = Boolean(
-    reviewBackendCountry &&
-    reviewData?.compensation?.country === reviewBackendCountry,
+    reviewCountry &&
+    getSavedCompensationCountry(reviewData?.compensation ?? null) === reviewCountry,
   );
   const outdatedReviewSections: Array<"identification" | "compensation"> = [];
   if (reviewData?.identification && !reviewIdentityMatchesCountry) {
@@ -996,6 +1124,11 @@ export default function TutorOnboardingFlow() {
     effectiveReviewData?.is_complete && !applicationPending && !applicationApproved,
   );
   const applicationEditable = !applicationPending && !applicationApproved;
+  const showingStripeReturnStatus =
+    stage === "review" &&
+    (stripeStatusChecking ||
+      stripeStatusPending ||
+      Boolean(stripeReturnOutcome && !stripeReturnAcknowledged));
 
   return (
     <main className="flex h-[100dvh] min-h-[100dvh] flex-col overflow-hidden bg-white text-[#171c2a]">
@@ -1039,10 +1172,62 @@ export default function TutorOnboardingFlow() {
           </div>
         ) : stage === "review" ? (
           <div className="mx-auto w-full max-w-[75rem]">
-            {submissionMessage ? <p className={`mb-3 rounded-xl border px-4 py-3 text-sm font-medium ${applicationSubmitted ? "border-[#bde8d0] bg-[#effaf4] text-[#20784d]" : "border-[#f0d6b5] bg-[#fff9f1] text-[#8b5a20]"}`} role="status">{submissionMessage}</p> : null}
-            {reviewLoading ? <div className="py-16 text-center text-sm font-medium text-[#8a93a7]">Loading your saved application…</div> : null}
-            {!reviewLoading && reviewError ? <div className="flex flex-col items-center gap-3 py-16 text-center" role="alert"><p className="text-sm font-medium text-brand-danger">{reviewError}</p><button className="h-10 rounded-full bg-brand-primary px-5 text-sm font-semibold text-white" onClick={() => { setReviewLoading(true); setReviewError(""); setReviewRefreshKey((current) => current + 1); }} type="button">Try again</button></div> : null}
-            {!reviewLoading && effectiveReviewData ? <TutorReviewStep canSubmit={canSubmitApplication} confirmed={reviewConfirmed} editable={applicationEditable} onConfirmedChange={(value) => { setReviewConfirmed(value); setSubmissionMessage(""); }} onEdit={editReview} outdatedSections={outdatedReviewSections} review={effectiveReviewData} /> : null}
+            {applicationSubmitted ? (
+              <div className="mx-auto flex max-w-[32rem] flex-col items-center px-4 py-12 text-center sm:py-16" role="status">
+                <span className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-[#eaf8f0] text-[#218553] shadow-[0_10px_30px_rgba(33,133,83,0.12)]">
+                  <BadgeCheck aria-hidden="true" size={32} strokeWidth={1.8} />
+                </span>
+                <span className="mt-5 rounded-full bg-[#eaf8f0] px-3 py-1 text-xs font-bold uppercase tracking-[0.12em] text-[#218553]">
+                  Application submitted
+                </span>
+                <h1 className="mt-3 text-2xl font-bold tracking-[-0.02em] text-[#252c3c] sm:text-3xl">
+                  Congratulations, {displayName}!
+                </h1>
+                <p className="mt-2 max-w-[28rem] text-sm leading-6 text-[#737d94]">
+                  Your tutor application has been submitted successfully and is now awaiting review.
+                </p>
+                <div className="mt-6 w-full rounded-xl border border-[#dfe3ec] bg-[#f8f9fc] px-4 py-3.5 text-left">
+                  <p className="text-sm font-semibold text-[#35405a]">What happens next?</p>
+                  <p className="mt-1 text-xs leading-5 text-[#737d94]">
+                    We’ll review your details and update your tutor status when a decision has been made. You can continue using SP Novate as a student in the meantime.
+                  </p>
+                </div>
+              </div>
+            ) : stripeStatusChecking ? (
+              <div className="mx-auto flex max-w-[31rem] flex-col items-center px-4 py-16 text-center" role="status">
+                <span className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-[#eeedff] text-brand-primary">
+                  <LoaderCircle aria-hidden="true" className="animate-spin" size={30} strokeWidth={1.8} />
+                </span>
+                <span className="mt-5 rounded-full bg-[#eeedff] px-3 py-1 text-xs font-bold uppercase tracking-[0.12em] text-brand-primary">Stripe</span>
+                <h1 className="mt-3 text-2xl font-bold tracking-[-0.02em] text-[#252c3c]">Confirming your payout setup</h1>
+                <p className="mt-2 max-w-[27rem] text-sm leading-6 text-[#737d94]">We’re checking the information you submitted to Stripe. This may take a moment.</p>
+              </div>
+            ) : stripeStatusPending ? (
+              <div className="mx-auto flex max-w-[31rem] flex-col items-center px-4 py-16 text-center" role="status">
+                <span className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-[#fff4e5] text-[#b86b12]">
+                  <Clock3 aria-hidden="true" size={30} strokeWidth={1.8} />
+                </span>
+                <span className="mt-5 rounded-full bg-[#fff4e5] px-3 py-1 text-xs font-bold uppercase tracking-[0.12em] text-[#9a5a10]">Processing</span>
+                <h1 className="mt-3 text-2xl font-bold tracking-[-0.02em] text-[#252c3c]">We’re still confirming your Stripe setup</h1>
+                <p className="mt-2 max-w-[27rem] text-sm leading-6 text-[#737d94]">Stripe has returned you safely. The payout update can take a little longer to reach us.</p>
+              </div>
+            ) : stripeReturnOutcome && !stripeReturnAcknowledged ? (
+              <div className="mx-auto flex max-w-[31rem] flex-col items-center px-4 py-16 text-center" role="status">
+                <span className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-[#eaf8f0] text-[#218553]">
+                  <BadgeCheck aria-hidden="true" size={31} strokeWidth={1.8} />
+                </span>
+                <span className="mt-5 rounded-full bg-[#eaf8f0] px-3 py-1 text-xs font-bold uppercase tracking-[0.12em] text-[#218553]">Details received</span>
+                <h1 className="mt-3 text-2xl font-bold tracking-[-0.02em] text-[#252c3c]">{stripeReturnOutcome === "ready" ? "Payout setup complete" : "Your Stripe details were received"}</h1>
+                <p className="mt-2 max-w-[27rem] text-sm leading-6 text-[#737d94]">{stripeReturnOutcome === "ready" ? "Your Stripe account is ready to receive tutor payouts." : "Stripe is still confirming payout availability. You can continue reviewing your application."}</p>
+              </div>
+            ) : (
+              <>
+                {submissionMessage ? <p className={`mb-3 rounded-xl border px-4 py-3 text-sm font-medium ${applicationSubmitted ? "border-[#bde8d0] bg-[#effaf4] text-[#20784d]" : "border-[#f0d6b5] bg-[#fff9f1] text-[#8b5a20]"}`} role="status">{submissionMessage}</p> : null}
+                {reviewLoading ? <div className="py-16 text-center text-sm font-medium text-[#8a93a7]">Loading your saved application…</div> : null}
+                {!reviewLoading && reviewError ? <div className="flex flex-col items-center gap-3 py-16 text-center" role="alert"><p className="text-sm font-medium text-brand-danger">{reviewError}</p><button className="h-10 rounded-full bg-brand-primary px-5 text-sm font-semibold text-white" onClick={() => { setReviewLoading(true); setReviewError(""); setReviewRefreshKey((current) => current + 1); }} type="button">Try again</button></div> : null}
+                {!reviewLoading && effectiveReviewData ? <TutorReviewStep canSubmit={canSubmitApplication} confirmed={reviewConfirmed} editable={applicationEditable} onConfirmedChange={(value) => { setReviewConfirmed(value); setSubmissionMessage(""); }} onEdit={editReview} outdatedSections={outdatedReviewSections} review={effectiveReviewData} /> : null}
+              </>
+            )}
           </div>
         ) : (
           <div className="mx-auto flex w-full max-w-[75rem] items-start justify-center gap-8 xl:gap-16">
@@ -1459,16 +1644,25 @@ export default function TutorOnboardingFlow() {
                   ) : null}
                   <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
                     {personalForm.country === "GB" ? (
-                      <div className="rounded-xl border border-[#dfe3ec] bg-[#f7f8fb] p-4 sm:col-span-2">
-                        <p className="text-sm font-semibold text-[#35405a]">
-                          Set up how you’ll receive your earnings
-                        </p>
-                        <p className="mt-1 text-sm leading-6 text-[#687188]">
-                          You’ll continue to Stripe to securely provide your
-                          bank and identity details. Stripe will verify your
-                          information and return you to SP Novate when you’re
-                          finished.
-                        </p>
+                      <div className="rounded-2xl border border-[#dfe3ec] bg-[#f8f8ff] p-5 sm:col-span-2 sm:p-6">
+                        <div className="flex items-start gap-4">
+                          <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-primary text-white shadow-[0_7px_18px_rgba(36,30,125,0.18)]">
+                            <CircleDollarSign aria-hidden="true" size={21} />
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <h2 className="text-lg font-bold tracking-[-0.01em] text-[#252c3c]">
+                                Set up payouts with Stripe
+                              </h2>
+                              <span className="rounded-full border border-[#d8dafa] bg-white px-2.5 py-1 text-[11px] font-semibold text-[#5149c8]">
+                                United Kingdom
+                              </span>
+                            </div>
+                            <p className="mt-2 max-w-[34rem] text-sm leading-6 text-[#687188]">
+                              Stripe will securely verify your identity and bank details. You’ll return here when finished.
+                            </p>
+                          </div>
+                        </div>
                       </div>
                     ) : personalForm.country === "NG" ? (
                       <>
@@ -1600,34 +1794,62 @@ export default function TutorOnboardingFlow() {
                 </>
               ) : (
                 <>
-                  {locationCountryError ? (
-                    <Notice className="mb-3 text-sm" role="alert">
-                      {locationCountryError}
-                    </Notice>
-                  ) : null}
-                  {location.view === "prompt" ? (
-                    <StepTwoLocationPrompt
-                      locationError={location.error}
-                      onAllowLocation={location.requestCurrentLocation}
-                      onEnterAddress={() => location.openSearch()}
-                      requestingLocation={location.requestingLocation}
-                      variant="tutor"
-                    />
+                  {unsupportedTutorLocation ? (
+                    <div className="mx-auto flex max-w-[30rem] flex-col items-center px-4 py-10 text-center sm:py-16" role="status">
+                      <span className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-[#eeedff] text-brand-primary shadow-[0_10px_30px_rgba(64,57,189,0.12)]">
+                        <Globe2 aria-hidden="true" size={30} strokeWidth={1.8} />
+                      </span>
+                      <span className="mt-5 rounded-full bg-[#eeedff] px-3 py-1 text-xs font-bold uppercase tracking-[0.12em] text-brand-primary">
+                        Coming soon
+                      </span>
+                      <h1 className="mt-3 text-2xl font-bold tracking-[-0.02em] text-[#252c3c]">
+                        Tutor sign-up is coming to your country
+                      </h1>
+                      <p className="mt-2 max-w-[25rem] text-sm leading-6 text-[#737d94]">
+                        We’ve saved your location. For now, you can keep learning and booking tutors as a student.
+                      </p>
+                      <div className="mt-6">
+                        <button
+                          className="h-11 rounded-full bg-brand-primary px-6 text-sm font-semibold text-white"
+                          onClick={() => router.push("/students/dashboard")}
+                          type="button"
+                        >
+                          Continue as a student
+                        </button>
+                      </div>
+                    </div>
                   ) : (
-                    <StepTwoAddressConfirm
-                      addressForm={location.address}
-                      coordinates={location.coordinates}
-                      locationError={location.error}
-                      mode={location.view}
-                      placeId={location.placeId}
-                      onChangeLocation={location.goBack}
-                      onPlaceQueryChange={location.changeQuery}
-                      onSelectPlace={location.selectPlace}
-                      placePredictions={location.predictions}
-                      placeQuery={location.query}
-                      requestingPlaceSearch={location.requestingSearch}
-                      source={location.source}
-                    />
+                    <>
+                    {locationCountryError ? (
+                      <Notice className="mb-3 text-sm" role="alert">
+                        {locationCountryError}
+                      </Notice>
+                    ) : null}
+                    {location.view === "prompt" ? (
+                      <StepTwoLocationPrompt
+                        locationError={location.error}
+                        onAllowLocation={location.requestCurrentLocation}
+                        onEnterAddress={() => location.openSearch()}
+                        requestingLocation={location.requestingLocation}
+                        variant="tutor"
+                      />
+                    ) : (
+                      <StepTwoAddressConfirm
+                        addressForm={location.address}
+                        coordinates={location.coordinates}
+                        locationError={location.error}
+                        mode={location.view}
+                        placeId={location.placeId}
+                        onChangeLocation={location.goBack}
+                        onPlaceQueryChange={location.changeQuery}
+                        onSelectPlace={location.selectPlace}
+                        placePredictions={location.predictions}
+                        placeQuery={location.query}
+                        requestingPlaceSearch={location.requestingSearch}
+                        source={location.source}
+                      />
+                    )}
+                    </>
                   )}
                 </>
               )}
@@ -1640,7 +1862,13 @@ export default function TutorOnboardingFlow() {
         <footer className="shrink-0 border-t border-[#e5e8f2] bg-white px-4 py-2 sm:px-[var(--dashboard-gutter)]">
           <div className="mx-auto flex w-full max-w-[var(--dashboard-max-width)] items-center justify-between gap-2 sm:gap-3">
             <span className="w-fit shrink-0 rounded-full border border-[#6d63ee] px-2.5 py-1 text-xs font-semibold text-[#5b4ded]">
-              {stage === "review" ? "Review" : `Step ${stageIndex + 1}/4`}
+              {showingStripeReturnStatus
+                ? "Stripe"
+                : applicationSubmitted
+                  ? "Complete"
+                : stage === "review"
+                  ? "Review"
+                  : `Step ${stageIndex + 1}/4`}
             </span>
             <div className="flex min-w-0 items-center justify-end gap-2">
               {submissionMessage && stage !== "review" ? (
@@ -1648,7 +1876,8 @@ export default function TutorOnboardingFlow() {
                   {submissionMessage}
                 </span>
               ) : null}
-              {stage !== "review" || (!applicationPending && !applicationApproved) ? (
+              {!showingStripeReturnStatus &&
+              (stage !== "review" || (!applicationPending && !applicationApproved)) ? (
                 <button
                   className="h-11 shrink-0 rounded-full border border-[#d8dde8] bg-white px-4 text-sm font-semibold sm:px-5"
                   onClick={() => {
@@ -1670,7 +1899,43 @@ export default function TutorOnboardingFlow() {
                   {stage === "personal" ? "Cancel" : "Back"}
                 </button>
               ) : null}
-              {stage === "personal" ? (
+              {stripeStatusChecking ? (
+                <button
+                  className="h-11 rounded-full bg-[#b8b6cf] px-6 text-sm font-semibold text-white"
+                  disabled
+                  type="button"
+                >
+                  Confirming…
+                </button>
+              ) : stripeStatusPending ? (
+                <>
+                  <button
+                    className="h-11 rounded-full border border-[#d8dde8] bg-white px-4 text-sm font-semibold text-[#46506a] sm:px-5"
+                    onClick={() => {
+                      clearStripeCallbackParameter();
+                      setStripeStatusPending(false);
+                    }}
+                    type="button"
+                  >
+                    Continue to review
+                  </button>
+                  <button
+                    className="h-11 rounded-full bg-brand-primary px-6 text-sm font-semibold text-white"
+                    onClick={() => window.location.reload()}
+                    type="button"
+                  >
+                    Check status
+                  </button>
+                </>
+              ) : stripeReturnOutcome && !stripeReturnAcknowledged ? (
+                <button
+                  className="h-11 rounded-full bg-brand-primary px-6 text-sm font-semibold text-white"
+                  onClick={() => setStripeReturnAcknowledged(true)}
+                  type="button"
+                >
+                  Continue to review
+                </button>
+              ) : stage === "personal" ? (
                 <button
                   className="h-11 rounded-full bg-brand-primary px-6 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-[#b8b6cf]"
                   disabled={personalSubmitting}
@@ -1704,7 +1969,7 @@ export default function TutorOnboardingFlow() {
                       : "Continue"}
                 </button>
               ) : stage === "location" ? (
-                location.view === "prompt" ? null : location.view === "search" ? null : (
+                unsupportedTutorLocation ? null : location.view === "prompt" ? null : location.view === "search" ? null : (
                   <>
                     <button
                       className="h-11 min-w-0 rounded-full bg-brand-primary px-3 text-sm font-semibold text-white disabled:bg-[#b8b6cf] sm:px-5"

@@ -55,7 +55,9 @@ export type TutorCompensationResult =
 
 export type TutorOnboardingReview = {
   compensation: null | {
-    country: string;
+    country?: string;
+    country_code?: string;
+    provider?: string;
     account_number?: string;
     account_name?: string;
     bank_code?: string;

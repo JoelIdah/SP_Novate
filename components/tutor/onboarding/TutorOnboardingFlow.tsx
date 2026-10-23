@@ -245,7 +245,7 @@ function StepList({
           const Icon = step.icon;
           const done = completed.includes(step.id);
           const current = index === activeIndex;
-          const selectable = done || current;
+          const selectable = done || current || index < activeIndex;
           return (
             <button
               className={`flex min-h-12 w-full items-center justify-between rounded-xl border px-3.5 text-left ${current ? "border-[#cfd3fa] bg-[#f1f3ff]" : "border-[#e0e5ee] bg-[#f7f9fc]"} ${selectable ? "cursor-pointer" : "cursor-default"}`}
@@ -471,6 +471,12 @@ export default function TutorOnboardingFlow() {
     }
     setStage(returnToReview ? "review" : next);
     setReturnToReview(false);
+  };
+  const goToRequiredLocation = () => {
+    setReturnToReview(false);
+    setSubmissionMessage("");
+    setLocationCountryError("");
+    setStage("location");
   };
   const updatePersonal = <K extends keyof PersonalForm>(
     field: K,
@@ -1449,8 +1455,15 @@ export default function TutorOnboardingFlow() {
                     Add the details and supporting documents needed to verify your identity.
                   </p>
                   {!personalForm.country ? (
-                    <Notice className="mt-3 text-sm" role="alert">
-                      Confirm a supported location before completing identity verification.
+                    <Notice className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm" role="alert">
+                      <span>Confirm a supported location before completing identity verification.</span>
+                      <button
+                        className="h-9 shrink-0 rounded-full border border-current px-4 text-xs font-semibold"
+                        onClick={goToRequiredLocation}
+                        type="button"
+                      >
+                        Go to location
+                      </button>
                     </Notice>
                   ) : null}
                   {personalForm.country === "GB" ? (
@@ -1638,8 +1651,15 @@ export default function TutorOnboardingFlow() {
                     Payout setup
                   </h1>
                   {!personalForm.country ? (
-                    <Notice className="mt-3 text-sm" role="alert">
-                      Confirm a supported location before setting up payouts.
+                    <Notice className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm" role="alert">
+                      <span>Confirm a supported location before setting up payouts.</span>
+                      <button
+                        className="h-9 shrink-0 rounded-full border border-current px-4 text-xs font-semibold"
+                        onClick={goToRequiredLocation}
+                        type="button"
+                      >
+                        Go to location
+                      </button>
                     </Notice>
                   ) : null}
                   <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">

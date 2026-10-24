@@ -4,7 +4,23 @@ allowBuilds:
 ignoredBuiltDependencies:
   - sharp
   - unrs-resolver
+minimumReleaseAgeExclude:
+  - '@next/env@16.4.3'
+  - '@next/eslint-plugin-next@16.4.3'
+  - '@next/swc-darwin-arm64@16.4.3'
+  - '@next/swc-darwin-x64@16.4.3'
+  - '@next/swc-linux-arm64-gnu@16.4.3'
+  - '@next/swc-linux-arm64-musl@16.4.3'
+  - '@next/swc-linux-x64-gnu@16.4.3'
+  - '@next/swc-linux-x64-musl@16.4.3'
+  - '@next/swc-win32-arm64-msvc@16.4.3'
+  - '@next/swc-win32-x64-msvc@16.4.3'
+  - 'eslint-config-next@16.4.3'
+  - 'next@16.4.3'
 overrides:
+  "next>baseline-browser-mapping": 2.11.0
+  "next>sharp": 0.35.5
   "next>postcss": 8.5.26
+  "postcss>source-map-js": 1.2.2
   "postcss>nanoid": 3.3.18
-  "next>sharp": 0.35.4
+  "@babel/helper-compilation-targets>browserslist": 4.28.7

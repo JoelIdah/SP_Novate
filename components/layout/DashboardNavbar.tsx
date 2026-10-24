@@ -296,7 +296,7 @@ export function DashboardNavbar({ role, active = "Home" }: { role: DashboardRole
               <span className="min-w-0 text-left leading-tight"><span className="block truncate text-xs font-semibold text-[#303755]">{profileName}</span><span className="mt-0.5 block text-[0.65rem] font-medium text-[#8a91a1]">{role === "tutor" ? "Tutor account" : "Student account"}</span></span>
               <ChevronDown className={`h-3.5 w-3.5 shrink-0 text-[#7b8497] transition-transform ${profileMenuOpen ? "rotate-180" : ""}`} />
             </button>
-            {profileMenuOpen ? <div className="absolute right-0 top-[calc(100%+0.45rem)] z-50 w-52 rounded-xl border border-ui-border bg-white p-2 shadow-[var(--ui-shadow-overlay)]">{role === "tutor" ? <Link className="flex min-h-10 items-center gap-2 rounded-lg px-3 text-sm font-medium text-ui-body hover:bg-[#f7f8fb]" href="/tutor/settings" onClick={() => setProfileMenuOpen(false)}><Settings className="h-4 w-4" />Account settings</Link> : null}<button className="flex min-h-10 w-full items-center gap-2 rounded-lg px-3 text-left text-sm font-medium text-[#a44343] hover:bg-[#fff7f5] disabled:opacity-50" disabled={signingOut} onClick={() => void logOut()} type="button"><LogOut className="h-4 w-4" />{signingOut ? "Logging out..." : "Log out"}</button></div> : null}
+            {profileMenuOpen ? <div className="absolute right-0 top-[calc(100%+0.45rem)] z-50 w-52 rounded-xl border border-ui-border bg-white p-2 shadow-[var(--ui-shadow-overlay)]"><Link className="flex min-h-10 items-center gap-2 rounded-lg px-3 text-sm font-medium text-ui-body hover:bg-[#f7f8fb]" href={role === "tutor" ? "/tutor/settings" : "/students/settings"} onClick={() => setProfileMenuOpen(false)}><Settings className="h-4 w-4" />Account settings</Link><button className="flex min-h-10 w-full items-center gap-2 rounded-lg px-3 text-left text-sm font-medium text-[#a44343] hover:bg-[#fff7f5] disabled:opacity-50" disabled={signingOut} onClick={() => void logOut()} type="button"><LogOut className="h-4 w-4" />{signingOut ? "Logging out..." : "Log out"}</button></div> : null}
           </div>
         </div>
       </div>
@@ -367,7 +367,7 @@ export function DashboardNavbar({ role, active = "Home" }: { role: DashboardRole
                 {switchMobileLabel}
               </button>
               <div className="mt-3 grid gap-1">
-                {role === "tutor" ? <Link className="flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm font-semibold text-[#596277] hover:bg-[#f5f6f9]" href="/tutor/settings" onClick={closeMenu}><Settings className="h-4 w-4" />Account settings</Link> : null}
+                <Link className="flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm font-semibold text-[#596277] hover:bg-[#f5f6f9]" href={role === "tutor" ? "/tutor/settings" : "/students/settings"} onClick={closeMenu}><Settings className="h-4 w-4" />Account settings</Link>
                 <button className="flex min-h-11 w-full items-center gap-3 rounded-lg px-3 text-left text-sm font-semibold text-[#a44343] hover:bg-[#fff5f4] disabled:opacity-50" disabled={signingOut} onClick={() => void logOut()} type="button"><LogOut className="h-4 w-4" />{signingOut ? "Logging out..." : "Log out"}</button>
               </div>
             </div>

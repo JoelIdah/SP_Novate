@@ -14,6 +14,10 @@ export type AuthenticatedProfile = {
   role: "student" | "tutor";
   tutor_status?: TutorStatus;
   phone_number?: string;
+  bio?: string;
+  middle_name?: string;
+  other_names?: string;
+  dob?: string;
   occupation?: string;
   average_rating?: number;
   qualifications?: string[];

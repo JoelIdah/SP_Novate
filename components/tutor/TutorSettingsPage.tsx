@@ -27,6 +27,7 @@ import {
 } from "./tutorSettings";
 
 type SettingsTab = "account" | "subjects" | "kyc";
+type Feedback = { text: string; tone: "error" | "success" } | null;
 type AccountDraft = { dbsNumber: string; email: string; firstName: string; lastName: string; middleName: string; occupation: string; phone: string; qualifications: string };
 type SubjectDraft = { availability: string[]; department: string; level: string; period: string; rateHourly: string; sessionType: string; subject: string };
 type KycDraft = { documents: File[]; idNumber: string; idType: string };
@@ -68,7 +69,7 @@ export default function TutorSettingsPage({ initialTab = "account" }: { initialT
   const [kycEditing, setKycEditing] = useState(false);
   const [locationOpen, setLocationOpen] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState("");
+  const [feedback, setFeedback] = useState<Feedback>(null);
 
   const loadSubjects = async (signal?: AbortSignal) => setSubjects(await getTutorSubjects(signal));
   const loadKyc = async (signal?: AbortSignal) => setKyc(await getTutorKyc(signal));
@@ -89,53 +90,53 @@ export default function TutorSettingsPage({ initialTab = "account" }: { initialT
   }, []);
 
   const openAccount = () => {
-    setMessage("");
+    setFeedback(null);
     setAccountDraft(account ? { dbsNumber: "", email: account.email, firstName: account.first_name, lastName: account.last_name, middleName: "", occupation: account.occupation, phone: account.phone_number, qualifications: account.qualifications.join(", ") } : emptyAccount);
     setAccountEditing(true);
   };
 
   const saveAccount = async () => {
-    setSaving(true); setMessage("");
+    setSaving(true); setFeedback(null);
     try {
       await updateTutorAccount({ first_name: accountDraft.firstName.trim(), last_name: accountDraft.lastName.trim(), middle_name: accountDraft.middleName.trim(), email: accountDraft.email.trim(), occupation: accountDraft.occupation.trim(), qualifications: accountDraft.qualifications.split(",").map((item) => item.trim()).filter(Boolean), ...(accountDraft.dbsNumber.trim() ? { dbs_certificate_number: accountDraft.dbsNumber.trim() } : {}) });
       const updated = await getTutorAccount();
       setAccount(updated);
       setAuthSession({ email: updated.email, first_name: updated.first_name, last_name: updated.last_name, profile_photo: updated.profile_photo, public_id: sessionUser?.publicId, role: sessionUser?.role || undefined, tutor_status: sessionUser?.tutorStatus || undefined });
-      setAccountEditing(false); setMessage("Account details updated.");
-    } catch (error) { setMessage(error instanceof Error ? error.message : "Account details could not be updated."); }
+      setAccountEditing(false); setFeedback({ text: "Account details updated.", tone: "success" });
+    } catch (error) { setFeedback({ text: error instanceof Error ? error.message : "Account details could not be updated.", tone: "error" }); }
     finally { setSaving(false); }
   };
 
-  const openNewSubject = () => { setSubjectDraft(emptySubject); setEditingSubjectId(""); setMessage(""); setSubjectEditorOpen(true); };
+  const openNewSubject = () => { setSubjectDraft(emptySubject); setEditingSubjectId(""); setFeedback(null); setSubjectEditorOpen(true); };
   const openSubject = (subject: TutorSubject) => {
     if (!subject.public_id) return;
     setSubjectDraft({ availability: subject.availability.map((item) => item.day), department: subject.department, level: subject.level, period: String(subject.period), rateHourly: String(subject.rate_hourly), sessionType: subject.session_type, subject: subject.subject });
-    setEditingSubjectId(subject.public_id); setMessage(""); setSubjectEditorOpen(true);
+    setEditingSubjectId(subject.public_id); setFeedback(null); setSubjectEditorOpen(true);
   };
   const saveSubject = async () => {
     const input: TutorSubjectInput = { days: subjectDraft.availability, department: subjectDraft.department, level: subjectDraft.level, period: Number(subjectDraft.period), rate_hourly: Number(subjectDraft.rateHourly), session_type: subjectDraft.sessionType, subject: subjectDraft.subject };
-    setSaving(true); setMessage("");
+    setSaving(true); setFeedback(null);
     try {
       if (editingSubjectId) await updateTutorSubject(editingSubjectId, input); else await createTutorSubject(input);
-      await loadSubjects(); setSubjectEditorOpen(false); setMessage(editingSubjectId ? "Subject updated." : "Subject added.");
-    } catch (error) { setMessage(error instanceof Error ? error.message : "The subject could not be saved."); }
+      await loadSubjects(); setSubjectEditorOpen(false); setFeedback({ text: editingSubjectId ? "Subject updated." : "Subject added.", tone: "success" });
+    } catch (error) { setFeedback({ text: error instanceof Error ? error.message : "The subject could not be saved.", tone: "error" }); }
     finally { setSaving(false); }
   };
 
-  const openKyc = () => { setKycDraft({ documents: [], idNumber: kyc?.id_number ?? "", idType: kyc?.id_type ?? "" }); setMessage(""); setKycEditing(true); };
+  const openKyc = () => { setKycDraft({ documents: [], idNumber: kyc?.id_number ?? "", idType: kyc?.id_type ?? "" }); setFeedback(null); setKycEditing(true); };
   const saveKyc = async () => {
-    setSaving(true); setMessage("");
-    try { await updateTutorKyc(kycDraft); await loadKyc(); setKycEditing(false); setMessage("Identity verification updated and sent for review."); }
-    catch (error) { setMessage(error instanceof Error ? error.message : "Identity verification could not be updated."); }
+    setSaving(true); setFeedback(null);
+    try { await updateTutorKyc(kycDraft); await loadKyc(); setKycEditing(false); setFeedback({ text: "Identity verification updated and sent for review.", tone: "success" }); }
+    catch (error) { setFeedback({ text: error instanceof Error ? error.message : "Identity verification could not be updated.", tone: "error" }); }
     finally { setSaving(false); }
   };
 
   return (
     <DashboardShell contentClassName="!max-w-none !px-0" mainClassName="!p-0" navbar={<TutorNavbar active="Settings" />}>
       <div className="w-full">
-        <div className="border-b border-[#e7eaf1] bg-[#f4f6fa] px-[var(--dashboard-gutter)] py-2.5"><nav aria-label="Tutor settings" className="navbar-scroll mx-auto flex w-full max-w-[74rem] justify-start gap-1.5 overflow-x-auto sm:justify-center"><Tab active={activeTab === "account"} icon={<Settings2 />} label="Account settings" onClick={() => { setActiveTab("account"); setMessage(""); }} /><Tab active={activeTab === "subjects"} icon={<BookOpenCheck />} label="Subjects" onClick={() => { setActiveTab("subjects"); setMessage(""); }} /><Tab active={activeTab === "kyc"} icon={<FileCheck2 />} label="KYC" onClick={() => { setActiveTab("kyc"); setMessage(""); }} /></nav></div>
+        <div className="border-b border-[#e7eaf1] bg-[#f4f6fa] px-[var(--dashboard-gutter)] py-2.5"><nav aria-label="Tutor settings" className="navbar-scroll mx-auto flex w-full max-w-[74rem] justify-start gap-1.5 overflow-x-auto sm:justify-center"><Tab active={activeTab === "account"} icon={<Settings2 />} label="Account settings" onClick={() => { setActiveTab("account"); setFeedback(null); }} /><Tab active={activeTab === "subjects"} icon={<BookOpenCheck />} label="Subjects" onClick={() => { setActiveTab("subjects"); setFeedback(null); }} /><Tab active={activeTab === "kyc"} icon={<FileCheck2 />} label="KYC" onClick={() => { setActiveTab("kyc"); setFeedback(null); }} /></nav></div>
         <div className="px-[var(--dashboard-gutter)] py-6"><div className="mx-auto w-full max-w-[74rem]">
-          {message ? <Notice className="mx-auto mb-4 max-w-[68rem] text-sm" tone={message.includes("could not") ? "error" : "success"}>{message}</Notice> : null}
+          {feedback ? <Notice className="mx-auto mb-4 max-w-[68rem] text-sm" tone={feedback.tone}>{feedback.text}</Notice> : null}
           {activeTab === "account" ? <AccountPanel account={account} draft={accountDraft} editing={accountEditing} error={accountError} loading={accountLoading} onCancel={() => setAccountEditing(false)} onChange={(field, value) => setAccountDraft((current) => ({ ...current, [field]: value }))} onEdit={openAccount} onLocation={() => setLocationOpen(true)} onSave={() => void saveAccount()} saving={saving} /> : null}
           {activeTab === "subjects" ? <SubjectsPanel categories={categories} draft={subjectDraft} editingId={editingSubjectId} editorOpen={subjectEditorOpen} error={subjectsError} loading={subjectsLoading} onCancel={() => setSubjectEditorOpen(false)} onChange={(field, value) => setSubjectDraft((current) => ({ ...current, [field]: value, ...(field === "department" ? { subject: "" } : {}) }))} onEdit={openSubject} onNew={openNewSubject} onSave={() => void saveSubject()} onToggleDay={(day) => setSubjectDraft((current) => ({ ...current, availability: current.availability.includes(day) ? current.availability.filter((item) => item !== day) : [...current.availability, day] }))} saving={saving} subjects={subjects} /> : null}
           {activeTab === "kyc" ? <KycPanel draft={kycDraft} editing={kycEditing} error={kycError} kyc={kyc} loading={kycLoading} onCancel={() => setKycEditing(false)} onChange={(field, value) => setKycDraft((current) => ({ ...current, [field]: value }))} onEdit={openKyc} onFiles={(documents) => setKycDraft((current) => ({ ...current, documents }))} onSave={() => void saveKyc()} saving={saving} /> : null}
@@ -160,10 +161,10 @@ function SubjectsPanel({ categories, draft, editingId, editorOpen, error, loadin
 }
 
 function KycPanel({ draft, editing, error, kyc, loading, onCancel, onChange, onEdit, onFiles, onSave, saving }: { draft: KycDraft; editing: boolean; error: string; kyc: TutorKyc | null; loading: boolean; onCancel: () => void; onChange: (field: "idNumber" | "idType", value: string) => void; onEdit: () => void; onFiles: (files: File[]) => void; onSave: () => void; saving: boolean }) {
-  const complete = Boolean(draft.idType || draft.idNumber.trim() || draft.documents.length);
+  const complete = Boolean(draft.idType && draft.idNumber.trim() && (kyc || draft.documents.length));
   if (loading) return <Loading text="Loading identity verification..." />;
   if (error) return <Notice tone="error">{error}</Notice>;
-  return <div className={`mx-auto grid max-w-[68rem] items-start gap-5 ${editing ? "lg:grid-cols-[minmax(0,1fr)_minmax(22rem,0.85fr)]" : "max-w-[44rem]"}`}><Card action={<EditButton label={kyc ? "Update information" : "Add information"} onClick={onEdit} />} title="Identity verification">{kyc ? <dl className="grid gap-4 sm:grid-cols-2"><Detail label="Country" value={words(kyc.country)} /><Detail label="Document type" value={words(kyc.id_type)} /><Detail label="Identity number" value={kyc.id_number} /><Detail label="Status" value={words(kyc.status)} /><Detail label="Documents" value={`${kyc.document_urls.length} uploaded`} /></dl> : <p className="text-sm text-ui-body">No identity verification has been submitted yet.</p>}{kyc?.document_urls.length ? <div className="mt-4 flex flex-wrap gap-2">{kyc.document_urls.map((url, index) => <a className="text-xs font-semibold text-brand-accent underline" href={url} key={url} rel="noreferrer" target="_blank">Document {index + 1}</a>)}</div> : null}</Card>{editing ? <Editor disabled={!complete} title="Identity verification" onCancel={onCancel} onSave={onSave} saving={saving}><SelectField label="Document type" onChange={(value) => onChange("idType", value)} options={identityTypes} placeholder="Select document type" value={draft.idType} /><Field label="Identity number" onChange={(value) => onChange("idNumber", value)} value={draft.idNumber} /><label className="text-xs font-semibold text-[#596277]">Additional documents<input accept=".jpg,.jpeg,.png,.webp,.pdf" className="mt-1.5 block w-full text-sm font-normal text-ui-body file:mr-3 file:rounded-full file:border-0 file:bg-brand-primary-soft file:px-4 file:py-2 file:font-semibold file:text-brand-accent" multiple onChange={(event) => onFiles(Array.from(event.target.files ?? []))} type="file" /></label>{draft.documents.length ? <p className="text-xs text-ui-body">{draft.documents.map((file) => file.name).join(", ")}</p> : null}</Editor> : null}</div>;
+  return <div className={`mx-auto grid max-w-[68rem] items-start gap-5 ${editing ? "lg:grid-cols-[minmax(0,1fr)_minmax(22rem,0.85fr)]" : "max-w-[44rem]"}`}><Card action={<EditButton label={kyc ? "Update information" : "Add information"} onClick={onEdit} />} title="Identity verification">{kyc ? <dl className="grid gap-4 sm:grid-cols-2"><Detail label="Country" value={words(kyc.country)} /><Detail label="Document type" value={words(kyc.id_type)} /><Detail label="Identity number" value={kyc.id_number} /><Detail label="Status" value={words(kyc.status)} /><Detail label="Documents" value={`${kyc.document_urls.length} uploaded`} /></dl> : <p className="text-sm text-ui-body">No identity verification has been submitted yet.</p>}{kyc?.document_urls.length ? <div className="mt-4 flex flex-wrap gap-2">{kyc.document_urls.map((url, index) => <a className="text-xs font-semibold text-brand-accent underline" href={url} key={url} rel="noreferrer" target="_blank">Document {index + 1}</a>)}</div> : null}</Card>{editing ? <Editor disabled={!complete} title="Identity verification" onCancel={onCancel} onSave={onSave} saving={saving}><SelectField label="Document type" onChange={(value) => onChange("idType", value)} options={identityTypes} placeholder="Select document type" value={draft.idType} /><Field label="Identity number" onChange={(value) => onChange("idNumber", value)} value={draft.idNumber} /><label className="text-xs font-semibold text-[#596277]">{kyc ? "Additional documents" : "Identity document"}<input accept=".jpg,.jpeg,.png,.webp,.pdf" className="mt-1.5 block w-full text-sm font-normal text-ui-body file:mr-3 file:rounded-full file:border-0 file:bg-brand-primary-soft file:px-4 file:py-2 file:font-semibold file:text-brand-accent" multiple onChange={(event) => onFiles(Array.from(event.target.files ?? []))} type="file" /></label>{draft.documents.length ? <p className="text-xs text-ui-body">{draft.documents.map((file) => file.name).join(", ")}</p> : !kyc ? <p className="text-xs text-[#9a7314]">Select a document to complete your first submission.</p> : null}</Editor> : null}</div>;
 }
 
 function Card({ action, children, title }: { action?: ReactNode; children: ReactNode; title: string }) { return <section className="rounded-2xl border border-[#e5e8ef] bg-white p-4 shadow-[0_8px_22px_rgba(31,40,74,0.04)] sm:p-5"><div className="mb-4 flex items-center justify-between gap-3"><h2 className="text-sm font-bold text-[#302d79]">{title}</h2>{action}</div>{children}</section>; }

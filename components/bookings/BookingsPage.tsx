@@ -15,13 +15,15 @@ import { Notice } from "../ui/Notice";
 import { SelectMenu } from "../ui/SelectMenu";
 import { TableFilters } from "../ui/TableFilters";
 import { InfiniteScrollTrigger } from "../ui/InfiniteScrollTrigger";
+import { StepTwoAddressConfirm } from "../signup/profile-setup/StepTwoAddressConfirm";
+import { StepTwoLocationPrompt } from "../signup/profile-setup/StepTwoLocationPrompt";
+import { useTutorLocationSetup } from "../tutor/onboarding/useTutorLocationSetup";
 import { getBookings, type BookingListItem, type BookingStatus } from "./bookings";
 import {
   getCategories,
   getTutors,
   isLocationRequiredError,
   isServiceUnavailableError,
-  updateCurrentLocation,
   type StudentCategory,
   type TutorSearchResult,
 } from "./tutorSearch";
@@ -404,7 +406,7 @@ export default function BookingsPage({ initialView = "explore", notice }: { init
         {view === "explore" ? (
             <div className="grid gap-[1.1em] xl:grid-cols-2 2xl:grid-cols-3">
           {serviceUnavailable ? <div className="col-span-full flex flex-col items-start justify-between gap-3 rounded-2xl border border-[#e2e6ef] bg-[#f8f9fc] px-5 py-5 sm:flex-row sm:items-center" role="alert"><p className="text-sm font-medium text-[#626b80]">We couldn&apos;t load this right now.</p><button className="min-h-10 rounded-full bg-[#232066] px-5 text-sm font-semibold text-white" onClick={() => { setCategoriesUnavailable(false); setTutorsUnavailable(false); setTutorsRefreshKey((current) => current + 1); }} type="button">Try again</button></div> : null}
-          {locationRequired ? <div className="col-span-full flex flex-col items-start gap-4 rounded-2xl border border-[#dfe3f5] bg-[linear-gradient(135deg,#f8f9ff_0%,#f1f3ff_100%)] px-5 py-6 sm:flex-row sm:items-center sm:justify-between" role="status"><div className="flex items-start gap-3"><span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-[#514bc8] shadow-sm"><LocateFixed className="h-5 w-5" /></span><div><h3 className="text-sm font-semibold text-[#30375a]">Set your location to find tutors near you</h3><p className="mt-1 max-w-xl text-xs leading-relaxed text-[#757e96]">We use your location to calculate tutor distance and show relevant results. Your browser will ask for permission before anything is saved.</p></div></div><button className="inline-flex min-h-11 w-full shrink-0 items-center justify-center gap-2 rounded-full bg-[#232066] px-5 text-sm font-semibold text-white hover:bg-[#1c175f] sm:w-auto" onClick={() => setLocationModalOpen(true)} type="button"><MapPin className="h-4 w-4" />Get location</button></div> : null}
+          {locationRequired ? <div className="col-span-full flex flex-col items-start gap-4 rounded-2xl border border-[#dfe3f5] bg-[linear-gradient(135deg,#f8f9ff_0%,#f1f3ff_100%)] px-5 py-6 sm:flex-row sm:items-center sm:justify-between" role="status"><div className="flex items-start gap-3"><span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-[#514bc8] shadow-sm"><LocateFixed className="h-5 w-5" /></span><div><h3 className="text-sm font-semibold text-[#30375a]">Set your location to find tutors near you</h3><p className="mt-1 max-w-xl text-xs leading-relaxed text-[#757e96]">Use your current location or search for an address to see accurate tutor distances.</p></div></div><button className="inline-flex min-h-11 w-full shrink-0 items-center justify-center gap-2 rounded-full bg-[#232066] px-5 text-sm font-semibold text-white hover:bg-[#1c175f] sm:w-auto" onClick={() => setLocationModalOpen(true)} type="button"><MapPin className="h-4 w-4" />Set location</button></div> : null}
           {tutorsError ? <div className="col-span-full flex items-center justify-between gap-3 rounded-xl border border-[#f0d6b5] bg-[#fff9f1] px-4 py-3 text-sm font-medium text-[#8b5a20]" role="alert"><span>{tutorsError}</span><button className="shrink-0 font-semibold underline" onClick={() => setTutorsRefreshKey((current) => current + 1)} type="button">Try again</button></div> : null}
       {tutorsLoading && !locationRequired && !serviceUnavailable && tutorCards.length === 0 ? Array.from({ length: 4 }, (_, index) => <TutorCardSkeleton key={`tutor-skeleton-${index}`} />) : null}
           {tutorCards.map((tutor) => (
@@ -632,8 +634,7 @@ export default function BookingsPage({ initialView = "explore", notice }: { init
 }
 
 function LocationRequiredModal({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
+  const location = useTutorLocationSetup((summary) => { if (summary) onSaved(); });
 
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
@@ -641,46 +642,7 @@ function LocationRequiredModal({ onClose, onSaved }: { onClose: () => void; onSa
     return () => { document.body.style.overflow = previousOverflow; };
   }, []);
 
-  const getLocation = async () => {
-    if (!navigator.geolocation) {
-      setError("Location access is not supported by this browser.");
-      return;
-    }
-
-    setSaving(true);
-    setError("");
-    try {
-      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject, {
-          enableHighAccuracy: true,
-          maximumAge: 0,
-          timeout: 15000,
-        });
-      });
-      if (!Number.isFinite(position.coords.accuracy) || position.coords.accuracy > 50) {
-        throw new Error("We could not get a precise location. Please move somewhere with a clearer GPS signal and try again.");
-      }
-      await updateCurrentLocation({
-        accuracy: position.coords.accuracy,
-        latitude: position.coords.latitude,
-        longitude: position.coords.longitude,
-      });
-      onSaved();
-    } catch (caught) {
-      if (caught && typeof caught === "object" && !(caught instanceof Error) && "code" in caught) {
-        const geolocationError = caught as GeolocationPositionError;
-        setError(geolocationError.code === geolocationError.PERMISSION_DENIED
-          ? "Location permission was denied. Allow location access in your browser and try again."
-          : "We could not get your location. Please try again.");
-      } else {
-        setError(caught instanceof Error ? caught.message : "Could not save your location.");
-      }
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  return <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#11152f]/50 px-4 py-6 backdrop-blur-[2px]" onClick={saving ? undefined : onClose}><section aria-labelledby="location-required-title" aria-modal="true" className="w-full max-w-md rounded-2xl border border-[#e2e5f0] bg-white p-5 shadow-2xl sm:p-6" onClick={(event) => event.stopPropagation()} role="dialog"><div className="flex items-start justify-between gap-4"><span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-[#eff1ff] text-[#4c47c6]"><LocateFixed className="h-6 w-6" /></span><button aria-label="Close location prompt" className="inline-flex h-10 w-10 items-center justify-center rounded-full text-[#747d91] hover:bg-[#f3f4f8] disabled:opacity-50" disabled={saving} onClick={onClose} type="button"><X className="h-4 w-4" /></button></div><h2 className="mt-4 text-xl font-semibold text-[#293047]" id="location-required-title">Find tutors near you</h2><p className="mt-2 text-sm leading-relaxed text-[#747d91]">Allow SP Novate to get your current location. We need a precise location to show accurate tutor distances.</p>{error ? <p className="mt-4 rounded-xl border border-[#f0d6b5] bg-[#fff9f1] px-3 py-2.5 text-sm font-medium text-[#8b5a20]" role="alert">{error}</p> : null}<div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"><button className="min-h-11 rounded-full border border-[#d8dde8] bg-white px-5 text-sm font-semibold text-[#596177] disabled:opacity-50" disabled={saving} onClick={onClose} type="button">Not now</button><button className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-[#232066] px-5 text-sm font-semibold text-white hover:bg-[#1c175f] disabled:cursor-wait disabled:opacity-70" disabled={saving} onClick={() => void getLocation()} type="button"><MapPin className="h-4 w-4" />{saving ? "Getting location..." : "Get location"}</button></div></section></div>;
+  return <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#11152f]/50 px-3 py-4 backdrop-blur-[2px]" onClick={location.saving ? undefined : onClose}><section aria-labelledby="location-required-title" aria-modal="true" className="flex max-h-[calc(100dvh-2rem)] w-full max-w-[48rem] flex-col overflow-hidden rounded-2xl border border-[#e2e5f0] bg-white shadow-2xl" onClick={(event) => event.stopPropagation()} role="dialog"><header className="flex shrink-0 items-center justify-between border-b border-[#e7eaf1] px-4 py-3 sm:px-5"><div><h2 className="text-base font-bold text-[#282f42]" id="location-required-title">Set your location</h2><p className="mt-0.5 text-xs text-[#858da0]">Use your current location or search for an address.</p></div><button aria-label="Close location prompt" className="inline-flex h-10 w-10 items-center justify-center rounded-full text-[#747d91] hover:bg-[#f3f4f8] disabled:opacity-50" disabled={location.saving} onClick={onClose} type="button"><X className="h-4 w-4" /></button></header><div className="min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6">{location.view === "prompt" ? <StepTwoLocationPrompt locationError={location.error} onAllowLocation={location.requestCurrentLocation} onEnterAddress={() => location.openSearch()} requestingLocation={location.requestingLocation} /> : <StepTwoAddressConfirm addressForm={location.address} coordinates={location.coordinates} locationError={location.error} mode={location.view} placeId={location.placeId} onChangeLocation={location.goBack} onPlaceQueryChange={location.changeQuery} onSelectPlace={location.selectPlace} placePredictions={location.predictions} placeQuery={location.query} requestingPlaceSearch={location.requestingSearch} source={location.source} />}</div>{location.view !== "prompt" ? <footer className="flex shrink-0 justify-end gap-2 border-t border-[#e7eaf1] px-4 py-3 sm:px-5"><button className="min-h-10 rounded-full border border-[#d8dde8] px-4 text-sm font-semibold text-[#555e73]" disabled={location.saving} onClick={location.goBack} type="button">Back</button>{location.view !== "search" ? <button className="min-h-10 rounded-full bg-brand-primary px-5 text-sm font-semibold text-white disabled:bg-[#b8b6cf]" disabled={!location.ready || location.saving} onClick={() => void location.confirm()} type="button">{location.saving ? "Saving..." : "Confirm location"}</button> : null}</footer> : null}</section></div>;
 }
 
 function TutorCardSkeleton() {

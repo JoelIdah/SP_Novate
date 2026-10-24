@@ -1,22 +1,29 @@
-import { BookOpenCheck, MessageCircleMore, ReceiptText } from "lucide-react";
+import { ArrowRight, BookOpenCheck, CalendarPlus, MessageCircleMore, ReceiptText } from "lucide-react";
 import Link from "next/link";
+import type { ReactNode } from "react";
 
 import { DashboardActionCard, DashboardResourceCard, DashboardSectionHeader } from "./DashboardPatterns";
 import type { StudentDashboardStats } from "./studentDashboard";
 import type { BookingListItem, BookingStatus } from "../bookings/bookings";
 
-function DashboardEmptyState({ children }: { children: string }) {
-  return <div className="flex min-h-48 items-center justify-center px-5 py-8 text-center text-sm font-medium text-[#8a93a7]">{children}</div>;
+function DashboardEmptyState({ actionHref, actionLabel, children, icon }: { actionHref?: string; actionLabel?: string; children: string; icon?: ReactNode }) {
+  return (
+    <div className="flex min-h-40 flex-col items-center justify-center px-5 py-6 text-center">
+      {icon ? <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#f0f1ff] text-[#5d59cf]">{icon}</span> : null}
+      <p className={`${icon ? "mt-3" : ""} text-sm font-medium text-[#7b859c]`}>{children}</p>
+      {actionHref && actionLabel ? <Link className="mt-3 inline-flex min-h-9 items-center gap-1.5 rounded-full border border-[#d6daeb] bg-white px-4 text-xs font-semibold text-[#5552bd] hover:border-[#b8b8e4] hover:bg-[#f7f7ff]" href={actionHref}>{actionLabel}<ArrowRight className="h-3.5 w-3.5" /></Link> : null}
+    </div>
+  );
 }
 
 export function StudentDashboardActionsSection() {
   return (
     <div>
-      <DashboardSectionHeader title="Actions" />
-      <div className="grid gap-3 md:grid-cols-3">
-        <DashboardActionCard description="Find a tutor and schedule your session." href="/students/bookings" icon={<span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#d8ebfa] text-[#2f8fd6]"><BookOpenCheck className="h-[1.125rem] w-[1.125rem]" /></span>} title="Book a session" toneClassName="border-[#b9dcf8] bg-[#f3f9ff]" />
-        <DashboardActionCard description="Go to your conversations with tutors." href="/students/chat" icon={<span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#daf3f1] text-[#43b8b2]"><MessageCircleMore className="h-[1.125rem] w-[1.125rem]" /></span>} title="Start a conversation" toneClassName="border-[#b4e5e4] bg-[#f4fcfc]" />
-        <DashboardActionCard description="Review your account activity." href="/students/transactions" icon={<span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#f6ead0] text-[#d8aa2c]"><ReceiptText className="h-[1.125rem] w-[1.125rem]" /></span>} title="Check transactions" toneClassName="border-[#ecd8b2] bg-[#fcf8ef]" />
+      <DashboardSectionHeader title="Quick actions" />
+      <div className="grid gap-4 lg:grid-cols-3">
+        <DashboardActionCard description="Find a tutor and schedule your session." href="/students/bookings" icon={<span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#c9e6fb] text-[#1679bd]"><BookOpenCheck className="h-5 w-5" /></span>} title="Book a session" toneClassName="border-[#9dcef2] bg-[#e9f6ff]" />
+        <DashboardActionCard description="Go to your conversations with tutors." href="/students/chat" icon={<span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#c7ece9] text-[#16867f]"><MessageCircleMore className="h-5 w-5" /></span>} title="Start a conversation" toneClassName="border-[#93d8d4] bg-[#e9f9f8]" />
+        <DashboardActionCard description="Review your account activity." href="/students/transactions" icon={<span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#f4dfaa] text-[#9a7413]"><ReceiptText className="h-5 w-5" /></span>} title="Check transactions" toneClassName="border-[#dfc478] bg-[#fff7df]" />
       </div>
     </div>
   );
@@ -31,15 +38,15 @@ export function StudentDashboardLearningOverviewSection({ stats, error }: { stat
   ] as const;
   return (
     <div>
-      <div className="mb-2 flex items-center justify-between gap-3">
-        <h2 className="text-[0.875rem] font-semibold text-[#616a82]">Learning Overview</h2>
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <h2 className="text-base font-semibold text-[#3f4860]">Learning Overview</h2>
         {error ? <p className="text-xs text-brand-danger">{error}</p> : null}
       </div>
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {metrics.map(([label, value]) => (
-          <article key={label} className="flex min-h-16 flex-col justify-center rounded-[0.65rem] border border-[#e4e8f1] bg-white px-3.5 py-2.5">
-            <p className="text-[0.75rem] text-[#747d94]">{label}</p>
-            <p aria-label={value === undefined ? "Loading" : undefined} className="mt-1 text-[1.75rem] font-bold leading-none text-[#4b5268]">{value ?? "—"}</p>
+          <article key={label} className="flex min-h-24 flex-col justify-center rounded-xl border border-[#e0e5ef] bg-white px-5 py-4 shadow-[0_5px_16px_rgba(31,40,74,0.04)]">
+            <p className="text-sm text-[#68738d]">{label}</p>
+            <p aria-label={value === undefined ? "Loading" : undefined} className="mt-2 text-[1.9rem] font-bold leading-none text-[#37405b]">{value ?? "—"}</p>
           </article>
         ))}
       </div>
@@ -71,11 +78,11 @@ export function StudentDashboardBookingsSection({
 }) {
   return (
     <section className="flex h-full min-h-0 flex-col">
-      <div className="mb-2 flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5">
-        <h2 className="text-[0.9rem] font-semibold text-[#616a82]">Managed Bookings</h2>
-        <Link className="max-w-[48vw] truncate text-right text-[0.75rem] font-semibold text-[#6f74a7] hover:text-[#5954c9] sm:max-w-none" href="/students/bookings?view=manage">Go to managed bookings &gt;</Link>
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+        <h2 className="text-base font-semibold text-[#3f4860]">Managed Bookings</h2>
+        <Link className="inline-flex max-w-[48vw] items-center gap-1 truncate text-right text-xs font-semibold text-[#5d5ab8] hover:text-[#4540b8] sm:max-w-none" href="/students/bookings?view=manage">Go to managed bookings<ArrowRight className="h-3.5 w-3.5 shrink-0" /></Link>
       </div>
-      <div className="flex min-h-48 flex-col overflow-hidden rounded-xl border border-[#e4e8f1] bg-white">
+      <div className="flex min-h-40 flex-col overflow-hidden rounded-xl border border-[#e4e8f1] bg-white">
         {loading ? <DashboardEmptyState>Loading your bookings…</DashboardEmptyState> : null}
         {!loading && error ? (
           <div className="flex min-h-48 flex-col items-center justify-center gap-3 px-5 py-8 text-center" role="alert">
@@ -83,7 +90,7 @@ export function StudentDashboardBookingsSection({
             <button className="min-h-10 rounded-full bg-[#232066] px-5 text-xs font-semibold text-white" onClick={onRetry} type="button">Try again</button>
           </div>
         ) : null}
-        {!loading && !error && bookings.length === 0 ? <DashboardEmptyState>You do not have any bookings yet.</DashboardEmptyState> : null}
+        {!loading && !error && bookings.length === 0 ? <DashboardEmptyState actionHref="/students/bookings" actionLabel="Find a tutor" icon={<CalendarPlus className="h-5 w-5" />}>You do not have any bookings yet.</DashboardEmptyState> : null}
         {!loading && !error && bookings.length > 0 ? (
           <div className="divide-y divide-[#edf0f6]">
             {bookings.map((booking) => (
@@ -112,12 +119,11 @@ export function StudentDashboardBookingsSection({
 export function StudentDashboardMessagesSection() {
   return (
     <section className="flex h-full min-h-0 flex-col">
-      <div className="mb-2 flex items-center justify-between">
-        <h2 className="text-[0.9rem] font-semibold text-[#616a82]">Messages</h2>
-        <Link className="max-w-[48vw] truncate text-right text-[0.75rem] font-semibold text-[#6f74a7] hover:text-[#5954c9] sm:max-w-none" href="/students/chat">Go to chat &gt;</Link>
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-base font-semibold text-[#3f4860]">Messages</h2>
       </div>
-      <div className="flex min-h-48 flex-col overflow-hidden rounded-xl border border-[#e4e8f1] bg-white">
-        <DashboardEmptyState>Your recent conversations will appear here when messaging data is available.</DashboardEmptyState>
+      <div className="flex min-h-40 flex-col overflow-hidden rounded-xl border border-[#e4e8f1] bg-white">
+        <DashboardEmptyState actionHref="/students/chat" actionLabel="Open chat" icon={<MessageCircleMore className="h-5 w-5" />}>Your recent conversations will appear here.</DashboardEmptyState>
       </div>
     </section>
   );
@@ -126,8 +132,8 @@ export function StudentDashboardMessagesSection() {
 export function StudentDashboardResourcesSection() {
   return (
     <div>
-      <h2 className="mb-2 text-[0.875rem] font-semibold text-[#616a82]">Resource &amp; Support</h2>
-      <div className="grid gap-3 xl:grid-cols-[2fr_1fr_1fr]">
+      <h2 className="mb-3 text-base font-semibold text-[#3f4860]">Resource &amp; Support</h2>
+      <div className="grid gap-4 lg:grid-cols-3">
         <DashboardResourceCard description="Watch this intro video to learn how SP Novate works." markerClassName="bg-[#f3c53d]" title="Watch our demo video" toneClassName="border-[#c5dbed] bg-[#e5f2ff]" />
         <DashboardResourceCard description="Watch this intro video to learn more about our tutors." markerClassName="bg-[#caa33a]" title="Learn about our tutors" toneClassName="border-[#e6decf] bg-[#f7f2e8]" />
         <DashboardResourceCard description="Watch this intro video to learn about our finder's fee." markerClassName="bg-[#9aa3b6]" title="What is a finder's fee" toneClassName="border-[#dfe4ed] bg-[#eef2f7]" />

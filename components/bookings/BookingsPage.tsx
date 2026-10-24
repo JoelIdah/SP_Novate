@@ -1,9 +1,9 @@
  "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronRight, ClipboardList, Compass, EllipsisVertical, LocateFixed, MapPin, Search, Star, X } from "lucide-react";
+import { CalendarPlus, Check, ChevronDown, ChevronRight, ClipboardList, Compass, EllipsisVertical, LocateFixed, MapPin, Search, Star, X } from "lucide-react";
 
 import { StudentDashboardNavbar } from "../dashboard/StudentDashboardNavbar";
 import { DashboardShell } from "../layout/DashboardShell";
@@ -15,13 +15,15 @@ import { Notice } from "../ui/Notice";
 import { SelectMenu } from "../ui/SelectMenu";
 import { TableFilters } from "../ui/TableFilters";
 import { InfiniteScrollTrigger } from "../ui/InfiniteScrollTrigger";
+import { StepTwoAddressConfirm } from "../signup/profile-setup/StepTwoAddressConfirm";
+import { StepTwoLocationPrompt } from "../signup/profile-setup/StepTwoLocationPrompt";
+import { useTutorLocationSetup } from "../tutor/onboarding/useTutorLocationSetup";
 import { getBookings, type BookingListItem, type BookingStatus } from "./bookings";
 import {
   getCategories,
   getTutors,
   isLocationRequiredError,
   isServiceUnavailableError,
-  updateCurrentLocation,
   type StudentCategory,
   type TutorSearchResult,
 } from "./tutorSearch";
@@ -102,11 +104,11 @@ export default function BookingsPage({ initialView = "explore", notice }: { init
   const [categoriesError, setCategoriesError] = useState("");
   const [categoriesUnavailable, setCategoriesUnavailable] = useState(false);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
-  const [days, setDays] = useState("");
+  const [days, setDays] = useState<string[]>([]);
   const [rating, setRating] = useState("");
   const [draftSubject, setDraftSubject] = useState("");
   const [draftCategory, setDraftCategory] = useState("");
-  const [draftDays, setDraftDays] = useState("");
+  const [draftDays, setDraftDays] = useState<string[]>([]);
   const [draftRating, setDraftRating] = useState("");
   const [bookingDate, setBookingDate] = useState("");
   const [selectedStatus, setSelectedStatus] = useState<BookingStatus | "">("");
@@ -117,7 +119,7 @@ export default function BookingsPage({ initialView = "explore", notice }: { init
       if (nextQuery) {
         setSubject("");
         setCategory("");
-        setDays("");
+        setDays([]);
         setRating("");
       }
       setTutorsPage(1);
@@ -168,7 +170,7 @@ export default function BookingsPage({ initialView = "explore", notice }: { init
             name: debouncedTutorQuery || undefined,
             department: category || undefined,
             subject: subject || undefined,
-            day: days || undefined,
+            days: days.length ? days : undefined,
             minimumRating: rating || undefined,
           },
           controller.signal,
@@ -241,9 +243,10 @@ export default function BookingsPage({ initialView = "explore", notice }: { init
     return [...new Set(source.map((item) => item.subject))].sort((first, second) => first.localeCompare(second));
   }, [categories, draftSelectedCategory]);
   const activeFilterCount = useMemo(
-    () => [subject, category, days, rating].filter(Boolean).length,
+    () => [subject, category, days.length ? "days" : "", rating].filter(Boolean).length,
     [subject, category, days, rating]
   );
+  const hasBookingFilters = Boolean(bookingDate || selectedStatus);
   const clearSearch = () => {
     setTutorQuery("");
     setDebouncedTutorQuery("");
@@ -259,7 +262,7 @@ export default function BookingsPage({ initialView = "explore", notice }: { init
     setTutorsPage(1);
   };
 
-  const selectDays = (nextDays: string) => {
+  const selectDays = (nextDays: string[]) => {
     clearSearch();
     setDays(nextDays);
     setTutorsPage(1);
@@ -296,7 +299,7 @@ export default function BookingsPage({ initialView = "explore", notice }: { init
   const resetDraftFilters = () => {
     setDraftSubject("");
     setDraftCategory("");
-    setDraftDays("");
+    setDraftDays([]);
     setDraftRating("");
   };
 
@@ -374,10 +377,10 @@ export default function BookingsPage({ initialView = "explore", notice }: { init
           <div className="hidden rounded-2xl border border-[#e4e8f3] bg-[#f7f9fd] p-[1em] md:block">
           {categoriesError ? <Notice className="mb-3 text-xs" role="alert">{categoriesError}</Notice> : null}
           <div className="grid gap-[0.7em] md:grid-cols-2 xl:grid-cols-4">
-            <FilterSelect disabled={categoriesLoading || subjectOptions.length === 0} label="What do you want to learn" onSelect={selectSubject} options={subjectOptions} placeholder={categoriesLoading ? "Loading subjects..." : "Select subject"} value={subject} />
-            <FilterSelect disabled={categoriesLoading || categoryOptions.length === 0} label="What is the field category?" onSelect={selectCategory} options={categoryOptions} placeholder={categoriesLoading ? "Loading categories..." : "Select category"} value={category} />
-            <FilterSelect label="Available days" onSelect={selectDays} options={["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]} placeholder="Select a day" value={days} />
-            <FilterSelect label="Tutor rating" onSelect={selectRating} options={["3", "4", "4.5"]} placeholder="Select minimum rating" value={rating} />
+            <FilterSelect disabled={categoriesLoading || subjectOptions.length === 0} label="What do you want to learn" onSelect={selectSubject} options={subjectOptions} placeholder={categoriesLoading ? "Loading subjects..." : "Select subject"} searchable searchPlaceholder="Search subjects" value={subject} />
+            <FilterSelect disabled={categoriesLoading || categoryOptions.length === 0} label="What is the field category?" onSelect={selectCategory} options={categoryOptions} placeholder={categoriesLoading ? "Loading categories..." : "Select category"} searchable searchPlaceholder="Search categories" value={category} />
+            <DaysMultiSelect onChange={selectDays} value={days} />
+            <RatingFilter onSelect={selectRating} value={rating} />
           </div>
           </div>
         ) : null}
@@ -403,7 +406,7 @@ export default function BookingsPage({ initialView = "explore", notice }: { init
         {view === "explore" ? (
             <div className="grid gap-[1.1em] xl:grid-cols-2 2xl:grid-cols-3">
           {serviceUnavailable ? <div className="col-span-full flex flex-col items-start justify-between gap-3 rounded-2xl border border-[#e2e6ef] bg-[#f8f9fc] px-5 py-5 sm:flex-row sm:items-center" role="alert"><p className="text-sm font-medium text-[#626b80]">We couldn&apos;t load this right now.</p><button className="min-h-10 rounded-full bg-[#232066] px-5 text-sm font-semibold text-white" onClick={() => { setCategoriesUnavailable(false); setTutorsUnavailable(false); setTutorsRefreshKey((current) => current + 1); }} type="button">Try again</button></div> : null}
-          {locationRequired ? <div className="col-span-full flex flex-col items-start gap-4 rounded-2xl border border-[#dfe3f5] bg-[linear-gradient(135deg,#f8f9ff_0%,#f1f3ff_100%)] px-5 py-6 sm:flex-row sm:items-center sm:justify-between" role="status"><div className="flex items-start gap-3"><span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-[#514bc8] shadow-sm"><LocateFixed className="h-5 w-5" /></span><div><h3 className="text-sm font-semibold text-[#30375a]">Set your location to find tutors near you</h3><p className="mt-1 max-w-xl text-xs leading-relaxed text-[#757e96]">We use your location to calculate tutor distance and show relevant results. Your browser will ask for permission before anything is saved.</p></div></div><button className="inline-flex min-h-11 w-full shrink-0 items-center justify-center gap-2 rounded-full bg-[#232066] px-5 text-sm font-semibold text-white hover:bg-[#1c175f] sm:w-auto" onClick={() => setLocationModalOpen(true)} type="button"><MapPin className="h-4 w-4" />Get location</button></div> : null}
+          {locationRequired ? <div className="col-span-full flex flex-col items-start gap-4 rounded-2xl border border-[#dfe3f5] bg-[linear-gradient(135deg,#f8f9ff_0%,#f1f3ff_100%)] px-5 py-6 sm:flex-row sm:items-center sm:justify-between" role="status"><div className="flex items-start gap-3"><span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-[#514bc8] shadow-sm"><LocateFixed className="h-5 w-5" /></span><div><h3 className="text-sm font-semibold text-[#30375a]">Set your location to find tutors near you</h3><p className="mt-1 max-w-xl text-xs leading-relaxed text-[#757e96]">Use your current location or search for an address to see accurate tutor distances.</p></div></div><button className="inline-flex min-h-11 w-full shrink-0 items-center justify-center gap-2 rounded-full bg-[#232066] px-5 text-sm font-semibold text-white hover:bg-[#1c175f] sm:w-auto" onClick={() => setLocationModalOpen(true)} type="button"><MapPin className="h-4 w-4" />Set location</button></div> : null}
           {tutorsError ? <div className="col-span-full flex items-center justify-between gap-3 rounded-xl border border-[#f0d6b5] bg-[#fff9f1] px-4 py-3 text-sm font-medium text-[#8b5a20]" role="alert"><span>{tutorsError}</span><button className="shrink-0 font-semibold underline" onClick={() => setTutorsRefreshKey((current) => current + 1)} type="button">Try again</button></div> : null}
       {tutorsLoading && !locationRequired && !serviceUnavailable && tutorCards.length === 0 ? Array.from({ length: 4 }, (_, index) => <TutorCardSkeleton key={`tutor-skeleton-${index}`} />) : null}
           {tutorCards.map((tutor) => (
@@ -482,16 +485,16 @@ export default function BookingsPage({ initialView = "explore", notice }: { init
           <InfiniteScrollTrigger className="col-span-full" enabled={!tutorsLoading && tutorsPage < tutorsTotalPages} onVisible={() => setTutorsPage((current) => current + 1)} />
           </div>
         ) : (
-          <section className="flex flex-col space-y-4">
+          <section className="flex flex-col space-y-3 sm:space-y-4">
             <div className="flex items-center justify-between gap-3">
-              <h1 className="text-[2em] font-semibold leading-none text-[#2f3547]">Manage booking</h1>
+              <h1 className="min-w-0 text-xl font-bold tracking-tight text-[#2f3547] sm:text-2xl">Manage bookings</h1>
               <button
-                className="inline-flex h-10 items-center gap-1 rounded-full bg-[#232066] px-4 text-[0.78em] font-semibold text-white"
+                className="hidden min-h-10 shrink-0 items-center gap-1.5 rounded-full bg-[#232066] px-4 text-xs font-semibold text-white shadow-sm hover:bg-[#1c175f] sm:inline-flex"
                 onClick={() => changeView("explore")}
                 type="button"
               >
-                <Star className="h-3.5 w-3.5" fill="currentColor" strokeWidth={1} />
-                Book a session
+                <CalendarPlus className="h-4 w-4" strokeWidth={2} />
+                Book session
               </button>
             </div>
 
@@ -499,7 +502,7 @@ export default function BookingsPage({ initialView = "explore", notice }: { init
               <p className="rounded-xl border border-[#bde8d0] bg-[#effaf4] px-4 py-3 text-sm font-medium text-[#20784d]" role="status">Your booking request was submitted. You can track it here.</p>
             ) : null}
 
-            <TableFilters date={bookingDate} filters={[{ label: "Status", value: selectedStatus ? bookingStatusLabel(selectedStatus) : "All", options: ["All", "Pending", "Awaiting approval", "Ongoing", "Completed", "Cancelled"], onChange: (value) => { setSelectedStatus(bookingStatusFromLabel(value)); setBookingsPage(1); } }]} onDateChange={(value) => { setBookingDate(value); setBookingsPage(1); }} />
+            <TableFilters className="[&>div]:flex-1 [&>div>button]:w-full sm:[&>div]:flex-none sm:[&>div>button]:w-auto" date={bookingDate} filters={[{ label: "Status", value: selectedStatus ? bookingStatusLabel(selectedStatus) : "All", options: ["All", "Pending", "Awaiting approval", "Ongoing", "Completed", "Cancelled"], onChange: (value) => { setSelectedStatus(bookingStatusFromLabel(value)); setBookingsPage(1); } }]} onDateChange={(value) => { setBookingDate(value); setBookingsPage(1); }} />
 
             {bookingsError ? <div className="flex items-center justify-between gap-3 rounded-xl border border-[#f0d6b5] bg-[#fff9f1] px-4 py-3 text-sm font-medium text-[#8b5a20]" role="alert"><span>{bookingsError}</span><button className="shrink-0 underline" onClick={() => setBookingsRefreshKey((current) => current + 1)} type="button">Try again</button></div> : null}
             {bookingsLoading && bookingsPage === 1 ? <p className="py-4 text-center text-sm text-[#7a8299]" role="status">Loading bookings...</p> : null}
@@ -576,7 +579,26 @@ export default function BookingsPage({ initialView = "explore", notice }: { init
                 </Link>
               ))}
             </div> : null}
-            {!bookingsLoading && !bookingsError && bookings.length === 0 ? <p className="rounded-xl border border-dashed border-[#d9deea] bg-[#fafbfe] px-4 py-10 text-center text-sm text-[#747d92]">No bookings match these filters.</p> : null}
+            {!bookingsLoading && !bookingsError && bookings.length === 0 ? (
+              <div className="flex min-h-40 flex-col items-center justify-center rounded-2xl border border-dashed border-[#d9deea] bg-[#fafbfe] px-5 py-7 text-center">
+                <span className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-[#eeefff] text-[#5b56cf]"><CalendarPlus className="h-5 w-5" /></span>
+                <h2 className="mt-3 text-sm font-semibold text-[#3d4660]">{hasBookingFilters ? "No matching bookings" : "No bookings yet"}</h2>
+                <p className="mt-1 max-w-xs text-xs leading-relaxed text-[#7b8499]">{hasBookingFilters ? "Try clearing your date or status filters." : "Find a tutor and book your first learning session."}</p>
+                <button
+                  className="mt-4 min-h-9 rounded-full border border-[#d4d8e8] bg-white px-4 text-xs font-semibold text-[#5552bd] hover:border-[#b9bae2] hover:bg-[#f6f6ff]"
+                  onClick={() => {
+                    if (hasBookingFilters) {
+                      setBookingDate("");
+                      setSelectedStatus("");
+                      setBookingsPage(1);
+                    } else changeView("explore");
+                  }}
+                  type="button"
+                >
+                  {hasBookingFilters ? "Clear filters" : "Explore tutors"}
+                </button>
+              </div>
+            ) : null}
             {bookingsLoading && bookingsPage > 1 ? <p className="py-3 text-center text-xs text-[#8a93a7]" role="status">Loading more bookings...</p> : null}
             <InfiniteScrollTrigger enabled={!bookingsLoading && bookingsPage < bookingsTotalPages} onVisible={() => setBookingsPage((current) => current + 1)} />
           </section>
@@ -592,10 +614,10 @@ export default function BookingsPage({ initialView = "explore", notice }: { init
             </div>
             <div className="grid gap-3 overflow-y-auto pb-3">
               {categoriesError ? <Notice className="text-xs" role="alert">{categoriesError}</Notice> : null}
-              <FilterSelect disabled={categoriesLoading || draftSubjectOptions.length === 0} label="What do you want to learn" onSelect={setDraftSubject} options={draftSubjectOptions} placeholder={categoriesLoading ? "Loading subjects..." : "Select subject"} value={draftSubject} />
-              <FilterSelect disabled={categoriesLoading || categoryOptions.length === 0} label="What is the field category?" onSelect={selectDraftCategory} options={categoryOptions} placeholder={categoriesLoading ? "Loading categories..." : "Select category"} value={draftCategory} />
-              <FilterSelect label="Available days" onSelect={setDraftDays} options={["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]} placeholder="Select a day" value={draftDays} />
-              <FilterSelect label="Tutor rating" onSelect={setDraftRating} options={["3", "4", "4.5"]} placeholder="Select minimum rating" value={draftRating} />
+              <FilterSelect disabled={categoriesLoading || draftSubjectOptions.length === 0} inlineMenu label="What do you want to learn" onSelect={setDraftSubject} options={draftSubjectOptions} placeholder={categoriesLoading ? "Loading subjects..." : "Select subject"} searchable searchPlaceholder="Search subjects" value={draftSubject} />
+              <FilterSelect disabled={categoriesLoading || categoryOptions.length === 0} inlineMenu label="What is the field category?" onSelect={selectDraftCategory} options={categoryOptions} placeholder={categoriesLoading ? "Loading categories..." : "Select category"} searchable searchPlaceholder="Search categories" value={draftCategory} />
+              <DaysMultiSelect inlineMenu onChange={setDraftDays} value={draftDays} />
+              <RatingFilter inlineMenu onSelect={setDraftRating} value={draftRating} />
             </div>
             <div className="mt-auto flex gap-2 border-t border-[#eef1f6] bg-white py-3">
               <button className="h-11 flex-1 rounded-full bg-[#ececef] text-[0.82em] font-semibold text-[#4e576d]" onClick={() => setIsFilterOpen(false)} type="button">
@@ -612,8 +634,7 @@ export default function BookingsPage({ initialView = "explore", notice }: { init
 }
 
 function LocationRequiredModal({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
+  const location = useTutorLocationSetup((summary) => { if (summary) onSaved(); });
 
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
@@ -621,46 +642,7 @@ function LocationRequiredModal({ onClose, onSaved }: { onClose: () => void; onSa
     return () => { document.body.style.overflow = previousOverflow; };
   }, []);
 
-  const getLocation = async () => {
-    if (!navigator.geolocation) {
-      setError("Location access is not supported by this browser.");
-      return;
-    }
-
-    setSaving(true);
-    setError("");
-    try {
-      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject, {
-          enableHighAccuracy: true,
-          maximumAge: 0,
-          timeout: 15000,
-        });
-      });
-      if (!Number.isFinite(position.coords.accuracy) || position.coords.accuracy > 50) {
-        throw new Error("We could not get a precise location. Please move somewhere with a clearer GPS signal and try again.");
-      }
-      await updateCurrentLocation({
-        accuracy: position.coords.accuracy,
-        latitude: position.coords.latitude,
-        longitude: position.coords.longitude,
-      });
-      onSaved();
-    } catch (caught) {
-      if (caught && typeof caught === "object" && !(caught instanceof Error) && "code" in caught) {
-        const geolocationError = caught as GeolocationPositionError;
-        setError(geolocationError.code === geolocationError.PERMISSION_DENIED
-          ? "Location permission was denied. Allow location access in your browser and try again."
-          : "We could not get your location. Please try again.");
-      } else {
-        setError(caught instanceof Error ? caught.message : "Could not save your location.");
-      }
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  return <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#11152f]/50 px-4 py-6 backdrop-blur-[2px]" onClick={saving ? undefined : onClose}><section aria-labelledby="location-required-title" aria-modal="true" className="w-full max-w-md rounded-2xl border border-[#e2e5f0] bg-white p-5 shadow-2xl sm:p-6" onClick={(event) => event.stopPropagation()} role="dialog"><div className="flex items-start justify-between gap-4"><span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-[#eff1ff] text-[#4c47c6]"><LocateFixed className="h-6 w-6" /></span><button aria-label="Close location prompt" className="inline-flex h-10 w-10 items-center justify-center rounded-full text-[#747d91] hover:bg-[#f3f4f8] disabled:opacity-50" disabled={saving} onClick={onClose} type="button"><X className="h-4 w-4" /></button></div><h2 className="mt-4 text-xl font-semibold text-[#293047]" id="location-required-title">Find tutors near you</h2><p className="mt-2 text-sm leading-relaxed text-[#747d91]">Allow SP Novate to get your current location. We need a precise location to show accurate tutor distances.</p>{error ? <p className="mt-4 rounded-xl border border-[#f0d6b5] bg-[#fff9f1] px-3 py-2.5 text-sm font-medium text-[#8b5a20]" role="alert">{error}</p> : null}<div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"><button className="min-h-11 rounded-full border border-[#d8dde8] bg-white px-5 text-sm font-semibold text-[#596177] disabled:opacity-50" disabled={saving} onClick={onClose} type="button">Not now</button><button className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-[#232066] px-5 text-sm font-semibold text-white hover:bg-[#1c175f] disabled:cursor-wait disabled:opacity-70" disabled={saving} onClick={() => void getLocation()} type="button"><MapPin className="h-4 w-4" />{saving ? "Getting location..." : "Get location"}</button></div></section></div>;
+  return <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#11152f]/50 px-3 py-4 backdrop-blur-[2px]" onClick={location.saving ? undefined : onClose}><section aria-labelledby="location-required-title" aria-modal="true" className="flex max-h-[calc(100dvh-2rem)] w-full max-w-[48rem] flex-col overflow-hidden rounded-2xl border border-[#e2e5f0] bg-white shadow-2xl" onClick={(event) => event.stopPropagation()} role="dialog"><header className="flex shrink-0 items-center justify-between border-b border-[#e7eaf1] px-4 py-3 sm:px-5"><div><h2 className="text-base font-bold text-[#282f42]" id="location-required-title">Set your location</h2><p className="mt-0.5 text-xs text-[#858da0]">Use your current location or search for an address.</p></div><button aria-label="Close location prompt" className="inline-flex h-10 w-10 items-center justify-center rounded-full text-[#747d91] hover:bg-[#f3f4f8] disabled:opacity-50" disabled={location.saving} onClick={onClose} type="button"><X className="h-4 w-4" /></button></header><div className="min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6">{location.view === "prompt" ? <StepTwoLocationPrompt locationError={location.error} onAllowLocation={location.requestCurrentLocation} onEnterAddress={() => location.openSearch()} requestingLocation={location.requestingLocation} /> : <StepTwoAddressConfirm addressForm={location.address} coordinates={location.coordinates} locationError={location.error} mode={location.view} placeId={location.placeId} onChangeLocation={location.goBack} onPlaceQueryChange={location.changeQuery} onSelectPlace={location.selectPlace} placePredictions={location.predictions} placeQuery={location.query} requestingPlaceSearch={location.requestingSearch} source={location.source} />}</div>{location.view !== "prompt" ? <footer className="flex shrink-0 justify-end gap-2 border-t border-[#e7eaf1] px-4 py-3 sm:px-5"><button className="min-h-10 rounded-full border border-[#d8dde8] px-4 text-sm font-semibold text-[#555e73]" disabled={location.saving} onClick={location.goBack} type="button">Back</button>{location.view !== "search" ? <button className="min-h-10 rounded-full bg-brand-primary px-5 text-sm font-semibold text-white disabled:bg-[#b8b6cf]" disabled={!location.ready || location.saving} onClick={() => void location.confirm()} type="button">{location.saving ? "Saving..." : "Confirm location"}</button> : null}</footer> : null}</section></div>;
 }
 
 function TutorCardSkeleton() {
@@ -669,24 +651,144 @@ function TutorCardSkeleton() {
 
 function FilterSelect({
   disabled = false,
+  inlineMenu = false,
   label,
   placeholder,
+  searchable = false,
+  searchPlaceholder,
   value,
   options,
   onSelect,
 }: {
   disabled?: boolean;
+  inlineMenu?: boolean;
   label: string;
   placeholder: string;
+  searchable?: boolean;
+  searchPlaceholder?: string;
   value: string;
   options: string[];
   onSelect: (next: string) => void;
 }) {
   return (
-    <label className="text-[0.74em] font-semibold text-[#8891a7]">
-      <span className="mb-[0.35em] block">{label}</span>
-      <SelectMenu ariaLabel={label} buttonClassName="text-[0.78em] md:h-[2.65em]" disabled={disabled} indicatorClassName="!h-[1.15rem] !w-[1.15rem] !rounded-[0.3rem]" onChange={onSelect} options={options.map((option) => ({ label: `${option}${label === "Tutor rating" ? "+ stars" : ""}`, value: option }))} placeholder={placeholder} value={value} />
-    </label>
+    <div className="text-xs font-semibold text-[#8891a7]">
+      <span className="mb-1 block">{label}</span>
+      <SelectMenu ariaLabel={label} buttonClassName="!h-8 !px-3 !text-xs" clearable disabled={disabled} indicatorClassName="!h-4 !w-4 !rounded" inlineMenu={inlineMenu} onChange={onSelect} options={options.map((option) => ({ label: option, value: option }))} placeholder={placeholder} searchable={searchable} searchPlaceholder={searchPlaceholder} value={value} />
+    </div>
+  );
+}
+
+const weekDays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+
+function DaysMultiSelect({ inlineMenu = false, onChange, value }: { inlineMenu?: boolean; onChange: (next: string[]) => void; value: string[] }) {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const closeOnOutsideClick = (event: PointerEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("pointerdown", closeOnOutsideClick);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutsideClick);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [open]);
+
+  const summary = value.length === 0
+    ? "Select days"
+    : value.length === 1
+      ? value[0]
+      : `${value.length} days selected`;
+
+  return (
+    <div className="min-w-0 text-xs font-semibold text-[#8891a7]" ref={rootRef}>
+      <span className="mb-1 block">Available days</span>
+      <div className="relative">
+        <button
+          aria-expanded={open}
+          aria-haspopup="listbox"
+          className={`flex h-8 w-full items-center justify-between gap-2 rounded-lg border bg-white px-3 text-left text-xs font-medium shadow-[0_1px_2px_rgba(25,32,56,0.04)] ${open ? "border-[#6d63ee] ring-2 ring-[#6d63ee]/15" : "border-[#d8dde8] hover:border-[#bfc5d3]"}`}
+          onClick={() => setOpen((current) => !current)}
+          type="button"
+        >
+          <span className={value.length ? "truncate text-[#46506a]" : "truncate text-[#9299a9]"}>{summary}</span>
+          <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded bg-[#f0f1ff] text-[#5652d2]"><ChevronDown className={`h-3 w-3 transition-transform ${open ? "rotate-180" : ""}`} /></span>
+        </button>
+        {open ? (
+          <div aria-label="Available days" aria-multiselectable="true" className={`${inlineMenu ? "relative mt-1.5" : "absolute left-0 top-[calc(100%+0.4rem)]"} z-[95] w-full min-w-48 rounded-xl border border-[#dfe3ec] bg-white p-1.5 shadow-[0_18px_42px_rgba(23,30,58,0.16)]`} role="listbox">
+            {weekDays.map((day) => {
+              const selected = value.includes(day);
+              return (
+                <button
+                  aria-selected={selected}
+                  className={`flex min-h-9 w-full items-center gap-2.5 rounded-lg px-2.5 text-left text-sm font-medium ${selected ? "bg-brand-primary-soft text-brand-accent" : "text-[#596277] hover:bg-[#f5f6fa]"}`}
+                  key={day}
+                  onClick={() => onChange(selected ? value.filter((item) => item !== day) : [...value, day])}
+                  role="option"
+                  type="button"
+                >
+                  <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${selected ? "border-brand-accent bg-brand-accent text-white" : "border-[#cbd1dd] bg-white"}`}>{selected ? <Check className="h-3 w-3" strokeWidth={3} /> : null}</span>
+                  {day}
+                </button>
+              );
+            })}
+            <div className="mt-1 flex items-center justify-between border-t border-[#edf0f5] px-1 pt-1.5">
+              <button className="min-h-8 px-2 text-xs font-semibold text-[#777f92] disabled:opacity-40" disabled={!value.length} onClick={() => onChange([])} type="button">Clear</button>
+              <button className="min-h-8 rounded-full bg-brand-primary px-3 text-xs font-semibold text-white" onClick={() => setOpen(false)} type="button">Done</button>
+            </div>
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function RatingStars({ rating }: { rating: number }) {
+  return (
+    <span aria-hidden className="flex items-center gap-px">
+      {Array.from({ length: 5 }, (_, index) => {
+        const fill = Math.max(0, Math.min(1, rating - index));
+        return (
+          <span className="relative h-2.5 w-2.5 text-[#d5d9e4]" key={index}>
+            <Star className="absolute inset-0 h-2.5 w-2.5" strokeWidth={1.8} />
+            {fill > 0 ? (
+              <span className="absolute inset-y-0 left-0 overflow-hidden text-[#e3aa16]" style={{ width: `${fill * 100}%` }}>
+                <Star className="h-2.5 w-2.5 max-w-none" fill="currentColor" strokeWidth={1.8} />
+              </span>
+            ) : null}
+          </span>
+        );
+      })}
+    </span>
+  );
+}
+
+function RatingFilter({ inlineMenu = false, onSelect, value }: { inlineMenu?: boolean; onSelect: (next: string) => void; value: string }) {
+  return (
+    <div className="min-w-0 text-xs font-semibold text-[#8891a7]">
+      <span className="mb-1 block">Tutor rating</span>
+      <SelectMenu
+        ariaLabel="Tutor rating"
+        buttonClassName="!h-8 !px-3 !text-xs"
+        indicatorClassName="!h-4 !w-4 !rounded"
+        inlineMenu={inlineMenu}
+        onChange={onSelect}
+        options={[
+          { label: "Any rating", value: "" },
+          { icon: <RatingStars rating={3} />, label: "3 stars & up", value: "3" },
+          { icon: <RatingStars rating={4} />, label: "4 stars & up", value: "4" },
+          { icon: <RatingStars rating={4.5} />, label: "4.5 stars & up", value: "4.5" },
+        ]}
+        placeholder="Any rating"
+        value={value}
+      />
+    </div>
   );
 }
 

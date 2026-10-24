@@ -57,7 +57,7 @@ export default function StudentDashboardPage() {
   return (
     <DashboardShell homeFit navbar={<StudentDashboardNavbar active="Home" />}>
       <div
-        className="dashboard-stack gap-3 2xl:gap-4"
+        className="dashboard-stack !gap-6 py-3 2xl:!gap-7"
         data-dashboard-content
       >
               <section>
@@ -69,7 +69,7 @@ export default function StudentDashboardPage() {
               </section>
 
               <section>
-                <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.45fr_1fr] xl:items-stretch">
+                <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.45fr_1fr] xl:items-stretch">
                   <div className="h-full min-h-0">
                     <StudentDashboardBookingsSection
                       bookings={bookings}

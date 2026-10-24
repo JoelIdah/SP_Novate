@@ -2,7 +2,7 @@
 
 import { DashboardNavbar } from "../layout/DashboardNavbar";
 
-type StudentNavLabel = "Home" | "Bookings" | "Transactions" | "Chat";
+type StudentNavLabel = "Home" | "Bookings" | "Transactions" | "Chat" | "Settings";
 
 export function StudentDashboardNavbar({ active = "Home" }: { active?: StudentNavLabel }) {
   return <DashboardNavbar active={active} role="student" />;

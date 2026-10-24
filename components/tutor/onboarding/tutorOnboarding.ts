@@ -38,7 +38,7 @@ export type TutorReviewDocument = {
 
 export type TutorCompensationInput =
   | { country: "uk"; return_url: string; refresh_url: string }
-  | { country: "nigeria"; bank_name: string; bank_code: string; account_number: string };
+  | { country: "nigeria"; bank_name: string; bank_code: string; account_name: string; account_number: string };
 
 export type TutorCompensationResult =
   | {
@@ -55,7 +55,9 @@ export type TutorCompensationResult =
 
 export type TutorOnboardingReview = {
   compensation: null | {
-    country: string;
+    country?: string;
+    country_code?: string;
+    provider?: string;
     account_number?: string;
     account_name?: string;
     bank_code?: string;
@@ -68,6 +70,7 @@ export type TutorOnboardingReview = {
     status: string;
     employer_share_code?: string;
     dbs_certificate_number?: string;
+    documents?: TutorReviewDocument[];
   };
   documents: TutorReviewDocument[];
   is_complete: boolean;
@@ -77,6 +80,7 @@ export type TutorOnboardingReview = {
     latitude: number;
     longitude: number;
     place_id?: string;
+    country_code?: string;
     source: string;
   };
   missing_steps: string[];
@@ -155,17 +159,49 @@ export async function saveTutorCompensation(input: TutorCompensationInput) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
   });
-  if (!isRecord(payload.data) || payload.data.country !== input.country) {
-    throw new Error("We couldnâ€™t process your compensation details. Please try again.");
+  if (!isRecord(payload.data)) {
+    throw new Error("We couldn’t process your compensation details. Please try again.");
   }
-  if (
-    input.country === "uk" &&
-    (typeof payload.data.stripe_onboarding_url !== "string" ||
-      !payload.data.stripe_onboarding_url)
-  ) {
-    throw new Error("We couldnâ€™t start Stripe onboarding. Please try again.");
+
+  if (input.country === "uk") {
+    const isUkResponse =
+      payload.data.country === "uk" ||
+      payload.data.country_code === "GB" ||
+      payload.data.provider === "stripe";
+    const onboardingUrl = [
+      payload.data.stripe_onboarding_url,
+      payload.data.onboarding_url,
+      payload.data.url,
+    ].find((value): value is string => typeof value === "string" && value.length > 0);
+
+    if (!isUkResponse || !onboardingUrl) {
+      throw new Error("We couldn’t start Stripe onboarding. Please try again.");
+    }
+
+    return {
+      country: "uk",
+      stripe_onboarding_url: onboardingUrl,
+      stripe_payouts_enabled: payload.data.stripe_payouts_enabled === true,
+    } satisfies TutorCompensationResult;
   }
-  return payload.data as TutorCompensationResult;
+
+  const isNigeriaResponse =
+    payload.data.country === "nigeria" ||
+    payload.data.country_code === "NG" ||
+    payload.data.provider === "paystack";
+  if (!isNigeriaResponse) {
+    throw new Error("We couldn’t process your compensation details. Please try again.");
+  }
+
+  return {
+    country: "nigeria",
+    account_name:
+      typeof payload.data.account_name === "string" ? payload.data.account_name : "",
+    account_number:
+      typeof payload.data.account_number === "string" ? payload.data.account_number : input.account_number,
+    bank_name:
+      typeof payload.data.bank_name === "string" ? payload.data.bank_name : input.bank_name,
+  } satisfies TutorCompensationResult;
 }
 
 export async function getTutorOnboardingReview(signal?: AbortSignal) {
@@ -174,9 +210,16 @@ export async function getTutorOnboardingReview(signal?: AbortSignal) {
   if (!isRecord(data)) {
     throw new Error("We couldn’t load your application review. Please try again.");
   }
+  const identification = isRecord(data.identification)
+    ? data.identification
+    : null;
+  const nestedDocuments = identification && Array.isArray(identification.documents)
+    ? identification.documents
+    : [];
+  const topLevelDocuments = Array.isArray(data.documents) ? data.documents : [];
   return {
     ...data,
-    documents: Array.isArray(data.documents) ? data.documents : [],
+    documents: topLevelDocuments.length ? topLevelDocuments : nestedDocuments,
     missing_steps: Array.isArray(data.missing_steps) ? data.missing_steps : [],
   } as TutorOnboardingReview;
 }
